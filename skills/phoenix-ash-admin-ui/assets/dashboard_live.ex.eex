@@ -1,0 +1,96 @@
+defmodule __WEB_MODULE__.Admin.DashboardLive do
+  use __WEB_MODULE__, :live_view
+
+  import __WEB_MODULE__.AdminComponents
+
+  @impl true
+  def mount(_params, _session, socket) do
+    # Replace this explicit empty state with a single authorized Ash summary action.
+    # The authenticated live_session/on_mount must assign :current_user before this mounts.
+    {:ok,
+     assign(socket,
+       page_title: "Visão geral",
+       metrics: [],
+       recent_items: []
+     )}
+  end
+
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <.admin_shell
+      brand="__BRAND__"
+      initials="__INITIALS__"
+      current_user={assigns[:current_user]}
+      page_title={@page_title}
+      flash={@flash}
+    >
+      <:navigation>
+        <.nav_section title="Visão geral">
+          <%!-- Replace with the project's verified route, for example: ~p"/admin". --%>
+          <.nav_item href="/admin" active label="Dashboard" icon="hero-home" />
+        </.nav_section>
+      </:navigation>
+      <:user_actions>
+        <%!-- Replace the path/method with the authenticated logout route used by the project. --%>
+        <.link
+          href="/sign-out"
+          method="delete"
+          class="flex h-9 items-center gap-2 rounded-md px-2 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+        >
+          <.icon name="hero-arrow-left-start-on-rectangle" class="size-4" /> Sair
+        </.link>
+      </:user_actions>
+
+      <.page_header
+        title="Visão geral"
+        description="Acompanhe os principais indicadores e operações administrativas."
+      />
+
+      <div :if={@metrics != []} class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <.metric_card
+          :for={metric <- @metrics}
+          label={metric.label}
+          value={metric.value}
+          trend={metric[:trend]}
+          trend_variant={metric[:trend_variant] || :neutral}
+          summary={metric[:summary]}
+          context={metric[:context]}
+        />
+      </div>
+
+      <.empty_state
+        :if={@metrics == []}
+        title="Dashboard aguardando métricas"
+        description="Conecte esta tela a uma action Ash autorizada que retorne um resumo real do domínio."
+        icon="hero-chart-bar-square"
+      />
+
+      <.card>
+        <div class="flex flex-col gap-3 border-b border-border p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 class="font-semibold">Atividade operacional</h2>
+            <p class="mt-1 text-sm text-muted-foreground">Eventos recentes que exigem acompanhamento.</p>
+          </div>
+          <p class="rounded-lg border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
+            Período ainda não configurado
+          </p>
+        </div>
+        <div class="min-h-64 p-5">
+          <.empty_state
+            title="Sem série operacional"
+            description="Adicione distribuição, progresso ou gráfico somente quando houver dados reais e uma necessidade analítica clara."
+            icon="hero-presentation-chart-line"
+          />
+        </div>
+      </.card>
+
+      <.empty_state
+        :if={@recent_items == []}
+        title="Nenhuma atividade recente"
+        description="Os registros mais recentes aparecerão aqui com filtros e paginação server-side."
+      />
+    </.admin_shell>
+    """
+  end
+end

@@ -1,0 +1,278 @@
+defmodule __WEB_MODULE__.AdminComponents do
+  @moduledoc "Application-owned administrative components with a shadcn-style visual system."
+
+  use __WEB_MODULE__, :html
+
+  attr :brand, :string, default: "__BRAND__"
+  attr :initials, :string, default: "__INITIALS__"
+  attr :current_user, :map, default: nil
+  attr :page_title, :string, default: "Administração"
+  attr :flash, :map, required: true
+  slot :navigation, required: true
+  slot :actions
+  slot :user_actions
+  slot :inner_block, required: true
+
+  def admin_shell(assigns) do
+    ~H"""
+    <div
+      id="admin-shell"
+      phx-hook="AdminSidebar"
+      data-mobile-open="false"
+      data-collapsed="false"
+      class="group/admin min-h-dvh bg-background text-foreground md:grid md:grid-cols-[auto_1fr]"
+    >
+      <div
+        data-admin-sidebar-backdrop
+        class="fixed inset-0 z-30 hidden bg-black/45 group-data-[mobile-open=true]/admin:block md:hidden"
+        aria-hidden="true"
+      />
+
+      <aside
+        id="admin-sidebar"
+        data-admin-sidebar-panel
+        tabindex="-1"
+        class="fixed inset-y-0 left-0 z-40 flex w-[min(20rem,calc(100vw-3rem))] -translate-x-full flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground shadow-xl transition-transform duration-200 group-data-[mobile-open=true]/admin:translate-x-0 md:sticky md:top-0 md:h-dvh md:w-64 md:translate-x-0 md:shadow-none md:transition-[width] md:group-data-[collapsed=true]/admin:w-16"
+        aria-label="Navegação administrativa"
+      >
+        <div class="flex h-14 shrink-0 items-center gap-3 border-b border-sidebar-border px-3">
+          <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-xs font-bold text-sidebar-primary-foreground">
+            {@initials}
+          </div>
+          <span class="min-w-0 flex-1 truncate text-sm font-semibold group-data-[collapsed=true]/admin:md:hidden">
+            {@brand}
+          </span>
+          <button
+            type="button"
+            data-admin-sidebar-action="close"
+            class="inline-flex size-9 items-center justify-center rounded-md hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring md:hidden"
+            aria-label="Fechar navegação"
+          >
+            <.icon name="hero-x-mark" class="size-5" />
+          </button>
+        </div>
+
+        <nav class="flex-1 space-y-5 overflow-y-auto overflow-x-hidden px-2 py-4">
+          {render_slot(@navigation)}
+        </nav>
+
+        <div :if={@current_user} class="shrink-0 border-t border-sidebar-border p-2">
+          <div class="flex min-w-0 items-center gap-2 rounded-lg px-2 py-2 hover:bg-sidebar-accent">
+            <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-xs font-semibold">
+              {user_initials(@current_user)}
+            </div>
+            <div class="min-w-0 flex-1 group-data-[collapsed=true]/admin:md:hidden">
+              <p class="truncate text-sm font-medium">{user_name(@current_user)}</p>
+              <p class="truncate text-xs text-muted-foreground">{user_email(@current_user)}</p>
+            </div>
+          </div>
+          <div :if={@user_actions != []} class="mt-1 group-data-[collapsed=true]/admin:md:hidden">
+            {render_slot(@user_actions)}
+          </div>
+        </div>
+      </aside>
+
+      <div class="min-w-0 md:col-start-2">
+        <header class="sticky top-0 z-20 flex h-14 items-center gap-2 border-b border-border bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:px-6">
+          <button
+            type="button"
+            data-admin-sidebar-action="open"
+            aria-controls="admin-sidebar"
+            aria-expanded="false"
+            class="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
+            aria-label="Abrir navegação"
+          >
+            <.icon name="hero-bars-3" class="size-5" />
+          </button>
+          <button
+            type="button"
+            data-admin-sidebar-action="collapse"
+            aria-controls="admin-sidebar"
+            aria-expanded="true"
+            class="hidden size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:inline-flex"
+            aria-label="Recolher navegação"
+          >
+            <.icon name="hero-view-columns" class="size-5" />
+          </button>
+          <div class="mx-1 hidden h-4 w-px bg-border sm:block" />
+          <p class="min-w-0 truncate text-sm font-medium">{@page_title}</p>
+          <div :if={@actions != []} class="ml-auto flex items-center gap-2">
+            {render_slot(@actions)}
+          </div>
+        </header>
+
+        <main class="min-h-[calc(100dvh-3.5rem)] bg-muted/30 p-4 sm:p-6 lg:p-8">
+          <div class="mx-auto max-w-screen-2xl space-y-6">
+            <Layouts.flash_group flash={@flash} />
+            {render_slot(@inner_block)}
+          </div>
+        </main>
+      </div>
+    </div>
+    """
+  end
+
+  attr :title, :string, required: true
+  slot :inner_block, required: true
+
+  def nav_section(assigns) do
+    ~H"""
+    <section>
+      <p class="mb-1.5 px-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-muted-foreground group-data-[collapsed=true]/admin:md:hidden">
+        {@title}
+      </p>
+      <div class="space-y-1">{render_slot(@inner_block)}</div>
+    </section>
+    """
+  end
+
+  attr :href, :string, required: true
+  attr :active, :boolean, default: false
+  attr :icon, :string, default: nil
+  attr :label, :string, required: true
+
+  def nav_item(assigns) do
+    ~H"""
+    <.link
+      navigate={@href}
+      aria-current={@active && "page"}
+      title={@label}
+      class={[
+        "flex h-9 items-center gap-2.5 rounded-md px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring group-data-[collapsed=true]/admin:md:justify-center group-data-[collapsed=true]/admin:md:px-0",
+        @active && "bg-sidebar-accent text-sidebar-accent-foreground",
+        !@active && "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+      ]}
+    >
+      <.icon :if={@icon} name={@icon} class="size-4 shrink-0" />
+      <span class="truncate group-data-[collapsed=true]/admin:md:hidden">{@label}</span>
+    </.link>
+    """
+  end
+
+  attr :title, :string, required: true
+  attr :description, :string, default: nil
+  slot :actions
+
+  def page_header(assigns) do
+    ~H"""
+    <header class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div>
+        <h1 class="text-2xl font-semibold tracking-tight">{@title}</h1>
+        <p :if={@description} class="mt-1 text-sm text-muted-foreground">{@description}</p>
+      </div>
+      <div :if={@actions != []} class="flex shrink-0 flex-wrap items-center gap-2">
+        {render_slot(@actions)}
+      </div>
+    </header>
+    """
+  end
+
+  attr :class, :string, default: nil
+  slot :inner_block, required: true
+
+  def card(assigns) do
+    ~H"""
+    <section class={["rounded-xl border border-border bg-card text-card-foreground shadow-sm", @class]}>
+      {render_slot(@inner_block)}
+    </section>
+    """
+  end
+
+  attr :label, :string, required: true
+  attr :value, :any, required: true
+  attr :trend, :string, default: nil
+  attr :trend_variant, :atom, values: [:positive, :negative, :neutral], default: :neutral
+  attr :summary, :string, default: nil
+  attr :context, :string, default: nil
+
+  def metric_card(assigns) do
+    ~H"""
+    <.card class="bg-gradient-to-t from-primary/5 to-card">
+      <div class="flex items-start justify-between gap-3 p-5">
+        <div class="min-w-0">
+          <p class="text-sm text-muted-foreground">{@label}</p>
+          <p class="mt-2 truncate text-2xl font-semibold tracking-tight tabular-nums lg:text-3xl">
+            {@value}
+          </p>
+        </div>
+        <.status_badge :if={@trend} variant={@trend_variant}>{@trend}</.status_badge>
+      </div>
+      <div :if={@summary || @context} class="space-y-1 px-5 pb-5 text-sm">
+        <p :if={@summary} class="font-medium">{@summary}</p>
+        <p :if={@context} class="text-muted-foreground">{@context}</p>
+      </div>
+    </.card>
+    """
+  end
+
+  attr :variant, :atom,
+    values: [:positive, :negative, :neutral, :default, :warning],
+    default: :default
+  attr :class, :string, default: nil
+  slot :inner_block, required: true
+
+  def status_badge(assigns) do
+    ~H"""
+    <span class={[
+      "inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium",
+      badge_class(@variant),
+      @class
+    ]}>
+      {render_slot(@inner_block)}
+    </span>
+    """
+  end
+
+  attr :class, :string, default: nil
+  slot :inner_block, required: true
+
+  def responsive_table(assigns) do
+    ~H"""
+    <div class={["overflow-x-auto rounded-xl border border-border bg-card", @class]}>
+      <table class="w-full text-sm">{render_slot(@inner_block)}</table>
+    </div>
+    """
+  end
+
+  attr :title, :string, required: true
+  attr :description, :string, default: nil
+  attr :icon, :string, default: "hero-inbox"
+  slot :actions
+
+  def empty_state(assigns) do
+    ~H"""
+    <div class="flex min-h-56 flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card p-8 text-center">
+      <div class="flex size-10 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+        <.icon name={@icon} class="size-5" />
+      </div>
+      <h2 class="mt-4 text-sm font-semibold">{@title}</h2>
+      <p :if={@description} class="mt-1 max-w-md text-sm text-muted-foreground">{@description}</p>
+      <div :if={@actions != []} class="mt-4 flex items-center gap-2">{render_slot(@actions)}</div>
+    </div>
+    """
+  end
+
+  defp badge_class(:positive), do: "border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+  defp badge_class(:negative), do: "border-destructive/25 bg-destructive/10 text-destructive"
+  defp badge_class(:warning), do: "border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+  defp badge_class(:neutral), do: "border-border bg-muted text-muted-foreground"
+  defp badge_class(:default), do: "border-border bg-background text-foreground"
+
+  defp user_name(user), do: Map.get(user, :name) || "Administrador"
+
+  defp user_email(user) do
+    case Map.get(user, :email) do
+      nil -> ""
+      email -> to_string(email)
+    end
+  end
+
+  defp user_initials(user) do
+    user
+    |> user_name()
+    |> String.split(~r/\s+/, trim: true)
+    |> Enum.take(2)
+    |> Enum.map_join(&String.first/1)
+    |> String.upcase()
+  end
+end

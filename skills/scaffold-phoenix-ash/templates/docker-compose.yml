@@ -1,0 +1,28 @@
+# Referência manual — o script generate-docker-compose.sh gera este arquivo
+# automaticamente a partir de config/dev.exs. Use este template se precisar
+# ajustar na mão (trocar porta, user, etc.).
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: "{{PROJECT_NAME}}_postgres"
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: "{{DB_NAME}}"
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d {{DB_NAME}}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:

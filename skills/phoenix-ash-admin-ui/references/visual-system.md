@@ -96,6 +96,15 @@ Card:
 
 Base recomendada: Neutral ou Zinc. Use OKLCH.
 
+Se o projeto já usa daisyUI, não instale esta paleta — ela criaria um segundo
+sistema semântico concorrente com o tema nativo do projeto. Reaproveite os
+tokens daisyUI existentes em vez destes; o mapeamento completo e uma
+armadilha de nome verificada (`--border`) estão em
+[installation.md](installation.md#projeto-já-usa-daisyui). O objetivo desta
+seção é a composição (hierarquia, ritmo, estados), não os valores hex/oklch
+literais — reproduzir isso sobre a paleta que já existe cumpre a mesma
+diretriz.
+
 ```css
 :root {
   --radius: 0.625rem;

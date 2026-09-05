@@ -56,6 +56,22 @@ def render(template: Path, replacements: dict[str, str]) -> str:
     return content
 
 
+def project_uses_daisyui(project: Path) -> bool:
+    """Detect an existing daisyUI theme system so we never scaffold a second,
+    competing set of semantic tokens (see installation.md, "Projeto já usa
+    daisyUI") — daisyUI's own bare `--border` is a border-width scalar, not a
+    color, and silently collides with the shadcn `--border` color token this
+    skill would otherwise install at the same effective CSS scope."""
+    app_css = project / "assets/css/app.css"
+    if not app_css.is_file():
+        return False
+    try:
+        content = app_css.read_text()
+    except OSError:
+        return False
+    return "daisyui" in content.lower()
+
+
 def main() -> int:
     args = parse_args()
     project = Path(args.project).resolve()
@@ -87,15 +103,28 @@ def main() -> int:
         "__INITIALS__": elixir_string(args.initials.upper()),
     }
 
-    destinations: list[tuple[Path, Path, bool]] = [
-        (ASSETS / "admin-theme.css", project / "assets/css/admin-theme.css", False),
-        (ASSETS / "admin_sidebar_hook.js", project / "assets/js/admin_sidebar_hook.js", False),
+    daisyui_detected = project_uses_daisyui(project)
+
+    destinations: list[tuple[Path, Path, bool]] = []
+    if daisyui_detected:
+        print(
+            "daisyUI detected in assets/css/app.css: skipping admin-theme.css "
+            "(would install a second, competing token system). Reuse the "
+            "existing daisyUI theme(s) instead - see references/installation.md, "
+            '"Projeto já usa daisyUI", for the token mapping and a verified '
+            "--border name collision to avoid."
+        )
+    else:
+        destinations.append((ASSETS / "admin-theme.css", project / "assets/css/admin-theme.css", False))
+
+    destinations.append((ASSETS / "admin_sidebar_hook.js", project / "assets/js/admin_sidebar_hook.js", False))
+    destinations.append(
         (
             ASSETS / "admin_components.ex.eex",
             project / f"lib/{args.web_path}/components/admin_components.ex",
             True,
-        ),
-    ]
+        )
+    )
 
     if args.with_dashboard:
         destinations.append(
@@ -145,11 +174,24 @@ def main() -> int:
         return 4
 
     print("\nManual integration still required:")
-    print('  1. import "./admin-theme.css" from assets/css/app.css')
-    print("  2. register AdminSidebar in assets/js/app.js Hooks")
-    print("  3. place admin routes in the authenticated/authorized live session")
-    print("  4. replace placeholder dashboard data with authorized domain queries")
-    print("  5. run compile, tests, assets and scripts/verify.sh")
+    step = 1
+    if not daisyui_detected:
+        print(f'  {step}. import "./admin-theme.css" from assets/css/app.css')
+        step += 1
+    else:
+        print(
+            f"  {step}. add the missing tokens (sidebar-*, chart-* if needed) to the "
+            "existing daisyUI theme block(s) and rewrite admin_components.ex classes "
+            "to daisyUI utilities - see installation.md"
+        )
+        step += 1
+    print(f"  {step}. register AdminSidebar in assets/js/app.js Hooks")
+    step += 1
+    print(f"  {step}. place admin routes in the authenticated/authorized live session")
+    step += 1
+    print(f"  {step}. replace placeholder dashboard data with authorized domain queries")
+    step += 1
+    print(f"  {step}. run compile, tests, assets and scripts/verify.sh")
     return 0
 
 

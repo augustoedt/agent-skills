@@ -68,6 +68,9 @@ Determine:
 
 - namespace web e convenção de paths;
 - Tailwind 4 e mecanismo de dark mode;
+- **se o projeto já usa daisyUI ou outro sistema de tema nativo** (procure
+  `@plugin "daisyui...` em `assets/css/app.css`) — muda a estratégia de
+  tokens da Etapa 3, ver [installation.md](references/installation.md#projeto-já-usa-daisyui);
 - actor/current user/current scope usado pelo projeto;
 - rota administrativa e pipeline de autorização;
 - componentes que já existem e podem ser preservados;
@@ -104,6 +107,12 @@ python3 ~/.pi/agent/skills/phoenix-ash-admin-ui/scripts/scaffold.py \
 ```
 
 `--with-dashboard` é opcional e gera um LiveView de estado vazio, sem métricas fictícias; conecte-o a actions Ash reais e adapte rotas/autenticação. O flag de confirmação é deliberadamente obrigatório: não o use se a decisão não estiver explícita no plano aprovado.
+
+Se o script detectar daisyUI no projeto alvo, ele pula a criação de
+`admin-theme.css` sozinho (evita o sistema de tokens concorrente) e imprime
+onde seguir o mapeamento correto — mas não reescreve as classes de
+`admin_components.ex.eex`, que ainda referenciam nomes shadcn; adapte-as à
+mão para os utilitários daisyUI existentes antes de integrar.
 
 Depois, integre manualmente:
 

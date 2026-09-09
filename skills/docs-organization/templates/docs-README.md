@@ -40,4 +40,6 @@ Resultados de medição que sustentam decisões. Vazio por ora.
 
 ## apresentacoes/
 
-Material explicativo para quem não acompanha o dia a dia técnico. Sob demanda.
+Material explicativo para quem não acompanha o dia a dia técnico.
+HTML editorial **só sob demanda** (skill docs-organization, template
+`apresentacao.html`). Pasta pode ficar vazia.

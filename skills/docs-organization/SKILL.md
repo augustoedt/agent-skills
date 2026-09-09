@@ -1,6 +1,6 @@
 ---
 name: docs-organization
-description: Organiza a pasta docs/ de um projeto no padrão do ecossistema (camara-intel/campanha-intel/softtrevo-lottery). Use quando o usuário pedir para organizar/estruturar a documentação, criar a pasta docs, definir "a função de cada pasta", criar/atualizar o checkpoint do projeto (project-state.md) ou registrar uma decisão de arquitetura (ADR).
+description: Organiza a pasta docs/ no padrão do ecossistema (camara-intel/campanha-intel/softtrevo-lottery/data-sc). Use ao organizar documentação, criar docs/, definir função das pastas, atualizar project-state.md, registrar ADR, ou quando pedirem apresentação HTML em docs/apresentacoes/ (infra, API, módulos, fluxo) sob demanda.
 ---
 
 # Organização de documentação — padrão do ecossistema
@@ -21,7 +21,7 @@ docs/
   issues/            ← problemas conhecidos EM ABERTO (virou plano → sai daqui)
   archive/           ← documentos de etapas concluídas (histórico)
   benchmarks/        ← medições que sustentam decisões (pode ficar vazia)
-  apresentacoes/     ← material pra não-técnicos (só sob demanda)
+  apresentacoes/     ← HTML editorial pra não-técnicos (só sob demanda)
 ```
 
 Pastas de domínio são bem-vindas quando o projeto precisa — precedentes:
@@ -71,6 +71,40 @@ sistema legado). A regra: **toda pasta tem sua função explicada no
    ler `docs/README.md` e o `project-state.md` antes de retomar trabalho.
 9. **Commit separado** só com a reorganização (não misturar com features).
 
+## Apresentação HTML (sob demanda)
+
+Não criar ao organizar `docs/`. Só quando pedirem apresentação, página
+HTML, “explica o sistema”, fluxo pra não-técnico, infra/API/módulos.
+
+Arquivo: `docs/apresentacoes/<kebab>.html` (ex. `infraestrutura-e-api.html`,
+`fluxo-<projeto>.html`). Listar em `docs/README.md` na seção
+`apresentacoes/`.
+
+### Como fazer
+
+1. Ler `docs/checkpoints/project-state.md`, ADRs e o contrato real
+   (router, domínios Ash, compose, portas). Não inventar arquitetura.
+2. Copiar [templates/apresentacao.html](templates/apresentacao.html)
+   **com o `<style>` intacto** — mesma família visual do
+   `camara-intel` / `data-sc`. Não restilizar, não usar shadcn, não
+   gerar slides PPTX.
+3. Preencher na língua do projeto (quase sempre pt-BR).
+4. Anatomia obrigatória: capa (eyebrow, h1, lede, meta) → TOC sticky →
+   `section.block` (opcional `.index` + `.status.done|.wip|.todo`) →
+   `.prose` (máx. ~64ch) → diagramas SVG `.dgm` → `.data-table` /
+   `.next-grid` / `.callout` / `.stepper` → rodapé + script do TOC.
+5. Diagramas em SVG inline (nós `.node`, fluxo `.accent`, futuro
+   `.dashed` / `.amber`). Não Mermaid, não print de tela.
+6. Status do stepper = checkpoint. Rotas, portas e nomes de módulo =
+   código. Identificadores em `.chip-code`.
+
+Blocos típicos (escolher o que o pedido pedir; não forçar todos):
+visão geral → infraestrutura → modelagem da API → um bloco por
+domínio/módulo → contrato front → próximos passos → onde estamos.
+
+Canônicos: `camara-intel/docs/apresentacoes/fluxo-camara-intel.html`,
+`data-sc/data_city_backend/docs/apresentacoes/infraestrutura-e-api.html`.
+
 ## Checkpoint autoritativo — como escrever
 
 Conteúdo denso, seções fixas: **Onde estamos** (fases/commits com hash),
@@ -84,4 +118,5 @@ substituir precisa saber nos primeiros 30 minutos?".
 - "organiza a pasta docs", "documenta certinho", "qual a função de cada pasta"
 - "cria o checkpoint", "atualiza o project-state"
 - "registra essa decisão", "cria um ADR"
+- "apresentação HTML", "explica o sistema", "página em apresentacoes/"
 - Projeto novo sem `docs/` estruturada

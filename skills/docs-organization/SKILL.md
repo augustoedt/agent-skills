@@ -1,6 +1,6 @@
 ---
 name: docs-organization
-description: Organiza a pasta docs/ no padrão do ecossistema (camara-intel/campanha-intel/softtrevo-lottery/data-sc). Use ao organizar documentação, criar docs/, definir função das pastas, atualizar project-state.md, registrar ADR, ou quando pedirem apresentação HTML em docs/apresentacoes/ (infra, API, módulos, fluxo) sob demanda.
+description: Organiza a pasta docs/ no padrão do ecossistema (camara-intel/campanha-intel/softtrevo-lottery/data-sc). Use ao organizar documentação, criar docs/, definir função das pastas, atualizar project-state.md, registrar ADR, criar ou atualizar docs/runbooks/ (rotinas padrão de debug/ops), ou quando pedirem apresentação HTML em docs/apresentacoes/ (infra, API, módulos, fluxo) sob demanda.
 ---
 
 # Organização de documentação — padrão do ecossistema
@@ -17,6 +17,7 @@ docs/
   decisions/         ← ADRs: um arquivo por decisão (data, contexto, consequências)
   plans/             ← planos de trabalho ainda não concluídos (documentos vivos)
   checkpoints/       ← project-state.md — arquivo ÚNICO e autoritativo
+  runbooks/          ← passo a passo vivo de debug/ops (um arquivo por operação)
   reviews/           ← revisões de código e auditorias
   issues/            ← problemas conhecidos EM ABERTO (virou plano → sai daqui)
   archive/           ← documentos de etapas concluídas (histórico)
@@ -43,7 +44,11 @@ sistema legado). A regra: **toda pasta tem sua função explicada no
    revertida = mesmo arquivo atualizado com o desfecho.
 5. **issues/ é só o que está aberto**: auditoria concluída → `reviews/`;
    etapa concluída → `archive/`; problema que virou trabalho → `plans/`.
-6. Mover com `git mv` (preserva histórico) e **atualizar todas as
+6. **runbooks/ são vivos**: um arquivo por operação de debug/ops. Não
+   arquivar quando a rotina muda — **editar o mesmo arquivo**. Novo tipo
+   de acesso (SSH, sqlite, ZIP, backfill, …) = arquivo novo + linha no
+   `docs/README.md`. Template: [templates/runbook.md](templates/runbook.md).
+7. Mover com `git mv` (preserva histórico) e **atualizar todas as
    referências cruzadas** (código, testes, outros docs). Proteger WIP não
    commitado: nunca commitar arquivos de trabalho alheio junto com a
    reorganização.
@@ -113,10 +118,22 @@ Conteúdo denso, seções fixas: **Onde estamos** (fases/commits com hash),
 **Referências**. Regra de ouro: responder "se eu sumir amanhã, o que quem me
 substituir precisa saber nos primeiros 30 minutos?".
 
+## Runbooks — rotinas de debug/ops
+
+Quando o agente (ou o utilizador) descobrir um acesso que vai repetir —
+SSH a uma VM, sqlite local, baixar objecto privado, inspeccionar um
+ficheiro, backfill — **não deixar só no chat**. Criar ou actualizar
+`docs/runbooks/<kebab-da-operacao>.md`.
+
+Conteúdo: Quando / Passos (comandos reais, paths reais) / Não fazer.
+Sem secrets. IP/hostname no checkpoint, o runbook aponta para lá.
+Rotina mudou → editar o mesmo arquivo, não criar `…-v2.md`.
+
 ## Sinais de que este skill se aplica
 
 - "organiza a pasta docs", "documenta certinho", "qual a função de cada pasta"
 - "cria o checkpoint", "atualiza o project-state"
 - "registra essa decisão", "cria um ADR"
+- "runbook", "passo a passo", "como acesso a VM", "como baixo o ZIP", debug/ops
 - "apresentação HTML", "explica o sistema", "página em apresentacoes/"
 - Projeto novo sem `docs/` estruturada

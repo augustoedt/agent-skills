@@ -22,6 +22,11 @@ de modelo.
 - `project-state.md` — **checkpoint autoritativo** (único arquivo, sempre
   atualizado ao fechar/pausar etapa)
 
+## runbooks/
+
+Passo a passo **vivo** de debug/ops. Um arquivo por operação; actualizar
+quando a rotina mudar. Não é plano nem ADR. Pasta pode começar vazia.
+
 ## reviews/
 
 Revisões de código e auditorias (concluídas ou em curso).

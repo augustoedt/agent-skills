@@ -7,6 +7,16 @@ Repositório dedicado ao versionamento e à sincronização de skills próprias 
 - `skills/`: fonte oficial das skills próprias.
 - `scripts/`: scripts de instalação, verificação e remoção segura.
 
+## Como as skills são instaladas
+
+`scripts/install.sh` mantém **uma única cópia física** das skills próprias em
+`~/.agents/skills/` (sincronizada do repo via rsync) e cria **symlinks por
+skill** em todos os agentes detectados na máquina — pi (`~/.pi/agent/skills`),
+Claude Code (`~/.claude/skills`), Codex (`~/.codex/skills`), Grok
+(`~/.grok/skills`), Copilot CLI (`~/.copilot/skills`), Cursor
+(`~/.cursor/skills`) e `~/.agent/skills`, quando a pasta do agente existir.
+Agentes ausentes são pulados; skills de terceiros nunca são tocadas.
+
 ## Skills de terceiros
 
 Skills de terceiros **não são versionadas aqui** — continuam gerenciadas por

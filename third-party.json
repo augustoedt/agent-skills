@@ -1,0 +1,14 @@
+{
+  "use-railway": {
+    "description": "Railway CLI skill - infra/deploy: projetos, serviços, bancos, domains, troubleshooting",
+    "source": "skills.sh marketplace: railwayapp/railway-skills@use-railway",
+    "update_cmd": "npx skills add railwayapp/railway-skills@use-railway -g -y",
+    "installed_at": "2026-08-06"
+  },
+  "kimi-webbridge": {
+    "description": "Controle do browser real do usuário via daemon local (Moonshot/Kimi)",
+    "source": "https://www.kimi.com/features/webbridge",
+    "update_cmd": "~/.kimi-webbridge/bin/kimi-webbridge upgrade",
+    "installed_at": "2026-08-06"
+  }
+}

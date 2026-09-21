@@ -6,6 +6,8 @@ Repositório dedicado ao versionamento e à sincronização de skills próprias 
 
 - `skills/`: fonte oficial das skills próprias.
 - `scripts/`: scripts de instalação, verificação e remoção segura.
+- `docs/`: documentação interna do repo — `docs/runbooks/` guarda as rotinas
+  de ops (sync/dedup de skills).
 
 ## Como as skills são instaladas
 
@@ -16,6 +18,15 @@ Claude Code (`~/.claude/skills`), Codex (`~/.codex/skills`), Grok
 (`~/.grok/skills`), Copilot CLI (`~/.copilot/skills`), Cursor
 (`~/.cursor/skills`) e `~/.agent/skills`, quando a pasta do agente existir.
 Agentes ausentes são pulados; skills de terceiros nunca são tocadas.
+
+## Compatibilidade (macOS + Linux)
+
+Os scripts são bash puro compatível com bash 3.2 (padrão do macOS) e bash 5
+(Linux), usando só ferramentas POSIX/portáveis — sem `find -printf`,
+`sed -i`, `realpath` nem `stat -c` (GNU-only). `rsync`, `diff`, `ln` e
+`readlink` são usados com flags comuns aos dois. Rodar `scripts/install.sh`
+numa máquina nova (macOS ou Linux) produz o mesmo layout: cópia canônica em
+`~/.agents/skills/` + symlinks nos agentes.
 
 ## Skills de terceiros
 

@@ -2,9 +2,10 @@
 
 ## Estado do plano
 
-- baseline lexical: implementado em `docs-search 0.1.0`;
+- baseline lexical: implementado e preservado sem tuning;
 - schema de avaliação v2: implementado e validado;
-- executor e métricas: próximo trabalho obrigatório;
+- executor, métricas e relatório v1: implementados em `docs-search 0.2.0`;
+- medição e registro do baseline no corpus real: próximo trabalho obrigatório;
 - SQLite/FTS5: bloqueado até o baseline ser medido e registrado;
 - embeddings/RRF: bloqueado até existir uma lacuna semântica comprovada;
 - MCP: fora do escopo enquanto a CLI atender os clientes.
@@ -44,7 +45,7 @@ O sistema deve responder a três perguntas antes de ganhar complexidade:
 - [x] 20 consultas de avaliação migradas para schema v2 com headings, notas e tags.
 - [x] Parser/validador compatível com schemas v1 e v2.
 - [x] Fixture documental estável e versionada `stable-v1`, separada do corpus real.
-- [x] `fmt`, `clippy` e 20 testes.
+- [x] `fmt`, `clippy` e 30 testes.
 - [x] Instalador compatível com Rust gerenciado por `asdf`.
 - [x] Skill e runbook com preflight obrigatório do binário.
 
@@ -73,8 +74,8 @@ Adicionar, em uma versão nova do schema, campos opcionais:
 - `tags`: domínio, idioma ou dificuldade;
 - `disabled_reason`: apenas para casos temporariamente inválidos, sem exclusão silenciosa.
 
-Relevância primária continua sendo por path. Heading é diagnóstico mais preciso para impedir que
-uma seção errada do arquivo seja considerada um acerto perfeito.
+Relevância primária continua sendo por path. Heading é diagnóstico separado para revelar quando o
+arquivo correto foi recuperado pela seção errada, sem alterar as métricas path-level.
 
 ### 1.2 Estabilizar os corpora — fixture v1 concluída
 
@@ -98,6 +99,9 @@ O corpus real pode mudar ao longo do tempo; por isso cada relatório deve regist
 identificação reproduzível do estado avaliado.
 
 ### 1.3 Implementar o executor em Rust
+
+**Status:** concluído no `docs-search` v0.2.0, com saída humana/JSON, `--output` explícito e
+continuação após falhas individuais.
 
 Adicionar um subcomando no mesmo binário, evitando scripts que reimplementem o motor:
 
@@ -126,8 +130,13 @@ confirmar `command -v docs-search` antes da invocação.
 
 ### 1.4 Definir as métricas sem ambiguidade
 
+**Status:** concluído no relatório de avaliação v1; testes cobrem agregação, deduplicação de paths,
+no-answer e percentis.
+
 Para métricas por path, resultados repetidos do mesmo arquivo devem ser deduplicados preservando a
-melhor posição.
+melhor posição no ranking bruto de chunks. O cutoff considera ranks brutos de 1 a 5; remover uma
+duplicata não comprime as posições seguintes. Headings permanecem diagnóstico separado e não
+alteram as métricas primárias por path.
 
 #### Hit@1
 
@@ -190,6 +199,8 @@ caracteres usado pelo CLI.
 
 ### 1.5 Versionar o relatório
 
+**Status:** contrato v1 implementado e formalizado em `evaluation/report.schema.json`.
+
 O JSON de avaliação deve ter schema próprio e independente do schema de busca. Campos mínimos:
 
 ```text
@@ -240,13 +251,13 @@ Adicionar integração com fixture para:
 
 Não iniciar SQLite ou embeddings até que:
 
-- [ ] todas as 20 consultas sejam executadas automaticamente;
-- [ ] o runner e suas métricas tenham testes;
+- [x] todas as 20 consultas sejam executadas automaticamente;
+- [x] o runner e suas métricas tenham testes;
 - [ ] exista relatório JSON do baseline lexical;
 - [ ] Hit@1, Recall@5, MRR, no-answer, latência e contexto estejam registrados;
 - [ ] `project-state.md` contenha o resumo medido;
 - [ ] este plano marque o baseline como concluído;
-- [ ] `fmt`, `clippy` e testes passem.
+- [x] `fmt`, `clippy` e testes passem.
 
 ---
 

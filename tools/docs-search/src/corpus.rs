@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Component, Path, PathBuf};
 
@@ -19,6 +20,7 @@ pub struct Chunk {
 pub struct Corpus {
     pub root: PathBuf,
     pub files: usize,
+    pub file_hashes: BTreeMap<String, String>,
     pub chunks: Vec<Chunk>,
 }
 
@@ -36,6 +38,7 @@ pub fn load(root: &Path) -> Result<Corpus> {
     let mut files = selected_files(&root)?;
     files.sort();
 
+    let mut file_hashes = BTreeMap::new();
     let mut chunks = Vec::new();
     for path in &files {
         let text = fs::read_to_string(path)
@@ -44,12 +47,17 @@ pub fn load(root: &Path) -> Result<Corpus> {
             .strip_prefix(&root)
             .with_context(|| format!("document escaped project root: {}", path.display()))?;
         let relative = portable_path(relative);
+        file_hashes.insert(
+            relative.clone(),
+            blake3::hash(text.as_bytes()).to_hex().to_string(),
+        );
         chunks.extend(chunk_markdown(&relative, &text));
     }
 
     Ok(Corpus {
         root,
         files: files.len(),
+        file_hashes,
         chunks,
     })
 }

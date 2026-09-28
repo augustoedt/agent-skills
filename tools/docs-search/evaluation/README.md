@@ -22,13 +22,15 @@ Optional:
 - `tags`: language, domain, or difficulty labels;
 - `disabled_reason`: explicit explanation when a case must be skipped temporarily.
 
-Path relevance is primary. Heading relevance is diagnostic and prevents a result from receiving
-full section-level credit merely because it found the right file. Every heading key must also be
-listed in `expected_paths`.
+Path relevance drives Hit@1, Recall@5, and MRR@5. Heading relevance is a separate diagnostic that
+reveals correct-file/wrong-section retrieval without changing path-level scores. Every heading key
+must also be listed in `expected_paths`.
 
 ## Invariants
 
 - IDs, expected paths, headings, and tags cannot repeat within a query.
+- Runtime validation requires at least one Unicode letter or number in `query`; the published JSON
+  Schema uses the more portable structural lower bound of one non-whitespace character.
 - Answerable categories require at least one expected path.
 - `no_answer` requires empty expected paths and no expected headings.
 - Empty notes, tags, headings, and disabled reasons are invalid.
@@ -37,10 +39,55 @@ listed in `expected_paths`.
 
 ## Corpora
 
-- `fixtures/stable-v1/` is the immutable regression corpus and preserves every expected path and
-  heading from the canonical dataset.
+- `fixtures/stable-v1/` is the versioned corpus kept stable by policy and preserves every expected
+  path and heading from the canonical dataset.
 - The real `agent-skills` checkout is the operational corpus and may evolve between reports.
 - `fixtures/stable-v1/fixture.json` records selected and deliberately excluded paths.
+
+## Evaluation runner
+
+From `tools/docs-search`:
+
+```bash
+cargo run -- evaluate \
+  --root evaluation/fixtures/stable-v1 \
+  --queries evaluation/queries.json \
+  --limit 5 \
+  --max-excerpt-chars 1200 \
+  --json
+```
+
+The runner validates the dataset, preserves query order, invokes the same public `search()` function
+used by the CLI, and reports individual failures without aborting later queries. Invalid datasets,
+global errors, and any failed query produce a non-zero exit status. Disabled cases are reported as
+skipped and excluded from metric denominators.
+
+Path metrics deduplicate repeated chunks from the same file while preserving that file's best raw
+chunk rank. The cutoff is applied to raw ranks 1–5; deduplication does not compress rank gaps. Hit@1,
+macro and micro Recall@5, and MRR@5 use answerable queries. No-answer false-positive rate uses
+`no_answer` queries. Heading rank scans all chunks returned by the configured limit and preserves
+its raw rank; it is not a cutoff metric. If a query fails, affected aggregate quality metrics are
+`null` and the command exits non-zero instead of reporting an artificially improved score. Latency
+uses a monotonic clock around each attempted search. Context aggregates include only successful
+queries and count Unicode characters across returned excerpts. `execution_model:
+full_corpus_scan_per_query`
+makes explicit that baseline latency includes corpus I/O for every query.
+
+## Evaluation report v1
+
+`report.schema.json` formalizes a contract independent from both search-response schema v1 and
+query-dataset schema v2. The report records:
+
+- tool version, engine, dataset hash and query schema version;
+- logical corpus name, caller-provided root, file/chunk counts, and a reproducible fingerprint;
+- effective limits and execution model;
+- global and per-category metrics;
+- expected evidence, returned ranks, section diagnostics, latency, context volume, and errors for
+  every query.
+
+`--output <path>` is the only way the runner writes a report. Use a relative `--root` when the JSON
+will be committed so it does not contain a machine-specific absolute path. Latency is intentionally
+volatile and should not be snapshot-compared byte for byte.
 
 ## Change policy
 

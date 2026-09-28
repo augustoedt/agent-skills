@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, HashSet};
 
 use anyhow::{Result, bail};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 pub const EVALUATION_SCHEMA_VERSION: u32 = 2;
 
@@ -13,7 +13,7 @@ pub struct EvaluationSet {
     pub queries: Vec<EvaluationQuery>,
 }
 
-#[derive(Debug, Clone, Copy, Deserialize, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum EvaluationCategory {
     Exact,
@@ -77,8 +77,11 @@ fn validate_query(query: &EvaluationQuery) -> Result<()> {
             query.id
         );
     }
-    if query.query.trim().is_empty() {
-        bail!("evaluation query {:?} has an empty query", query.id);
+    if !query.query.chars().any(char::is_alphanumeric) {
+        bail!(
+            "evaluation query {:?} must contain at least one letter or number",
+            query.id
+        );
     }
     if query
         .expected_paths
@@ -259,6 +262,10 @@ mod tests {
             (
                 "empty query text",
                 r#"{"schema_version":2,"corpus":"fixture","queries":[{"id":"exact-01","category":"exact","query":" ","expected_paths":["README.md"]}]}"#,
+            ),
+            (
+                "query without searchable terms",
+                r#"{"schema_version":2,"corpus":"fixture","queries":[{"id":"exact-01","category":"exact","query":"!!!","expected_paths":["README.md"]}]}"#,
             ),
             (
                 "answerable without paths",

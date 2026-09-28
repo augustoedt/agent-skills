@@ -3,7 +3,10 @@ use std::fs;
 use std::path::PathBuf;
 
 use docs_search::corpus;
-use docs_search::{EVALUATION_SCHEMA_VERSION, EvaluationCategory, parse_evaluation_set};
+use docs_search::{
+    EVALUATION_REPORT_SCHEMA_VERSION, EVALUATION_SCHEMA_VERSION, EvaluationCategory,
+    parse_evaluation_set,
+};
 use serde::Deserialize;
 use serde_json::Value;
 
@@ -154,7 +157,7 @@ fn stable_fixture_contains_every_expected_path_and_heading() {
 }
 
 #[test]
-fn published_json_schema_tracks_the_runtime_contract() {
+fn published_query_schema_tracks_the_runtime_contract() {
     let schema: Value = serde_json::from_str(include_str!("../evaluation/queries.schema.json"))
         .expect("published evaluation schema should be valid JSON");
 
@@ -181,6 +184,35 @@ fn published_json_schema_tracks_the_runtime_contract() {
         .as_array()
         .expect("required fields should be an array");
     for field in ["id", "category", "query", "expected_paths"] {
+        assert!(required.contains(&Value::from(field)), "missing {field}");
+    }
+}
+
+#[test]
+fn published_report_schema_tracks_the_runtime_contract() {
+    let schema: Value = serde_json::from_str(include_str!("../evaluation/report.schema.json"))
+        .expect("published report schema should be valid JSON");
+
+    assert_eq!(
+        schema["properties"]["schema_version"]["const"],
+        EVALUATION_REPORT_SCHEMA_VERSION
+    );
+    assert_eq!(schema["properties"]["config"]["$ref"], "#/$defs/config");
+
+    let required = schema["required"]
+        .as_array()
+        .expect("report required fields should be an array");
+    for field in [
+        "schema_version",
+        "tool_version",
+        "engine",
+        "queries_schema_version",
+        "corpus",
+        "config",
+        "summary",
+        "per_category",
+        "queries",
+    ] {
         assert!(required.contains(&Value::from(field)), "missing {field}");
     }
 }

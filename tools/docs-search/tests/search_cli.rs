@@ -106,3 +106,162 @@ fn cli_emits_the_versioned_json_contract() {
     assert_eq!(json["engine"], "lexical-bm25-v1");
     assert_eq!(json["results"][0]["path"], "README.md");
 }
+
+#[test]
+fn cli_evaluates_the_stable_fixture_and_emits_metrics() {
+    let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let root = manifest.join("evaluation/fixtures/stable-v1");
+    let queries = manifest.join("evaluation/queries.json");
+
+    let output = Command::new(env!("CARGO_BIN_EXE_docs-search"))
+        .args([
+            "evaluate",
+            "--root",
+            root.to_str().unwrap(),
+            "--queries",
+            queries.to_str().unwrap(),
+            "--json",
+        ])
+        .output()
+        .unwrap();
+
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let json: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(json["schema_version"], 1);
+    assert_eq!(json["engine"], "lexical-bm25-v1");
+    assert_eq!(json["tool_version"], env!("CARGO_PKG_VERSION"));
+    assert_eq!(json["queries_schema_version"], 2);
+    assert_eq!(json["corpus"]["files"], 5);
+    assert_eq!(json["summary"]["queries_total"], 20);
+    assert_eq!(json["summary"]["executed"], 20);
+    assert_eq!(json["summary"]["failed"], 0);
+    assert!(json["summary"]["hit_at_1"].is_number());
+    assert!(json["summary"]["latency_ms"]["p95"].is_number());
+    assert!(json["summary"]["context_chars"]["total"].is_number());
+    assert_eq!(json["per_category"]["exact"]["queries_total"], 8);
+    assert_eq!(json["per_category"]["no_answer"]["queries_total"], 3);
+    assert_eq!(
+        json["per_category"]["no_answer"]["hit_at_1"],
+        serde_json::Value::Null
+    );
+    assert_eq!(json["queries"].as_array().unwrap().len(), 20);
+    assert_eq!(json["queries"][0]["id"], "exact-01");
+    assert_eq!(json["queries"][19]["id"], "no-answer-03");
+    assert_eq!(json["queries"][0]["results"][0]["line_start"], 17);
+    assert_eq!(json["queries"][0]["results"][0]["line_end"], 25);
+    assert!(json["queries"][0]["result_count"].as_u64().unwrap() > 0);
+}
+
+#[test]
+fn cli_writes_an_evaluation_report_only_when_output_is_explicit() {
+    let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let root = manifest.join("evaluation/fixtures/stable-v1");
+    let queries = manifest.join("evaluation/queries.json");
+    let directory = tempdir().unwrap();
+    let report = directory.path().join("report.json");
+
+    let output = Command::new(env!("CARGO_BIN_EXE_docs-search"))
+        .args([
+            "evaluate",
+            "--root",
+            root.to_str().unwrap(),
+            "--queries",
+            queries.to_str().unwrap(),
+            "--output",
+            report.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+
+    assert!(output.status.success());
+    assert!(String::from_utf8_lossy(&output.stdout).contains("Hit@1"));
+    let json: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(report).unwrap()).unwrap();
+    assert_eq!(json["schema_version"], 1);
+    assert_eq!(json["summary"]["queries_total"], 20);
+}
+
+#[test]
+fn cli_reports_disabled_queries_as_skipped() {
+    let directory = tempdir().unwrap();
+    fs::write(
+        directory.path().join("README.md"),
+        "# Project\nProject documentation.\n",
+    )
+    .unwrap();
+    let queries = directory.path().join("queries.json");
+    fs::write(
+        &queries,
+        r#"{
+          "schema_version": 2,
+          "corpus": "fixture",
+          "queries": [
+            {
+              "id": "exact-one",
+              "category": "exact",
+              "query": "project documentation",
+              "expected_paths": ["README.md"]
+            },
+            {
+              "id": "disabled-one",
+              "category": "no_answer",
+              "query": "temporarily unavailable case",
+              "expected_paths": [],
+              "disabled_reason": "fixture migration"
+            }
+          ]
+        }"#,
+    )
+    .unwrap();
+
+    let output = Command::new(env!("CARGO_BIN_EXE_docs-search"))
+        .args([
+            "evaluate",
+            "--root",
+            directory.path().to_str().unwrap(),
+            "--queries",
+            queries.to_str().unwrap(),
+            "--json",
+        ])
+        .output()
+        .unwrap();
+
+    assert!(output.status.success());
+    let json: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(json["summary"]["queries_total"], 2);
+    assert_eq!(json["summary"]["executed"], 1);
+    assert_eq!(json["summary"]["skipped"], 1);
+    assert_eq!(json["queries"][1]["status"], "skipped");
+    assert_eq!(json["queries"][1]["disabled_reason"], "fixture migration");
+}
+
+#[test]
+fn cli_rejects_an_invalid_evaluation_dataset() {
+    let directory = tempdir().unwrap();
+    fs::write(directory.path().join("README.md"), "# Project\nDocs.\n").unwrap();
+    let queries = directory.path().join("invalid-queries.json");
+    fs::write(
+        &queries,
+        r#"{"schema_version":2,"corpus":"fixture","queries":[]}"#,
+    )
+    .unwrap();
+
+    let output = Command::new(env!("CARGO_BIN_EXE_docs-search"))
+        .args([
+            "evaluate",
+            "--root",
+            directory.path().to_str().unwrap(),
+            "--queries",
+            queries.to_str().unwrap(),
+            "--json",
+        ])
+        .output()
+        .unwrap();
+
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("invalid evaluation dataset"));
+}

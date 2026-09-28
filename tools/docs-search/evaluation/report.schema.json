@@ -1,0 +1,233 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/augustoedt/agent-skills/tools/docs-search/evaluation/report.schema.json",
+  "title": "docs-search evaluation report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "tool_version",
+    "engine",
+    "queries_schema_version",
+    "dataset_hash",
+    "corpus",
+    "config",
+    "summary",
+    "per_category",
+    "queries"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "tool_version": { "type": "string", "minLength": 1 },
+    "engine": { "type": "string", "minLength": 1 },
+    "queries_schema_version": { "type": "integer", "minimum": 1 },
+    "dataset_hash": { "$ref": "#/$defs/hash" },
+    "corpus": { "$ref": "#/$defs/corpus" },
+    "config": { "$ref": "#/$defs/config" },
+    "summary": { "$ref": "#/$defs/summary" },
+    "per_category": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["exact", "semantic", "ambiguous", "no_answer"],
+      "properties": {
+        "exact": { "$ref": "#/$defs/summary" },
+        "semantic": { "$ref": "#/$defs/summary" },
+        "ambiguous": { "$ref": "#/$defs/summary" },
+        "no_answer": { "$ref": "#/$defs/summary" }
+      }
+    },
+    "queries": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/query" }
+    }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "nullableMetric": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 1
+    },
+    "nullableNonNegativeNumber": {
+      "type": ["number", "null"],
+      "minimum": 0
+    },
+    "nullableNonNegativeInteger": {
+      "type": ["integer", "null"],
+      "minimum": 0
+    },
+    "nullablePositiveInteger": {
+      "type": ["integer", "null"],
+      "minimum": 1
+    },
+    "corpus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "root", "files", "chunks", "fingerprint"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "root": { "type": "string", "minLength": 1 },
+        "files": { "type": "integer", "minimum": 0 },
+        "chunks": { "type": "integer", "minimum": 0 },
+        "fingerprint": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "config": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["limit", "max_excerpt_chars", "recall_cutoff", "execution_model"],
+      "properties": {
+        "limit": { "type": "integer", "minimum": 5, "maximum": 100 },
+        "max_excerpt_chars": { "type": "integer", "minimum": 80 },
+        "recall_cutoff": { "const": 5 },
+        "execution_model": { "const": "full_corpus_scan_per_query" }
+      }
+    },
+    "latency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mean", "p50", "p95", "max", "total"],
+      "properties": {
+        "mean": { "$ref": "#/$defs/nullableNonNegativeNumber" },
+        "p50": { "$ref": "#/$defs/nullableNonNegativeNumber" },
+        "p95": { "$ref": "#/$defs/nullableNonNegativeNumber" },
+        "max": { "$ref": "#/$defs/nullableNonNegativeNumber" },
+        "total": { "type": "number", "minimum": 0 }
+      }
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mean", "p95", "max", "total"],
+      "properties": {
+        "mean": { "$ref": "#/$defs/nullableNonNegativeNumber" },
+        "p95": { "$ref": "#/$defs/nullableNonNegativeInteger" },
+        "max": { "$ref": "#/$defs/nullableNonNegativeInteger" },
+        "total": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "queries_total",
+        "executed",
+        "skipped",
+        "failed",
+        "answerable",
+        "no_answer",
+        "hit_at_1",
+        "recall_at_5_macro",
+        "recall_at_5_micro",
+        "mrr_at_5",
+        "no_answer_false_positives",
+        "no_answer_false_positive_rate",
+        "latency_ms",
+        "context_chars"
+      ],
+      "properties": {
+        "queries_total": { "type": "integer", "minimum": 0 },
+        "executed": { "type": "integer", "minimum": 0 },
+        "skipped": { "type": "integer", "minimum": 0 },
+        "failed": { "type": "integer", "minimum": 0 },
+        "answerable": { "type": "integer", "minimum": 0 },
+        "no_answer": { "type": "integer", "minimum": 0 },
+        "hit_at_1": { "$ref": "#/$defs/nullableMetric" },
+        "recall_at_5_macro": { "$ref": "#/$defs/nullableMetric" },
+        "recall_at_5_micro": { "$ref": "#/$defs/nullableMetric" },
+        "mrr_at_5": { "$ref": "#/$defs/nullableMetric" },
+        "no_answer_false_positives": { "type": "integer", "minimum": 0 },
+        "no_answer_false_positive_rate": { "$ref": "#/$defs/nullableMetric" },
+        "latency_ms": { "$ref": "#/$defs/latency" },
+        "context_chars": { "$ref": "#/$defs/context" }
+      }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rank",
+        "path",
+        "heading",
+        "line_start",
+        "line_end",
+        "score",
+        "excerpt_chars"
+      ],
+      "properties": {
+        "rank": { "type": "integer", "minimum": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "heading": { "type": ["string", "null"] },
+        "line_start": { "type": "integer", "minimum": 1 },
+        "line_end": { "type": "integer", "minimum": 1 },
+        "score": { "type": "number" },
+        "excerpt_chars": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "query": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "category",
+        "query",
+        "status",
+        "expected_paths",
+        "expected_headings",
+        "results",
+        "result_count",
+        "first_relevant_rank",
+        "first_relevant_heading_rank",
+        "relevant_paths_found",
+        "hit_at_1",
+        "recall_at_5",
+        "reciprocal_rank_at_5",
+        "no_answer_false_positive",
+        "latency_ms",
+        "context_chars",
+        "error",
+        "disabled_reason"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "category": {
+          "enum": ["exact", "semantic", "ambiguous", "no_answer"]
+        },
+        "query": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["ok", "error", "skipped"] },
+        "expected_paths": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "expected_headings": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "uniqueItems": true
+          }
+        },
+        "results": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/result" }
+        },
+        "result_count": { "type": "integer", "minimum": 0 },
+        "first_relevant_rank": { "$ref": "#/$defs/nullablePositiveInteger" },
+        "first_relevant_heading_rank": { "$ref": "#/$defs/nullablePositiveInteger" },
+        "relevant_paths_found": { "$ref": "#/$defs/nullableNonNegativeInteger" },
+        "hit_at_1": { "type": ["boolean", "null"] },
+        "recall_at_5": { "$ref": "#/$defs/nullableMetric" },
+        "reciprocal_rank_at_5": { "$ref": "#/$defs/nullableMetric" },
+        "no_answer_false_positive": { "type": ["boolean", "null"] },
+        "latency_ms": { "$ref": "#/$defs/nullableNonNegativeNumber" },
+        "context_chars": { "type": "integer", "minimum": 0 },
+        "error": { "type": ["string", "null"] },
+        "disabled_reason": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

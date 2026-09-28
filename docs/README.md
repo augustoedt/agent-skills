@@ -19,7 +19,7 @@ Decisões arquiteturais permanentes e suas consequências.
 
 Planos vivos de trabalho ainda não concluído.
 
-- `docs-search.md` — etapas do baseline lexical até busca híbrida e distribuição.
+- `docs-search.md` — plano detalhado, métricas, gates e etapas do baseline lexical até busca híbrida e distribuição.
 
 ## runbooks/
 

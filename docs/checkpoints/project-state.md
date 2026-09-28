@@ -11,7 +11,8 @@ passam. O binário foi instalado no Rust 1.98.1 gerenciado por `asdf` e uma cons
 evidência válida deste repositório.
 
 A skill `search-project-docs` também está sincronizada em `~/.agents/skills/` e ligada aos agentes
-locais detectados.
+locais detectados. O plano detalhado em `docs/plans/docs-search.md` agora define schema de avaliação,
+métricas, relatórios, testes, gates e critérios para SQLite/FTS5, embeddings/RRF e distribuição.
 
 ## Em andamento
 

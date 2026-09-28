@@ -63,6 +63,10 @@ cargo clippy --all-targets --all-features -- -D warnings
 cargo test
 ```
 
-O conjunto inicial de avaliação está em `evaluation/queries.json`. Ele inclui consultas exatas,
-semânticas, ambíguas e sem resposta. A qualidade desse baseline deve ser medida antes de adicionar
-SQLite FTS5, embeddings ou um classificador/router.
+O conjunto inicial de avaliação está em `evaluation/queries.json`. O schema v2 é documentado em
+`evaluation/README.md` e formalizado por `evaluation/queries.schema.json`; o parser Rust também
+mantém leitura do schema v1. As 20 consultas incluem casos exatos, semânticos, ambíguos e sem
+resposta, com headings esperados, notas e tags diagnósticas. A fixture imutável
+`evaluation/fixtures/stable-v1` sustenta testes de regressão; o repositório real será medido
+separadamente. A qualidade desse baseline deve ser medida antes de adicionar SQLite FTS5,
+embeddings ou um classificador/router.

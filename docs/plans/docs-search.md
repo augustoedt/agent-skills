@@ -3,6 +3,7 @@
 ## Estado do plano
 
 - baseline lexical: implementado em `docs-search 0.1.0`;
+- schema de avaliação v2: implementado e validado;
 - executor e métricas: próximo trabalho obrigatório;
 - SQLite/FTS5: bloqueado até o baseline ser medido e registrado;
 - embeddings/RRF: bloqueado até existir uma lacuna semântica comprovada;
@@ -40,8 +41,10 @@ O sistema deve responder a três perguntas antes de ganhar complexidade:
 - [x] Cobertura mínima de termos para reduzir evidência acidental.
 - [x] Contrato JSON v1 com hashes BLAKE3.
 - [x] Saída humana e saída JSON.
-- [x] 20 consultas iniciais de avaliação.
-- [x] `fmt`, `clippy` e 11 testes.
+- [x] 20 consultas de avaliação migradas para schema v2 com headings, notas e tags.
+- [x] Parser/validador compatível com schemas v1 e v2.
+- [x] Fixture documental estável e versionada `stable-v1`, separada do corpus real.
+- [x] `fmt`, `clippy` e 20 testes.
 - [x] Instalador compatível com Rust gerenciado por `asdf`.
 - [x] Skill e runbook com preflight obrigatório do binário.
 
@@ -54,9 +57,9 @@ O sistema deve responder a três perguntas antes de ganhar complexidade:
 Transformar `evaluation/queries.json` em benchmark executável e reproduzível, sem alterar o motor de
 busca durante a primeira medição.
 
-### 1.1 Versionar o schema das consultas
+### 1.1 Versionar o schema das consultas — concluído
 
-Evoluir o dataset sem perder compatibilidade com o schema atual. Cada consulta deve continuar tendo:
+O dataset foi migrado para schema v2 sem perder leitura do schema v1. Cada consulta continua tendo:
 
 - `id` único e estável;
 - `category`: `exact`, `semantic`, `ambiguous` ou `no_answer`;
@@ -73,11 +76,11 @@ Adicionar, em uma versão nova do schema, campos opcionais:
 Relevância primária continua sendo por path. Heading é diagnóstico mais preciso para impedir que
 uma seção errada do arquivo seja considerada um acerto perfeito.
 
-### 1.2 Estabilizar os corpora
+### 1.2 Estabilizar os corpora — fixture v1 concluída
 
-Manter duas modalidades:
+A fixture `evaluation/fixtures/stable-v1` foi criada e validada contra o dataset v2. Manter duas modalidades:
 
-1. **fixture versionada e pequena** — conteúdo imutável para testes de regressão;
+1. **fixture versionada e pequena** — conteúdo mantido estável por política para testes de regressão;
 2. **corpus real** — o próprio `agent-skills`, para medir comportamento operacional.
 
 A fixture deve conter casos de:
@@ -86,6 +89,7 @@ A fixture deve conter casos de:
 - dois arquivos relevantes para a mesma consulta;
 - resposta inexistente;
 - headings com acentos e caracteres `#`;
+- texto que parece heading dentro de bloco de código cercado;
 - arquivos fora do corpus permitido;
 - symlinks que não podem ser seguidos;
 - documentos longos com match próximo ao início, meio e fim.
@@ -315,6 +319,7 @@ Adicionar cobertura para:
 - symlink de arquivo e diretório;
 - arquivo ignorado pelo Git;
 - erro de leitura e Markdown inválido tolerável;
+- linha iniciada por `#` dentro de bloco de código, sem alterar breadcrumbs;
 - instalador quando o binário não fica no `PATH`.
 
 ### 3.2 Avaliar melhorias lexicais isoladamente

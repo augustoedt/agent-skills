@@ -1,126 +1,249 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "corpus": "agent-skills",
   "queries": [
     {
       "id": "exact-01",
       "category": "exact",
       "query": "como sincronizar skills próprias",
-      "expected_paths": ["README.md", "docs/runbooks/sincronizar-e-deduplicar-skills.md"]
+      "expected_paths": ["README.md", "docs/runbooks/sincronizar-e-deduplicar-skills.md"],
+      "expected_headings": {
+        "README.md": ["Agent Skills > Editar e sincronizar uma skill própria"],
+        "docs/runbooks/sincronizar-e-deduplicar-skills.md": [
+          "Runbook — Sincronizar skills e eliminar conflitos de nome > Passos"
+        ]
+      },
+      "notes": "A resposta completa combina o fluxo resumido do README com os passos operacionais do runbook.",
+      "tags": ["pt-BR", "skills", "sync"]
     },
     {
       "id": "exact-02",
       "category": "exact",
       "query": "fonte da verdade das skills",
-      "expected_paths": ["README.md"]
+      "expected_paths": ["README.md"],
+      "expected_headings": {
+        "README.md": [
+          "Agent Skills > Estrutura",
+          "Agent Skills > Editar e sincronizar uma skill própria"
+        ]
+      },
+      "notes": "As seções Estrutura e Editar declaram que skills/ é a fonte da verdade.",
+      "tags": ["pt-BR", "skills", "source-of-truth"]
     },
     {
       "id": "exact-03",
       "category": "exact",
       "query": "eliminar conflitos de nome",
-      "expected_paths": ["docs/runbooks/sincronizar-e-deduplicar-skills.md"]
+      "expected_paths": ["docs/runbooks/sincronizar-e-deduplicar-skills.md"],
+      "expected_headings": {
+        "docs/runbooks/sincronizar-e-deduplicar-skills.md": [
+          "Runbook — Sincronizar skills e eliminar conflitos de nome",
+          "Runbook — Sincronizar skills e eliminar conflitos de nome > Quando"
+        ]
+      },
+      "notes": "O título e a seção Quando descrevem diretamente colisões de nome.",
+      "tags": ["pt-BR", "skills", "deduplication"]
     },
     {
       "id": "exact-04",
       "category": "exact",
       "query": "instalar skill de terceiro",
-      "expected_paths": ["README.md"]
+      "expected_paths": ["README.md"],
+      "expected_headings": {
+        "README.md": ["Agent Skills > Skills de terceiros"]
+      },
+      "notes": "A seção de terceiros contém os comandos de descoberta e instalação.",
+      "tags": ["pt-BR", "skills", "third-party"]
     },
     {
       "id": "exact-05",
       "category": "exact",
       "query": "quais agentes recebem symlinks",
-      "expected_paths": ["README.md"]
+      "expected_paths": ["README.md"],
+      "expected_headings": {
+        "README.md": ["Agent Skills > Como as skills são instaladas"]
+      },
+      "notes": "A seção enumera Pi, Claude, Codex, Grok, Copilot, Cursor e o diretório genérico.",
+      "tags": ["pt-BR", "skills", "symlinks"]
     },
     {
       "id": "exact-06",
       "category": "exact",
       "query": "compatibilidade macOS Linux",
-      "expected_paths": ["README.md"]
+      "expected_paths": ["README.md"],
+      "expected_headings": {
+        "README.md": ["Agent Skills > Compatibilidade (macOS + Linux)"]
+      },
+      "notes": "A seção documenta os shells e utilitários portáveis entre os dois sistemas.",
+      "tags": ["pt-BR", "portability", "platforms"]
     },
     {
       "id": "exact-07",
       "category": "exact",
       "query": "como verificar symlink quebrado",
-      "expected_paths": ["docs/runbooks/sincronizar-e-deduplicar-skills.md"]
+      "expected_paths": ["docs/runbooks/sincronizar-e-deduplicar-skills.md"],
+      "expected_headings": {
+        "docs/runbooks/sincronizar-e-deduplicar-skills.md": [
+          "Runbook — Sincronizar skills e eliminar conflitos de nome > Passos"
+        ]
+      },
+      "notes": "O quarto passo contém a verificação de diretórios reais e symlinks quebrados.",
+      "tags": ["pt-BR", "skills", "symlinks", "verification"]
     },
     {
       "id": "exact-08",
       "category": "exact",
       "query": "diretório canônico agents skills",
-      "expected_paths": ["README.md", "docs/runbooks/sincronizar-e-deduplicar-skills.md"]
+      "expected_paths": ["README.md", "docs/runbooks/sincronizar-e-deduplicar-skills.md"],
+      "expected_headings": {
+        "README.md": ["Agent Skills > Como as skills são instaladas"],
+        "docs/runbooks/sincronizar-e-deduplicar-skills.md": [
+          "Runbook — Sincronizar skills e eliminar conflitos de nome > Contexto"
+        ]
+      },
+      "notes": "README e runbook identificam ~/.agents/skills como cópia física canônica.",
+      "tags": ["pt-BR", "skills", "canonical-directory"]
     },
     {
       "id": "semantic-01",
       "category": "semantic",
       "query": "onde alterar uma skill sem perder mudanças",
-      "expected_paths": ["README.md"]
+      "expected_paths": ["README.md"],
+      "expected_headings": {
+        "README.md": ["Agent Skills > Editar e sincronizar uma skill própria"]
+      },
+      "notes": "A resposta exige inferir que editar a cópia instalada seria sobrescrito pelo sync.",
+      "tags": ["pt-BR", "skills", "source-of-truth", "paraphrase"]
     },
     {
       "id": "semantic-02",
       "category": "semantic",
       "query": "distribuir uma skill para vários assistentes",
-      "expected_paths": ["README.md"]
+      "expected_paths": ["README.md"],
+      "expected_headings": {
+        "README.md": ["Agent Skills > Como as skills são instaladas"]
+      },
+      "notes": "A seção descreve uma cópia canônica e symlinks para vários agentes.",
+      "tags": ["pt-BR", "skills", "distribution", "paraphrase"]
     },
     {
       "id": "semantic-03",
       "category": "semantic",
       "query": "evitar cópias duplicadas no pi",
-      "expected_paths": ["docs/runbooks/sincronizar-e-deduplicar-skills.md"]
+      "expected_paths": ["docs/runbooks/sincronizar-e-deduplicar-skills.md"],
+      "expected_headings": {
+        "docs/runbooks/sincronizar-e-deduplicar-skills.md": [
+          "Runbook — Sincronizar skills e eliminar conflitos de nome > Contexto"
+        ]
+      },
+      "notes": "O contexto explica como symlinks evitam colisões causadas por cópias físicas.",
+      "tags": ["pt-BR", "skills", "deduplication", "paraphrase"]
     },
     {
       "id": "semantic-04",
       "category": "semantic",
       "query": "adicionar uma ferramenta encontrada no marketplace",
-      "expected_paths": ["README.md"]
+      "expected_paths": ["README.md"],
+      "expected_headings": {
+        "README.md": ["Agent Skills > Skills de terceiros"]
+      },
+      "notes": "Marketplace e ferramenta são paráfrases do fluxo de instalação de skill de terceiro.",
+      "tags": ["pt-BR", "skills", "third-party", "paraphrase"]
     },
     {
       "id": "semantic-05",
       "category": "semantic",
       "query": "mudar a pasta do repositório em outra máquina",
-      "expected_paths": ["README.md"]
+      "expected_paths": ["README.md"],
+      "expected_headings": {
+        "README.md": [
+          "Agent Skills > Repo portátil (`AGENT_SKILLS_REPO`)",
+          "Agent Skills > Clonar em outra máquina"
+        ]
+      },
+      "notes": "As duas seções explicam descoberta do repo e configuração de caminho em outra máquina.",
+      "tags": ["pt-BR", "portability", "repository-path", "paraphrase"]
     },
     {
       "id": "semantic-06",
       "category": "semantic",
       "query": "não sobrescrever uma skill diferente",
-      "expected_paths": ["docs/runbooks/sincronizar-e-deduplicar-skills.md"]
+      "expected_paths": ["docs/runbooks/sincronizar-e-deduplicar-skills.md"],
+      "expected_headings": {
+        "docs/runbooks/sincronizar-e-deduplicar-skills.md": [
+          "Runbook — Sincronizar skills e eliminar conflitos de nome > Não fazer"
+        ]
+      },
+      "notes": "A seção proíbe substituir cópias divergentes sem revisar o diff.",
+      "tags": ["pt-BR", "skills", "safety", "paraphrase"]
     },
     {
       "id": "ambiguous-01",
       "category": "ambiguous",
       "query": "instalar skill",
-      "expected_paths": ["README.md"]
+      "expected_paths": ["README.md"],
+      "expected_headings": {
+        "README.md": [
+          "Agent Skills > Como as skills são instaladas",
+          "Agent Skills > Skills de terceiros"
+        ]
+      },
+      "notes": "A consulta pode se referir a skill própria ou de terceiro; ambas as seções são aceitáveis.",
+      "tags": ["pt-BR", "skills", "underspecified"]
     },
     {
       "id": "ambiguous-02",
       "category": "ambiguous",
       "query": "sincronizar",
-      "expected_paths": ["README.md", "docs/runbooks/sincronizar-e-deduplicar-skills.md"]
+      "expected_paths": ["README.md", "docs/runbooks/sincronizar-e-deduplicar-skills.md"],
+      "expected_headings": {
+        "README.md": ["Agent Skills > Editar e sincronizar uma skill própria"],
+        "docs/runbooks/sincronizar-e-deduplicar-skills.md": [
+          "Runbook — Sincronizar skills e eliminar conflitos de nome",
+          "Runbook — Sincronizar skills e eliminar conflitos de nome > Quando",
+          "Runbook — Sincronizar skills e eliminar conflitos de nome > Passos"
+        ]
+      },
+      "notes": "O termo isolado admite tanto a visão resumida quanto o runbook operacional.",
+      "tags": ["pt-BR", "skills", "underspecified"]
     },
     {
       "id": "ambiguous-03",
       "category": "ambiguous",
       "query": "cópia canônica",
-      "expected_paths": ["README.md", "docs/runbooks/sincronizar-e-deduplicar-skills.md"]
+      "expected_paths": ["README.md", "docs/runbooks/sincronizar-e-deduplicar-skills.md"],
+      "expected_headings": {
+        "README.md": ["Agent Skills > Como as skills são instaladas"],
+        "docs/runbooks/sincronizar-e-deduplicar-skills.md": [
+          "Runbook — Sincronizar skills e eliminar conflitos de nome > Contexto"
+        ]
+      },
+      "notes": "Os dois documentos explicam o diretório físico canônico e os symlinks.",
+      "tags": ["pt-BR", "skills", "canonical-directory", "underspecified"]
     },
     {
       "id": "no-answer-01",
       "category": "no_answer",
       "query": "como emitir nota fiscal no Tiny",
-      "expected_paths": []
+      "expected_paths": [],
+      "notes": "Tema operacional externo ao repositório de skills e à documentação indexada.",
+      "tags": ["pt-BR", "out-of-domain", "business-operations"]
     },
     {
       "id": "no-answer-02",
       "category": "no_answer",
       "query": "senha do banco de produção",
-      "expected_paths": []
+      "expected_paths": [],
+      "notes": "Credenciais não devem existir no corpus e nenhum resultado deve ser fabricado.",
+      "tags": ["pt-BR", "out-of-domain", "credentials"]
     },
     {
       "id": "no-answer-03",
       "category": "no_answer",
       "query": "como configurar Kubernetes",
-      "expected_paths": []
+      "expected_paths": [],
+      "notes": "O corpus não documenta configuração de Kubernetes.",
+      "tags": ["pt-BR", "out-of-domain", "infrastructure"]
     }
   ]
 }

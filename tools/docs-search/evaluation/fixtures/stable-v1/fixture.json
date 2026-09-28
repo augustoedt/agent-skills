@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "name": "agent-skills-stable-v1",
+  "query_dataset": "../../queries.json",
+  "expected_selected_paths": [
+    "README.md",
+    "docs/reference/glossary.md",
+    "docs/reference/long-guide.md",
+    "docs/reference/markdown-edge-cases.md",
+    "docs/runbooks/sincronizar-e-deduplicar-skills.md"
+  ],
+  "excluded_paths": [
+    ".hidden.md",
+    "docs/ignored.md",
+    "docs/reference/linked-notes.md",
+    "notes.md",
+    "skills/excluded/SKILL.md"
+  ]
+}

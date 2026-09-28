@@ -19,6 +19,39 @@ Claude Code (`~/.claude/skills`), Codex (`~/.codex/skills`), Grok
 (`~/.cursor/skills`) e `~/.agent/skills`, quando a pasta do agente existir.
 Agentes ausentes são pulados; skills de terceiros nunca são tocadas.
 
+## Repo portátil (`AGENT_SKILLS_REPO`)
+
+O caminho deste repo **muda por máquina**. Scripts e skills que precisam do
+caminho resolvem nesta ordem:
+
+1. `$AGENT_SKILLS_REPO` (env var), se setada;
+2. `~/Projects/agent-skills`, se existir;
+3. descoberta pelo marcador `scripts/install.sh` (ver `skills/edit-own-skills`).
+
+Setar a env var no shell evita ambiguidade:
+
+```bash
+# ~/.zshrc ou ~/.bashrc
+export AGENT_SKILLS_REPO="$HOME/Projects/agent-skills"
+```
+
+## Clonar em outra máquina
+
+```bash
+git clone git@github.com:augustoedt/agent-skills.git ~/Projects/agent-skills  # ou outro caminho
+export AGENT_SKILLS_REPO=~/Projects/agent-skills   # recomendado, se não for o default
+cd "$AGENT_SKILLS_REPO"
+./scripts/install.sh   # cria ~/.agents/skills/ + symlinks nos agentes
+```
+
+## Editar e sincronizar uma skill própria
+
+A **fonte da verdade** é `skills/` deste repo — **nunca** edite
+`~/.agents/skills/` direto (o `install.sh` sobrescreve via `rsync --delete`).
+Fluxo: editar em `skills/<nome>/`, commitar, pushar e rodar
+`./scripts/install.sh <nome>`. A skill `edit-own-skills` (neste repo) documenta
+esse fluxo e é carregada automaticamente pelo pi ao pedir pra mexer em skill.
+
 ## Compatibilidade (macOS + Linux)
 
 Os scripts são bash puro compatível com bash 3.2 (padrão do macOS) e bash 5

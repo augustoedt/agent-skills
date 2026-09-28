@@ -17,6 +17,14 @@ Recall@5 macro 0,617647, Recall@5 micro 0,619048, MRR@5 0,705882, zero falsos po
 casos no-answer e 7.453 caracteres de contexto. `fmt`, `clippy` e 30 testes passam; o relatório
 gerado também passa em `evaluation/report.schema.json`.
 
+O primeiro baseline do corpus real foi preservado em
+`tools/docs-search/evaluation/reports/agent-skills-lexical-bm25-v1-baseline.json`, sobre o commit
+fonte `de77945`: 7 arquivos, 87 chunks, 20/20 consultas sem erro, Hit@1 0,647059, Recall@5 macro
+0,588235, Recall@5 micro 0,619048, MRR@5 0,647059, zero falsos positivos em três casos no-answer e
+18.326 caracteres de contexto. Casos exatos tiveram Hit@1 0,875; semânticos, apenas 0,166667. A
+análise detalhada e a política de preservação estão em
+`tools/docs-search/evaluation/reports/README.md`.
+
 O binário instalado via Rust 1.98.1 gerenciado por `asdf` continua na versão 0.1.0; ele não foi
 atualizado automaticamente. O v0.2.0 pode ser executado no checkout com `cargo run -- evaluate` até
 uma instalação ser solicitada.
@@ -27,14 +35,14 @@ métricas, relatórios, testes, gates e critérios para SQLite/FTS5, embeddings/
 
 ## Em andamento
 
-- medir o corpus real sem alterar o motor `lexical-bm25-v1`;
-- registrar o relatório reproduzível e interpretar os misses por consulta.
+- ampliar casos ambíguos e no-answer sem ajustar o dataset para favorecer o motor atual;
+- preparar a medição de um segundo corpus documental autorizado.
 
 ## Próximo passo
 
-Executar `tools/docs-search/evaluation/queries.json` contra a raiz real de `agent-skills`, usando
-path relativo, e registrar Hit@1, Recall@5, MRR, falsos positivos de no-answer, latência e caracteres
-retornados antes de qualquer tuning lexical.
+Adicionar casos humanos revisáveis de ambiguidade, abstention, flexão e consultas parcialmente fora
+do corpus; depois medir novamente o baseline original e selecionar um segundo corpus antes de
+considerar tuning lexical, SQLite ou embeddings.
 
 ## Armadilhas conhecidas
 
@@ -43,7 +51,8 @@ retornados antes de qualquer tuning lexical.
 - O corpus padrão exclui `skills/**`; por isso avaliações devem apontar para documentação em
   `README.md` ou `docs/`, não apenas para conteúdo de `SKILL.md`.
 - Resultado lexical vazio não prova ausência da informação.
-- O chunker atual trata uma linha `# ...` dentro de bloco de código como heading. O dataset v2
-  preserva os headings corretos do corpus real para tornar a regressão visível no futuro runner; a
-  fixture também contém um caso dedicado para o hardening posterior.
+- O chunker atual trata uma linha `# ...` dentro de bloco de código como heading. O baseline tornou
+  a regressão visível nos breadcrumbs do `README.md`: somente 4 de 17 consultas respondíveis
+  recuperaram um heading esperado. A fixture também contém um caso dedicado para o hardening
+  posterior.
 - Runbook e `skills/search-project-docs/SKILL.md` descrevem o mesmo processo e devem mudar juntos.

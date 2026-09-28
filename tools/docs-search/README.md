@@ -88,6 +88,7 @@ O conjunto inicial de avaliação está em `evaluation/queries.json`. O schema v
 `evaluation/README.md` e formalizado por `evaluation/queries.schema.json`; o parser Rust também
 mantém leitura do schema v1. As 20 consultas incluem casos exatos, semânticos, ambíguos e sem
 resposta, com headings esperados, notas e tags diagnósticas. A fixture estável e versionada
-`evaluation/fixtures/stable-v1` sustenta testes de regressão; o repositório real será medido
-separadamente. A qualidade desse baseline deve ser medida antes de adicionar SQLite FTS5,
-embeddings ou um classificador/router.
+`evaluation/fixtures/stable-v1` sustenta testes de regressão. O primeiro baseline do corpus real,
+sem tuning, está preservado e analisado em [`evaluation/reports/`](evaluation/reports/README.md).
+O benchmark ainda precisa de mais casos ambíguos/no-answer e de um segundo corpus antes de
+justificar SQLite FTS5, embeddings ou um classificador/router.

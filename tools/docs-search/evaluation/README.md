@@ -43,6 +43,8 @@ must also be listed in `expected_paths`.
   path and heading from the canonical dataset.
 - The real `agent-skills` checkout is the operational corpus and may evolve between reports.
 - `fixtures/stable-v1/fixture.json` records selected and deliberately excluded paths.
+- [`reports/`](reports/README.md) preserves immutable baseline/experiment reports and their
+  human-readable interpretation.
 
 ## Evaluation runner
 
@@ -87,7 +89,8 @@ query-dataset schema v2. The report records:
 
 `--output <path>` is the only way the runner writes a report. Use a relative `--root` when the JSON
 will be committed so it does not contain a machine-specific absolute path. Latency is intentionally
-volatile and should not be snapshot-compared byte for byte.
+volatile and should not be snapshot-compared byte for byte. The first real-corpus baseline is
+[`reports/agent-skills-lexical-bm25-v1-baseline.json`](reports/agent-skills-lexical-bm25-v1-baseline.json).
 
 ## Change policy
 

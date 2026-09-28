@@ -5,8 +5,9 @@
 - baseline lexical: implementado e preservado sem tuning;
 - schema de avaliação v2: implementado e validado;
 - executor, métricas e relatório v1: implementados em `docs-search 0.2.0`;
-- medição e registro do baseline no corpus real: próximo trabalho obrigatório;
-- SQLite/FTS5: bloqueado até o baseline ser medido e registrado;
+- baseline real do `lexical-bm25-v1`: medido e preservado no relatório de referência;
+- ampliação de casos ambíguos/no-answer: próximo trabalho obrigatório;
+- SQLite/FTS5: adiado até ampliar o benchmark e uma lacuna medida justificar persistência;
 - embeddings/RRF: bloqueado até existir uma lacuna semântica comprovada;
 - MCP: fora do escopo enquanto a CLI atender os clientes.
 
@@ -48,6 +49,7 @@ O sistema deve responder a três perguntas antes de ganhar complexidade:
 - [x] `fmt`, `clippy` e 30 testes.
 - [x] Instalador compatível com Rust gerenciado por `asdf`.
 - [x] Skill e runbook com preflight obrigatório do binário.
+- [x] Baseline real sem tuning, com relatório JSON v1 e análise por categoria.
 
 ---
 
@@ -207,7 +209,7 @@ O JSON de avaliação deve ter schema próprio e independente do schema de busca
 schema_version
 engine
 queries_schema_version
-corpus: nome, root normalizada, files, chunks e identificação do estado
+corpus: nome, root fornecida pelo chamador, files, chunks e identificação do estado
 config: limit e max_excerpt_chars
 summary: totais e métricas globais
 per_category: métricas por categoria
@@ -253,17 +255,24 @@ Não iniciar SQLite ou embeddings até que:
 
 - [x] todas as 20 consultas sejam executadas automaticamente;
 - [x] o runner e suas métricas tenham testes;
-- [ ] exista relatório JSON do baseline lexical;
-- [ ] Hit@1, Recall@5, MRR, no-answer, latência e contexto estejam registrados;
-- [ ] `project-state.md` contenha o resumo medido;
-- [ ] este plano marque o baseline como concluído;
+- [x] exista relatório JSON do baseline lexical;
+- [x] Hit@1, Recall@5, MRR, no-answer, latência e contexto estejam registrados;
+- [x] `project-state.md` contenha o resumo medido;
+- [x] este plano marque o baseline como concluído;
 - [x] `fmt`, `clippy` e testes passem.
 
 ---
 
 ## Etapa 2 — ampliar o benchmark e registrar o baseline confiável
 
-### 2.1 Executar a primeira medição sem tuning
+### 2.1 Executar a primeira medição sem tuning — concluído
+
+O relatório `tools/docs-search/evaluation/reports/agent-skills-lexical-bm25-v1-baseline.json`
+preserva a execução sobre o commit fonte `de77945`: 20/20 consultas sem falha, Hit@1 0,647059,
+Recall@5 macro 0,588235,
+Recall@5 micro 0,619048, MRR@5 0,647059, zero falsos positivos em três casos no-answer e 18.326
+caracteres de contexto. A análise por categoria está em
+`tools/docs-search/evaluation/reports/README.md`.
 
 Rodar a versão atual sem alterar pesos, stopwords ou cobertura mínima. Guardar o relatório como
 referência imutável do motor `lexical-bm25-v1`.
@@ -305,10 +314,10 @@ produzir métricas artificialmente altas ou instáveis.
 
 ### Gate da Etapa 2
 
-- [ ] baseline original preservado sem tuning;
+- [x] baseline original preservado sem tuning;
 - [ ] benchmark ampliado com cobertura suficiente de no-answer e ambiguidade;
 - [ ] segundo corpus medido;
-- [ ] limitações lexicais documentadas com exemplos concretos;
+- [x] limitações lexicais documentadas com exemplos concretos;
 - [ ] decisão registrada: manter baseline, ajustar lexical ou investigar busca híbrida.
 
 ---

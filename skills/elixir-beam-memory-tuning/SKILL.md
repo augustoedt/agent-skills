@@ -21,10 +21,12 @@ A BEAM assume por default que roda numa máquina dedicada e grande. Em container
 
 ```bash
 RELEASE_MODE=interactive                                  # lazy code loading — o script do release lê essa var (RELEASE_MODE="${RELEASE_MODE:-"embedded"}")
-ELIXIR_ERL_OPTIONS="+S 4:4 +MBas aobf +MBlmbcs 512"       # 4 schedulers + alocadores enxutos
+ERL_FLAGS="+S 4:4 +MBas aobf +MBlmbcs 512"                # 4 schedulers + alocadores enxutos
 MALLOC_ARENA_MAX=2                                        # arenas glibc p/ NIFs (bcrypt, picosat...)
 POOL_SIZE=5                                               # pool Ecto (runtime.exs já lê essa var no padrão phx.new)
 ```
+
+> **`ERL_FLAGS` vale nos DOIS modos — use uma variável só.** Verificado em release Railpack (2026): `bin/<app> start` executa o launcher `elixir`, que no fim chama o `erlexec`, e é o `erlexec` que lê `ERL_FLAGS` (schedulers caíram de 48→4 só com `ERL_FLAGS`). Não precisa manter `ELIXIR_ERL_OPTIONS` separado.
 
 ### B) Deploy via nixpacks / `mix phx.server` (sem release)
 
@@ -51,6 +53,33 @@ POOL_SIZE=5
 - **`+S 4:4` é o único com trade-off real**: cap de paralelismo CPU. Irrelevante para apps I/O-bound (99% dos Phoenix: esperam DB/HTTP). Só importa em burst CPU-bound pesado e simultâneo (geração massiva de PDFs, hashes bcrypt em massa). Se o app crescer: subir para `+S 8:8` é trocar uma env var.
 - **Alocadores/arenas**: overhead de nanossegundos por alocação — nunca aparece em latência de request de app I/O-bound.
 - **`interactive` mode**: primeiro hit em cada rota paga alguns ms de code loading (uma vez só). Steady state idêntico.
+
+## Rede privada (Railway) — economize egress
+
+Serviços no **mesmo projeto + environment** do Railway podem se falar pela rede interna (`.railway.internal`) sem contar egress/ingress. Atenção: essa rede privada costuma ser **IPv6-only** (só registro AAAA).
+
+- **Robôs/usuários externos** → continuam no domínio público.
+- **Serviço → serviço** (ex.: app Phoenix chamando a API de outro serviço) → use `http://<servico>.railway.internal:<porta>`.
+
+Se o client HTTP do app usa **Finch/Req**, ele resolve só IPv4 por padrão e falha com `nxdomain`. Crie uma pool Finch dedicada IPv6 e use-a no client (mantenha a Finch padrão em IPv4 p/ e-mail/Swoosh):
+
+```elixir
+# application.ex — pool dedicada
+{Finch, name: MyApp.InternalFinch,
+ pools: %{default: [conn_opts: [transport_opts: [inet6: true]]]}}
+```
+
+```elixir
+# client
+Finch.build(:get, url, headers) |> Finch.request(MyApp.InternalFinch)
+```
+
+Diagnóstico dentro do container (imagem release não tem `curl`):
+
+```elixir
+:inet.getaddr(~c"<servico>.railway.internal", :inet6)   # {:ok, ip} → rede ok
+:inet.getaddr(~c"<servico>.railway.internal", :inet)     # {:error, :nxdomain} → IPv6-only
+```
 
 ## Auditoria de dependências (apps Ash)
 
@@ -106,7 +135,7 @@ ssh -i ~/.ssh/<key> -o StrictHostKeyChecking=accept-new railway-<svc> "bin/<app>
 
 | Tipo de app | RSS típico pós-tuning |
 |---|---|
-| Phoenix puro (Phoenix + Ecto + LiveView) | ~90-130 MB |
-| Ash + Phoenix (stack completo: json_api, admin, auth, oban) | ~120-200 MB |
+| Phoenix puro (Phoenix + Ecto + LiveView) | ~90-130 MB (medido: 112 MB → **66 MB**) |
+| Ash + Phoenix (stack completo: json_api, admin, auth, oban) | ~120-200 MB (medido: 304 MB → **91 MB** com tuning + remoção de deps) |
 
 Se ficar muito acima disso, investigar leaks: top processos (`process_info(:memory)`), top ETS (`:ets.info(t, :memory)`), `:recon` se disponível.

@@ -5,9 +5,10 @@ Repositório dedicado ao versionamento e à sincronização de skills próprias 
 ## Estrutura
 
 - `skills/`: fonte oficial das skills próprias.
+- `tools/docs-search/`: binário Rust de recuperação documental usado pelas skills.
 - `scripts/`: scripts de instalação, verificação e remoção segura.
 - `docs/`: documentação interna do repo — `docs/runbooks/` guarda as rotinas
-  de ops (sync/dedup de skills).
+  de ops (sync/dedup de skills e uso do `docs-search`).
 
 ## Como as skills são instaladas
 
@@ -60,6 +61,25 @@ Os scripts são bash puro compatível com bash 3.2 (padrão do macOS) e bash 5
 `readlink` são usados com flags comuns aos dois. Rodar `scripts/install.sh`
 numa máquina nova (macOS ou Linux) produz o mesmo layout: cópia canônica em
 `~/.agents/skills/` + symlinks nos agentes.
+
+## Busca documental com `docs-search`
+
+O binário local seleciona contexto verificável em `docs/**/*.md` e nos arquivos de instrução da
+raiz de qualquer projeto. Para instalar ou atualizar:
+
+```bash
+scripts/install-docs-search.sh
+```
+
+Uso para agentes ou humanos:
+
+```bash
+docs-search search --root /caminho/do/projeto --query "pergunta objetiva" --limit 5 --json
+```
+
+A implementação, os testes e o conjunto de avaliação ficam em `tools/docs-search/`. O processo
+operacional está em `docs/runbooks/buscar-documentacao-de-projetos.md` e a integração com agentes
+em `skills/search-project-docs/`.
 
 ## Skills de terceiros
 

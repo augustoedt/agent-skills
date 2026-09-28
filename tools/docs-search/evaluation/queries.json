@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "corpus": "agent-skills",
+  "queries": [
+    {
+      "id": "exact-01",
+      "category": "exact",
+      "query": "como sincronizar skills próprias",
+      "expected_paths": ["README.md", "docs/runbooks/sincronizar-e-deduplicar-skills.md"]
+    },
+    {
+      "id": "exact-02",
+      "category": "exact",
+      "query": "fonte da verdade das skills",
+      "expected_paths": ["README.md"]
+    },
+    {
+      "id": "exact-03",
+      "category": "exact",
+      "query": "eliminar conflitos de nome",
+      "expected_paths": ["docs/runbooks/sincronizar-e-deduplicar-skills.md"]
+    },
+    {
+      "id": "exact-04",
+      "category": "exact",
+      "query": "instalar skill de terceiro",
+      "expected_paths": ["README.md"]
+    },
+    {
+      "id": "exact-05",
+      "category": "exact",
+      "query": "quais agentes recebem symlinks",
+      "expected_paths": ["README.md"]
+    },
+    {
+      "id": "exact-06",
+      "category": "exact",
+      "query": "compatibilidade macOS Linux",
+      "expected_paths": ["README.md"]
+    },
+    {
+      "id": "exact-07",
+      "category": "exact",
+      "query": "como verificar symlink quebrado",
+      "expected_paths": ["docs/runbooks/sincronizar-e-deduplicar-skills.md"]
+    },
+    {
+      "id": "exact-08",
+      "category": "exact",
+      "query": "diretório canônico agents skills",
+      "expected_paths": ["README.md", "docs/runbooks/sincronizar-e-deduplicar-skills.md"]
+    },
+    {
+      "id": "semantic-01",
+      "category": "semantic",
+      "query": "onde alterar uma skill sem perder mudanças",
+      "expected_paths": ["README.md"]
+    },
+    {
+      "id": "semantic-02",
+      "category": "semantic",
+      "query": "distribuir uma skill para vários assistentes",
+      "expected_paths": ["README.md"]
+    },
+    {
+      "id": "semantic-03",
+      "category": "semantic",
+      "query": "evitar cópias duplicadas no pi",
+      "expected_paths": ["docs/runbooks/sincronizar-e-deduplicar-skills.md"]
+    },
+    {
+      "id": "semantic-04",
+      "category": "semantic",
+      "query": "adicionar uma ferramenta encontrada no marketplace",
+      "expected_paths": ["README.md"]
+    },
+    {
+      "id": "semantic-05",
+      "category": "semantic",
+      "query": "mudar a pasta do repositório em outra máquina",
+      "expected_paths": ["README.md"]
+    },
+    {
+      "id": "semantic-06",
+      "category": "semantic",
+      "query": "não sobrescrever uma skill diferente",
+      "expected_paths": ["docs/runbooks/sincronizar-e-deduplicar-skills.md"]
+    },
+    {
+      "id": "ambiguous-01",
+      "category": "ambiguous",
+      "query": "instalar skill",
+      "expected_paths": ["README.md"]
+    },
+    {
+      "id": "ambiguous-02",
+      "category": "ambiguous",
+      "query": "sincronizar",
+      "expected_paths": ["README.md", "docs/runbooks/sincronizar-e-deduplicar-skills.md"]
+    },
+    {
+      "id": "ambiguous-03",
+      "category": "ambiguous",
+      "query": "cópia canônica",
+      "expected_paths": ["README.md", "docs/runbooks/sincronizar-e-deduplicar-skills.md"]
+    },
+    {
+      "id": "no-answer-01",
+      "category": "no_answer",
+      "query": "como emitir nota fiscal no Tiny",
+      "expected_paths": []
+    },
+    {
+      "id": "no-answer-02",
+      "category": "no_answer",
+      "query": "senha do banco de produção",
+      "expected_paths": []
+    },
+    {
+      "id": "no-answer-03",
+      "category": "no_answer",
+      "query": "como configurar Kubernetes",
+      "expected_paths": []
+    }
+  ]
+}

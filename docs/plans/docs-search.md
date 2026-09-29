@@ -27,6 +27,7 @@ O sistema deve responder a três perguntas antes de ganhar complexidade:
 
 - Verificar `command -v docs-search` antes de qualquer invocação externa do binário.
 - Nunca indexar código, `.env`, `skills/**` ou credenciais no corpus padrão.
+- Manter avaliações de projetos privados fora do Git, com IDs e roots em manifesto local por máquina.
 - Preservar path, heading, linhas e hashes para conferir a fonte original.
 - Não tratar score, excerpt, relatório ou índice como fonte da verdade.
 - Não adicionar SQLite, embeddings, classificador ou MCP sem comparação registrada com o baseline.
@@ -300,8 +301,10 @@ Toda inclusão exige justificativa de relevância revisável por humano.
 
 ### 2.3 Medir um segundo corpus
 
-Selecionar um projeto documental maior, sem credenciais e com autorização para avaliação. Usar o
-mesmo schema e métricas. Registrar separadamente:
+Selecionar um projeto documental maior, sem credenciais e com autorização para avaliação. Se o
+projeto não for público, dataset, manifesto e relatório permanecem em armazenamento local
+criptografado, fora deste Git; somente fixtures sintéticas ou corpora explicitamente públicos podem
+ser versionados. Usar o mesmo schema e métricas. Registrar localmente e em separado:
 
 - tamanho do corpus;
 - distribuição de documentos e chunks;

@@ -1,1 +1,7 @@
 /target/
+
+# Avaliações de checkouts privados são estado local da máquina, nunca artefatos públicos.
+/evaluation/corpora/
+/evaluation/private/
+/evaluation/*.local.*
+/evaluation/reports/*.json

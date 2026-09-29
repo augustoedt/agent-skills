@@ -73,7 +73,9 @@ O relatório usa contrato independente `schema_version: 1`, formalizado em
 <arquivo>` grava explicitamente o relatório JSON; nada é persistido automaticamente. O comando
 continua após falhas individuais, inclui o erro no caso correspondente e termina com status não
 zero se alguma consulta falhar. Para relatórios versionados, execute com um `--root` relativo para
-não registrar paths absolutos específicos da máquina.
+não registrar paths absolutos específicos da máquina. Avaliações derivadas de projetos privados não
+são versionadas: mantenha dataset, relatório e manifesto fora do repositório, use um identificador
+neutro e passe os caminhos locais explicitamente. Veja `evaluation/README.md`.
 
 ## Desenvolvimento
 

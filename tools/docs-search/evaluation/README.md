@@ -92,6 +92,22 @@ will be committed so it does not contain a machine-specific absolute path. Laten
 volatile and should not be snapshot-compared byte for byte. The first real-corpus baseline is
 [`reports/agent-skills-lexical-bm25-v1-baseline.json`](reports/agent-skills-lexical-bm25-v1-baseline.json).
 
+## Private and machine-local corpora
+
+Datasets and reports derived from private checkouts must stay outside this public repository. Project
+names, local roots, queries, expected paths/headings, fingerprints, revisions, and metrics can reveal
+private information even when source documents are not copied.
+
+Use a directory owned by the current user outside every Git checkout, preferably on encrypted local
+storage. Keep a machine-local manifest that maps neutral corpus IDs to roots; paths are configuration
+for that computer and are not portable by contract. On another computer, create another manifest
+with the projects and locations available there.
+
+The CLI already supports this separation: pass external paths to `--root`, `--queries`, and
+`--output`. Public regression coverage must use synthetic fixtures or explicitly public corpora.
+`evaluation/corpora/`, `evaluation/private/`, local manifests, and untracked report JSON are ignored
+defensively; do not force-add them.
+
 ## Change policy
 
 Do not change a query merely to make a ranking experiment pass. Every relevance change needs a

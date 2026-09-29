@@ -13,9 +13,9 @@ Automatiza a criação de um backend Elixir com o stack padrão:
 
 | Parâmetro | Exemplo |
 |---|---|
-| `<project-name>` (kebab-case) | `campanha-intel-back` |
+| `<project-name>` (kebab-case) | `acme-api` |
 
-Pergunte o nome do projeto se o usuário não informou. O nome vira o app atom no mix.exs com underscores (`campanha-intel-back` → `:campanha_intel_back`).
+Pergunte o nome do projeto se o usuário não informou. O nome vira o app atom no mix.exs com underscores (`acme-api` → `:acme_api`).
 
 ## Passos
 

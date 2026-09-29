@@ -15,9 +15,9 @@ Pensado para ser o par do backend criado pela skill `scaffold-phoenix-ash`: o As
 
 | Parâmetro | Exemplo |
 |---|---|
-| `<project-name>` (kebab-case) | `campanha-intel-front` |
+| `<project-name>` (kebab-case) | `acme-web` |
 
-Pergunte o nome do projeto se o usuário não informou. Use **kebab-case** (o Svelte CLI aceita, mas `snake_case` como `campanha_intel_front` é incomum e deve ser normalizado).
+Pergunte o nome do projeto se o usuário não informou. Use **kebab-case** (o Svelte CLI aceita, mas `snake_case` como `acme_web` é incomum e deve ser normalizado).
 
 ## Passos
 

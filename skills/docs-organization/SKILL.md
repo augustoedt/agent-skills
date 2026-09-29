@@ -1,13 +1,13 @@
 ---
 name: docs-organization
-description: Organiza a pasta docs/ no padrão do ecossistema (camara-intel/campanha-intel/softtrevo-lottery/data-sc). Use ao organizar documentação, criar docs/, definir função das pastas, atualizar project-state.md, registrar ADR, criar ou atualizar docs/runbooks/ (rotinas padrão de debug/ops), ou quando pedirem apresentação HTML em docs/apresentacoes/ (infra, API, módulos, fluxo) sob demanda.
+description: Organiza a pasta docs/ no padrão documental do ecossistema. Use ao organizar documentação, criar docs/, definir função das pastas, atualizar project-state.md, registrar ADR, criar ou atualizar docs/runbooks/ (rotinas padrão de debug/ops), ou quando pedirem apresentação HTML em docs/apresentacoes/ (infra, API, módulos, fluxo) sob demanda.
 ---
 
 # Organização de documentação — padrão do ecossistema
 
-Padrão de docs dos projetos do usuário (origem: `campanha_intel_back/docs`,
-adotado por `camara-intel` e `softtrevo-lottery`). Aplica-se a qualquer
-projeto novo ou existente.
+Padrão consolidado de documentação dos projetos do usuário. Aplica-se a
+qualquer projeto novo ou existente sem depender de nomes ou paths de
+checkouts privados.
 
 ## Estrutura padrão
 
@@ -90,9 +90,8 @@ Arquivo: `docs/apresentacoes/<kebab>.html` (ex. `infraestrutura-e-api.html`,
 1. Ler `docs/checkpoints/project-state.md`, ADRs e o contrato real
    (router, domínios Ash, compose, portas). Não inventar arquitetura.
 2. Copiar [templates/apresentacao.html](templates/apresentacao.html)
-   **com o `<style>` intacto** — mesma família visual do
-   `camara-intel` / `data-sc`. Não restilizar, não usar shadcn, não
-   gerar slides PPTX.
+   **com o `<style>` intacto** — essa é a família visual canônica.
+   Não restilizar, não usar shadcn, não gerar slides PPTX.
 3. Preencher na língua do projeto (quase sempre pt-BR).
 4. Anatomia obrigatória: capa (eyebrow, h1, lede, meta) → TOC sticky →
    `section.block` (opcional `.index` + `.status.done|.wip|.todo`) →
@@ -107,8 +106,8 @@ Blocos típicos (escolher o que o pedido pedir; não forçar todos):
 visão geral → infraestrutura → modelagem da API → um bloco por
 domínio/módulo → contrato front → próximos passos → onde estamos.
 
-Canônicos: `camara-intel/docs/apresentacoes/fluxo-camara-intel.html`,
-`data-sc/data_city_backend/docs/apresentacoes/infraestrutura-e-api.html`.
+Nomes canônicos: `docs/apresentacoes/fluxo-do-sistema.html` e
+`docs/apresentacoes/infraestrutura-e-api.html`.
 
 ## Checkpoint autoritativo — como escrever
 

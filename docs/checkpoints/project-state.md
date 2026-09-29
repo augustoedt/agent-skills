@@ -25,6 +25,11 @@ fonte `de77945`: 7 arquivos, 87 chunks, 20/20 consultas sem erro, Hit@1 0,647059
 análise detalhada e a política de preservação estão em
 `tools/docs-search/evaluation/reports/README.md`.
 
+Avaliações de checkouts privados são estado local da máquina: datasets, nomes, roots, headings,
+fingerprints e relatórios ficam fora deste repositório público, em armazenamento local criptografado.
+Um manifesto local associa IDs neutros aos paths disponíveis em cada computador. O Git mantém apenas
+fixtures sintéticas e corpora explicitamente públicos.
+
 O binário instalado via Rust 1.98.1 gerenciado por `asdf` continua na versão 0.1.0; ele não foi
 atualizado automaticamente. O v0.2.0 pode ser executado no checkout com `cargo run -- evaluate` até
 uma instalação ser solicitada.
@@ -36,12 +41,12 @@ métricas, relatórios, testes, gates e critérios para SQLite/FTS5, embeddings/
 ## Em andamento
 
 - ampliar casos ambíguos e no-answer sem ajustar o dataset para favorecer o motor atual;
-- preparar a medição de um segundo corpus documental autorizado.
+- preparar a medição local de outros corpora autorizados, sem versionar informação privada.
 
 ## Próximo passo
 
 Adicionar casos humanos revisáveis de ambiguidade, abstention, flexão e consultas parcialmente fora
-do corpus; depois medir novamente o baseline original e selecionar um segundo corpus antes de
+do corpus público; medir outros projetos somente pela configuração local da máquina antes de
 considerar tuning lexical, SQLite ou embeddings.
 
 ## Armadilhas conhecidas
@@ -51,6 +56,8 @@ considerar tuning lexical, SQLite ou embeddings.
 - O corpus padrão exclui `skills/**`; por isso avaliações devem apontar para documentação em
   `README.md` ou `docs/`, não apenas para conteúdo de `SKILL.md`.
 - Resultado lexical vazio não prova ausência da informação.
+- Nunca versionar nomes, paths, queries, headings, fingerprints ou relatórios derivados de projetos
+  privados; nem paths absolutos, porque a configuração muda entre computadores.
 - O chunker atual trata uma linha `# ...` dentro de bloco de código como heading. O baseline tornou
   a regressão visível nos breadcrumbs do `README.md`: somente 4 de 17 consultas respondíveis
   recuperaram um heading esperado. A fixture também contém um caso dedicado para o hardening

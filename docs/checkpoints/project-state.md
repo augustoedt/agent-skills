@@ -56,14 +56,17 @@ métricas, relatórios, testes, gates e critérios para SQLite/FTS5, embeddings/
 
 - manter cap 1 apenas como opção explícita, sem alterar o default;
 - preservar o freeze, o gate fechado e os relatórios privados imutáveis;
+- testar somente em development a hipótese pré-registrada de prefixo morfológico limitado;
 - não usar os holdouts consumidos para retuning ou mudança de julgamentos.
 
 ## Próximo passo
 
-Formular qualquer hipótese futura somente nos corpora de desenvolvimento e apenas se houver lacuna
-medida que justifique outro experimento isolado. Antes de um novo gate, reservar holdouts novos e
-congelá-los sem observar rankings. A decisão atual está registrada em
-[`0002-manter-cap-1-opt-in-apos-holdout.md`](../decisions/0002-manter-cap-1-opt-in-apos-holdout.md).
+Implementar como opt-in uma única variável de equivalência lexical: prefixo comum mínimo de sete
+caracteres e cauda máxima de quatro por token. Fórmula e constantes BM25, `minimum_should_match`,
+pesos, datasets e ranking ilimitado permanecem fixos; frequências e IDF acompanham a equivalência. Medir apenas nos corpora de desenvolvimento pelos critérios congelados
+em [`docs-search.md`](../plans/docs-search.md); falhar qualquer critério rejeita a hipótese sem ajustar
+parâmetros. Um novo gate continua condicionado à reserva de holdouts novos. A decisão anterior está
+no [`ADR 0002`](../decisions/0002-manter-cap-1-opt-in-apos-holdout.md).
 
 ## Armadilhas conhecidas
 

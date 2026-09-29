@@ -100,6 +100,7 @@ está documentado em `evaluation/README.md` e formalizado por
 resposta, com headings esperados, notas e tags diagnósticas. A fixture estável e versionada
 `evaluation/fixtures/stable-v1` sustenta testes de regressão. As medições atuais do corpus real e da
 fixture estão analisadas em [`evaluation/reports/`](evaluation/reports/README.md). O primeiro gate
-de holdout rejeitou a promoção do cap 1 a default. SQLite FTS5, embeddings ou um classificador/router
-continuam bloqueados até uma hipótese isolada demonstrar necessidade nos corpora de desenvolvimento
-e existir um novo gate com holdouts ainda não consumidos.
+de holdout rejeitou a promoção do cap 1 a default. A próxima hipótese pré-registrada testa somente
+equivalência por prefixo morfológico limitado no ranking ilimitado e em development. SQLite FTS5,
+embeddings ou um classificador/router continuam bloqueados até uma hipótese isolada demonstrar
+necessidade nos corpora de desenvolvimento e existir um novo gate com holdouts ainda não consumidos.

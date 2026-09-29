@@ -365,6 +365,48 @@ Alterar uma variável por experimento:
 Cada experimento deve gerar relatório comparável. Não manter mudanças que melhorem uma categoria
 escondendo regressão relevante em outra.
 
+#### Hipótese pré-registrada — prefixo morfológico limitado
+
+A evidência de desenvolvimento mostra categorias exatas e ambíguas fortes, mas consultas semânticas
+frequentemente ficam sem candidatos porque query e documento usam flexões ou nominalizações
+diferentes. Reduzir `minimum_should_match` seria uma mudança ampla e arriscaria abstention sem criar
+sobreposição lexical real.
+
+O próximo experimento altera somente a equivalência entre tokens normalizados:
+
+- match exato continua válido;
+- match morfológico exige prefixo comum com pelo menos sete caracteres;
+- depois do prefixo, cada token pode ter no máximo quatro caracteres restantes;
+- os mesmos critérios valem para document frequency, body, heading, path e seleção do excerpt;
+- fórmula e constantes BM25, `minimum_should_match`, pesos, bônus de frase, stopwords, chunking e
+  desempate não mudam; frequências e IDF refletem a nova equivalência de forma consistente;
+- o modo é opt-in; desligado, deve reproduzir byte a byte o comportamento atual;
+- o baseline do experimento usa ranking ilimitado, sem combinar a variável com diversidade por path.
+
+A configuração `7/4` é única e congelada para o experimento; não haverá variação por corpus. Ela
+cobre diferenças morfológicas longas sem aproximar tokens curtos ou introduzir dicionários,
+sinônimos, modelos ou regras de domínio.
+
+O conjunto exato de avaliação será congelado localmente antes da implementação: corpus e fixture
+públicos mais todos os aliases então marcados como `development`, com revisão fonte, hash do dataset
+e fingerprint do baseline. Nenhum corpus poderá entrar ou sair durante o experimento.
+
+Critérios de aceitação apenas nesse conjunto de development, definidos antes da implementação:
+
+1. nenhum corpus aumenta falsos positivos `no_answer`;
+2. Hit@1, Recall@5 e MRR@5 de `exact` e `ambiguous` não diminuem em nenhum corpus;
+3. Recall@5 semântico melhora na maioria dos corpora e a macro entre corpora sobe ao menos 0,03;
+4. Hit@1 e MRR@5 globais não caem mais de 0,02;
+5. nenhuma consulta respondível já correta se torna sem resposta;
+6. contexto médio não cresce mais de 25%; p95 de latência não cresce mais de 25% ou 50 ms,
+   prevalecendo o limite maior;
+7. duas execuções idênticas produzem ranking idêntico;
+8. datasets e julgamentos permanecem byte a byte inalterados.
+
+Falhar qualquer item rejeita a hipótese sem ajuste de parâmetros. Mesmo se aprovada em development,
+ela só poderá chegar a outro gate depois que novos holdouts forem reservados e congelados; os
+holdouts consumidos não serão consultados.
+
 ### 3.3 Diversidade por path — candidato medido
 
 O `docs-search 0.5.0` oferece `--max-results-per-path N` como seleção opt-in após o ranking BM25. O

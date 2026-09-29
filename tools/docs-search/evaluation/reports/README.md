@@ -29,7 +29,7 @@ posição final; `raw_rank` preserva a posição BM25 antes da seleção por pat
 
 ### Corpus público atual
 
-Corpus medido: 8 arquivos e 92 chunks.
+Corpus medido: 8 arquivos e 93 chunks.
 
 | Configuração | Hit@1 | Recall@5 macro | Recall@5 micro | MRR@5 | FP no-answer | Contexto |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -46,7 +46,9 @@ quantidade de corpora, métricas detalhadas, queries, paths, fingerprints e diag
 permanecem fora do Git. Cada holdout executou uma única vez e agora está consumido.
 
 **Decisão após o gate:** cap 1 não será promovido a default porque falhou os pisos de qualidade
-predefinidos nos holdouts. A flag permanece opt-in pelos ganhos públicos de recall e contexto.
+predefinidos nos holdouts. A flag permanece opt-in pelos ganhos públicos de recall e contexto. A
+próxima hipótese altera somente equivalência por prefixo morfológico limitado e será medida em
+development, sem combinar diversidade por path.
 
 A fixture reutiliza o dataset canônico, portanto `corpus.name` permanece `agent-skills`; nome do
 arquivo, root e fingerprint distinguem a execução sintética.

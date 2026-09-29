@@ -99,14 +99,78 @@ names, local roots, queries, expected paths/headings, fingerprints, revisions, a
 private information even when source documents are not copied.
 
 Use a directory owned by the current user outside every Git checkout, preferably on encrypted local
-storage. Keep a machine-local manifest that maps neutral corpus IDs to roots; paths are configuration
-for that computer and are not portable by contract. On another computer, create another manifest
-with the projects and locations available there.
-
-The CLI already supports this separation: pass external paths to `--root`, `--queries`, and
-`--output`. Public regression coverage must use synthetic fixtures or explicitly public corpora.
+storage. Public regression coverage must use synthetic fixtures or explicitly public corpora.
 `evaluation/corpora/`, `evaluation/private/`, local manifests, and untracked report JSON are ignored
 defensively; do not force-add them.
+
+### `manifest.local.json`
+
+The local manifest is an inventory and path mapping for one computer. It is not read automatically
+by the `docs-search` CLI and must never be committed. A private wrapper can resolve an ID from the
+manifest and pass the resulting external paths to `--root`, `--queries`, and `--output`.
+
+Its public structural contract is
+[`local-manifest.schema.json`](local-manifest.schema.json). Example with invented values:
+
+```json
+{
+  "schema_version": 1,
+  "scope": "machine-local-only",
+  "reports_dir": "reports",
+  "corpora": [
+    {
+      "id": "corpus-001",
+      "role": "development",
+      "root": "/absolute/path/on-this-machine/project-a",
+      "queries": "corpus-001/queries.json",
+      "baseline_report": "reports/corpus-001-baseline.json"
+    },
+    {
+      "id": "corpus-002",
+      "role": "holdout",
+      "root": "/another/local/path/project-b"
+    }
+  ]
+}
+```
+
+Top-level fields:
+
+- `schema_version`: manifest contract version; currently `1`;
+- `scope`: must be `machine-local-only`, making non-portability explicit;
+- `notes`: optional local operational note;
+- `reports_dir`: directory relative to the manifest location for new reports;
+- `corpora`: non-empty list of local corpus registrations.
+
+Corpus fields:
+
+- `id`: neutral stable alias such as `corpus-001`; never encode a client, product, repository, or
+  domain name;
+- `role`: `development`, `holdout`, `deferred`, or `excluded`;
+- `root`: absolute path to the checkout on this computer;
+- `queries`: optional dataset path relative to the manifest directory;
+- `baseline_report`: optional pointer to an immutable local baseline, also relative to the manifest
+  directory. It requires `queries` and is descriptive; new experiments receive new report files.
+
+IDs must be unique. Relative paths must stay inside the private evaluation directory and must not use
+`..` to escape it. A safe local runner executes only `development`; holdouts remain registered but
+blocked until the explicit generalization gate. Report tags should be kebab-case and outputs must not
+silently overwrite a previous measurement.
+
+### Lifecycle across computers
+
+- Project moved on the same computer: edit only its `root`.
+- Different computer: create a new manifest with the roots and projects available there; do not
+  commit or assume the old paths.
+- Reusing a private dataset: transfer it only through an approved encrypted channel and map it to a
+  new neutral ID/root locally.
+- Removing a project: delete its local registration and data; no public Git change is required.
+- Public report: create a separate sanitized benchmark from synthetic or explicitly public content;
+  never copy a private report and try to redact it afterward.
+
+Recommended permissions are `0700` for directories and executables owned by the user, and `0600`
+for manifests, datasets, mappings, and reports. Full-disk encryption protects data at rest; an
+encrypted mounted volume adds isolation while preserving the same manifest contract.
 
 ## Change policy
 

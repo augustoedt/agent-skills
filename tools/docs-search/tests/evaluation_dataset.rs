@@ -157,6 +157,51 @@ fn stable_fixture_contains_every_expected_path_and_heading() {
 }
 
 #[test]
+fn stable_fixture_ignores_heading_like_lines_inside_fenced_code() {
+    let loaded = corpus::load(&fixture_root()).expect("stable fixture should load");
+    let edge_chunks: Vec<_> = loaded
+        .chunks
+        .iter()
+        .filter(|chunk| chunk.path == "docs/reference/markdown-edge-cases.md")
+        .collect();
+
+    assert!(edge_chunks.iter().any(|chunk| {
+        chunk.heading.as_deref() == Some("Markdown Edge Cases > Fenced code")
+            && chunk.text.contains("# ~/.zshrc or ~/.bashrc")
+    }));
+    assert!(edge_chunks.iter().any(|chunk| {
+        chunk.heading.as_deref() == Some("Markdown Edge Cases > Heading after code")
+    }));
+    assert!(
+        edge_chunks
+            .iter()
+            .all(|chunk| chunk.heading.as_deref() != Some("~/.zshrc or ~/.bashrc"))
+    );
+}
+
+#[test]
+fn published_local_manifest_schema_defines_machine_local_contract() {
+    let schema: Value =
+        serde_json::from_str(include_str!("../evaluation/local-manifest.schema.json"))
+            .expect("published local manifest schema should be valid JSON");
+
+    assert_eq!(schema["properties"]["schema_version"]["const"], 1);
+    assert_eq!(schema["properties"]["scope"]["const"], "machine-local-only");
+    assert_eq!(
+        schema["$defs"]["corpus"]["properties"]["id"]["pattern"],
+        "^corpus-[0-9]{3,}$"
+    );
+    assert_eq!(
+        schema["$defs"]["corpus"]["properties"]["role"]["enum"],
+        serde_json::json!(["development", "holdout", "deferred", "excluded"])
+    );
+    assert_eq!(
+        schema["$defs"]["corpus"]["dependentRequired"]["baseline_report"],
+        serde_json::json!(["queries"])
+    );
+}
+
+#[test]
 fn published_query_schema_tracks_the_runtime_contract() {
     let schema: Value = serde_json::from_str(include_str!("../evaluation/queries.schema.json"))
         .expect("published evaluation schema should be valid JSON");

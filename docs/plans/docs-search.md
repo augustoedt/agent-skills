@@ -47,7 +47,7 @@ O sistema deve responder a três perguntas antes de ganhar complexidade:
 - [x] 20 consultas de avaliação migradas para schema v2 com headings, notas e tags.
 - [x] Parser/validador compatível com schemas v1 e v2.
 - [x] Fixture documental estável e versionada `stable-v1`, separada do corpus real.
-- [x] `fmt`, `clippy` e 30 testes.
+- [x] `fmt`, `clippy` e 37 testes.
 - [x] Instalador compatível com Rust gerenciado por `asdf`.
 - [x] Skill e runbook com preflight obrigatório do binário.
 - [x] Baseline real sem tuning, com relatório JSON v1 e análise por categoria.
@@ -342,8 +342,14 @@ Adicionar cobertura para:
 - symlink de arquivo e diretório;
 - arquivo ignorado pelo Git;
 - erro de leitura e Markdown inválido tolerável;
-- linha iniciada por `#` dentro de bloco de código, sem alterar breadcrumbs;
+- [x] linha iniciada por `#` dentro de bloco cercado, sem alterar breadcrumbs;
 - instalador quando o binário não fica no `PATH`.
+
+O item de fenced code foi concluído no v0.2.1 para cercas de crases e tils, incluindo fechamento com
+marcador compatível, comprimento suficiente, indentação de até três espaços e fence não encerrada.
+No corpus público real, headings esperados encontrados passaram de 4/17 para 9/17; métricas primárias
+ficaram idênticas e o contexto total subiu de 18.326 para 18.927 caracteres. Fixture e corpora locais
+de desenvolvimento não regrediram nas métricas primárias; holdouts não foram executados.
 
 ### 3.2 Avaliar melhorias lexicais isoladamente
 
@@ -367,7 +373,8 @@ Uma mudança lexical só entra quando:
 
 - não reduz Hit@1 ou MRR global sem justificativa registrada;
 - não aumenta falsos positivos de no-answer;
-- melhora a categoria-alvo em ambos os corpora ou explica claramente a diferença;
+- melhora a categoria-alvo nos corpora de desenvolvimento ou explica claramente a diferença, sem
+  consultar holdouts durante tuning;
 - não aumenta contexto retornado de forma desproporcional;
 - mantém determinismo e contrato JSON.
 

@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/augustoedt/agent-skills/tools/docs-search/evaluation/local-manifest.schema.json",
+  "title": "docs-search machine-local evaluation manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "scope", "reports_dir", "corpora"],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "scope": {
+      "const": "machine-local-only"
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "reports_dir": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "corpora": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/corpus"
+      }
+    }
+  },
+  "$defs": {
+    "corpus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "role", "root"],
+      "dependentRequired": {
+        "baseline_report": ["queries"]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^corpus-[0-9]{3,}$"
+        },
+        "role": {
+          "enum": ["development", "holdout", "deferred", "excluded"]
+        },
+        "root": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "queries": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "baseline_report": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      }
+    }
+  }
+}

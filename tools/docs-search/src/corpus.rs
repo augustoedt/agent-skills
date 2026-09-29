@@ -140,6 +140,33 @@ fn heading(line: &str) -> Option<(usize, String)> {
     (!title.is_empty()).then(|| (depth, title.to_owned()))
 }
 
+fn fence_marker(line: &str) -> Option<(u8, usize)> {
+    let indent = line.bytes().take_while(|byte| *byte == b' ').count();
+    if indent > 3 {
+        return None;
+    }
+    let trimmed = &line[indent..];
+    let marker = *trimmed.as_bytes().first()?;
+    if marker != b'`' && marker != b'~' {
+        return None;
+    }
+    let run = trimmed.bytes().take_while(|byte| *byte == marker).count();
+    (run >= 3).then_some((marker, run))
+}
+
+fn closes_fence(line: &str, marker: u8, opener_run: usize) -> bool {
+    let indent = line.bytes().take_while(|byte| *byte == b' ').count();
+    if indent > 3 {
+        return false;
+    }
+    let trimmed = &line[indent..];
+    let run = trimmed.bytes().take_while(|byte| *byte == marker).count();
+    if run < opener_run {
+        return false;
+    }
+    trimmed[run..].trim().is_empty()
+}
+
 fn chunk_markdown(path: &str, text: &str) -> Vec<Chunk> {
     let lines: Vec<_> = text.lines().collect();
     if lines.is_empty() {
@@ -150,9 +177,22 @@ fn chunk_markdown(path: &str, text: &str) -> Vec<Chunk> {
     let mut chunks = Vec::new();
     let mut heading_stack: Vec<String> = Vec::new();
     let mut current_heading = None;
+    let mut fence: Option<(u8, usize)> = None;
     let mut start = 0;
 
     for (index, line) in lines.iter().enumerate() {
+        if let Some((marker, opener_run)) = fence {
+            if closes_fence(line, marker, opener_run) {
+                fence = None;
+            }
+            continue;
+        }
+
+        if let Some(opener) = fence_marker(line) {
+            fence = Some(opener);
+            continue;
+        }
+
         let Some((depth, title)) = heading(line) else {
             continue;
         };
@@ -258,5 +298,71 @@ mod tests {
     fn preserves_hash_characters_that_are_part_of_a_heading() {
         assert_eq!(heading("## C#"), Some((2, "C#".to_owned())));
         assert_eq!(heading("## Install ##"), Some((2, "Install".to_owned())));
+    }
+
+    #[test]
+    fn ignores_hash_comments_inside_backtick_fences() {
+        let chunks = chunk_markdown(
+            "docs/example.md",
+            "intro\n# Install\n```bash\n# comment, not a heading\napt install demo\n```\n# Usage\nend\n",
+        );
+
+        assert_eq!(chunks.len(), 3);
+        assert_eq!(chunks[0].heading, None);
+        assert_eq!(chunks[0].text, "intro");
+        assert_eq!(chunks[1].heading.as_deref(), Some("Install"));
+        assert_eq!(
+            chunks[1].text,
+            "# Install\n```bash\n# comment, not a heading\napt install demo\n```"
+        );
+        assert_eq!(chunks[2].heading.as_deref(), Some("Usage"));
+    }
+
+    #[test]
+    fn resumes_heading_breadcrumbs_after_backtick_fence() {
+        let chunks = chunk_markdown(
+            "docs/example.md",
+            "# Install\n```bash\n#### deep fake\n```\n## Linux\ncommand\n### Sub\nmore\n",
+        );
+
+        assert_eq!(chunks.len(), 3);
+        assert_eq!(chunks[0].heading.as_deref(), Some("Install"));
+        assert_eq!(chunks[1].heading.as_deref(), Some("Install > Linux"));
+        assert_eq!(chunks[2].heading.as_deref(), Some("Install > Linux > Sub"));
+    }
+
+    #[test]
+    fn ignores_headings_inside_tilde_fences() {
+        let chunks = chunk_markdown("docs/example.md", "# A\n~~~\n# fake\n~~~\n# B\nafter\n");
+
+        assert_eq!(chunks.len(), 2);
+        assert_eq!(chunks[0].heading.as_deref(), Some("A"));
+        assert_eq!(chunks[0].text, "# A\n~~~\n# fake\n~~~");
+        assert_eq!(chunks[1].heading.as_deref(), Some("B"));
+    }
+
+    #[test]
+    fn requires_matching_closing_fence_of_sufficient_length() {
+        let chunks = chunk_markdown(
+            "docs/example.md",
+            "# A\n````\n```\n~~~\n# still fenced\n````\n# B\nafter\n",
+        );
+
+        assert_eq!(chunks.len(), 2);
+        assert_eq!(chunks[0].heading.as_deref(), Some("A"));
+        assert_eq!(chunks[0].text, "# A\n````\n```\n~~~\n# still fenced\n````");
+        assert_eq!(chunks[1].heading.as_deref(), Some("B"));
+    }
+
+    #[test]
+    fn treats_unclosed_fence_as_part_of_the_current_chunk() {
+        let chunks = chunk_markdown(
+            "docs/example.md",
+            "# A\n```bash\n# fake\nno closing fence\n",
+        );
+
+        assert_eq!(chunks.len(), 1);
+        assert_eq!(chunks[0].heading.as_deref(), Some("A"));
+        assert_eq!(chunks[0].text, "# A\n```bash\n# fake\nno closing fence");
     }
 }

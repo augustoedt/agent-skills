@@ -6,11 +6,12 @@ confira a fonte original antes de alterar código.
 
 ## Estado atual
 
-A versão 0.2.0 mantém o baseline lexical sem banco e sem embeddings e adiciona um executor de
-avaliação reproduzível:
+A versão 0.2.1 mantém o baseline lexical sem banco e sem embeddings, adiciona um executor de
+avaliação reproduzível e corrige o chunking de Markdown:
 
 - corpus: `docs/**/*.md` e, na raiz, `README.md`, `CLAUDE.md`, `AGENTS.md` e `pi-warden.md`;
-- chunking por headings Markdown, preservando breadcrumbs;
+- chunking por headings Markdown, preservando breadcrumbs e ignorando headings aparentes dentro de
+  blocos cercados por crases ou tils;
 - ranking BM25 com reforço de heading, path e frase exata;
 - normalização Unicode, inclusive acentos;
 - evidência com path, heading, linhas, excerpt, hashes BLAKE3, score e termos encontrados;

@@ -34,8 +34,9 @@ O experimento público de diversidade comparou ilimitado, cap 1 e cap 2 na fixtu
 próprio repositório. Cap 1 melhorou Recall@5 na fixture, manteve a qualidade no corpus público e usou
 menos contexto que cap 2 nos dois. Avaliações adicionais ficaram integralmente no ambiente privado:
 quantidade de corpora, métricas e direção dos resultados não foram versionadas. Os julgamentos de
-desenvolvimento foram revisados diretamente contra as fontes e o candidato cap 1 foi congelado com
-commit, parâmetros, revisões e checksums. Cap 1 continua opt-in e nenhum holdout foi executado.
+desenvolvimento e holdout foram revisados diretamente contra as fontes; o candidato cap 1 foi
+congelado com commit, parâmetros, revisões e checksums. Cap 1 continua opt-in, o gate permanece
+fechado e nenhum holdout foi executado.
 
 A apresentação editorial `docs/apresentacoes/docs-search-arquitetura-e-avaliacao.html` explica o
 fluxo de busca, contrato de evidência, avaliação, privacidade, manifesto local e roadmap sem expor
@@ -51,15 +52,15 @@ métricas, relatórios, testes, gates e critérios para SQLite/FTS5, embeddings/
 
 ## Em andamento
 
-- criar e revisar os datasets de holdout diretamente contra suas fontes, sem executar busca;
 - manter cap 1 como candidato opt-in enquanto o gate não for concluído;
-- preservar o freeze privado do candidato e dos datasets de desenvolvimento.
+- preservar o freeze privado do candidato e de todos os datasets;
+- manter os holdouts bloqueados até autorização explícita.
 
 ## Próximo passo
 
-Criar os julgamentos dos dois holdouts sem consultar rankings, incorporar seus checksums ao freeze e
-só então decidir explicitamente a abertura do gate para cap 1. Holdouts continuam bloqueados até essa
-decisão; cap 1 não deve virar default antes da validação de generalização.
+Decidir explicitamente se o gate de holdout deve ser aberto para o candidato cap 1. Se autorizado,
+cada holdout será executado uma única vez com a configuração congelada e sem retuning posterior.
+Cap 1 não deve virar default antes dessa validação de generalização.
 
 ## Armadilhas conhecidas
 

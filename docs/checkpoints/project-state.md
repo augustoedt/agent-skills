@@ -33,8 +33,9 @@ privadas permanecem fora do Git e nenhum holdout foi executado.
 O experimento público de diversidade comparou ilimitado, cap 1 e cap 2 na fixture e no corpus do
 próprio repositório. Cap 1 melhorou Recall@5 na fixture, manteve a qualidade no corpus público e usou
 menos contexto que cap 2 nos dois. Avaliações adicionais ficaram integralmente no ambiente privado:
-quantidade de corpora, métricas e direção dos resultados não foram versionadas. Cap 1 é candidato,
-ainda opt-in; nenhum holdout foi executado.
+quantidade de corpora, métricas e direção dos resultados não foram versionadas. Os julgamentos de
+desenvolvimento foram revisados diretamente contra as fontes e o candidato cap 1 foi congelado com
+commit, parâmetros, revisões e checksums. Cap 1 continua opt-in e nenhum holdout foi executado.
 
 A apresentação editorial `docs/apresentacoes/docs-search-arquitetura-e-avaliacao.html` explica o
 fluxo de busca, contrato de evidência, avaliação, privacidade, manifesto local e roadmap sem expor
@@ -50,14 +51,14 @@ métricas, relatórios, testes, gates e critérios para SQLite/FTS5, embeddings/
 
 ## Em andamento
 
-- revisar os julgamentos humanos pendentes de um dataset local sem observar rankings;
+- criar e revisar os datasets de holdout diretamente contra suas fontes, sem executar busca;
 - manter cap 1 como candidato opt-in enquanto o gate não for concluído;
-- ampliar casos ambíguos e no-answer sem ajustar o dataset para favorecer o motor atual.
+- preservar o freeze privado do candidato e dos datasets de desenvolvimento.
 
 ## Próximo passo
 
-Concluir a revisão humana local, congelar código, configuração e datasets e então decidir
-explicitamente a abertura do gate de holdout para cap 1. Holdouts continuam bloqueados até essa
+Criar os julgamentos dos dois holdouts sem consultar rankings, incorporar seus checksums ao freeze e
+só então decidir explicitamente a abertura do gate para cap 1. Holdouts continuam bloqueados até essa
 decisão; cap 1 não deve virar default antes da validação de generalização.
 
 ## Armadilhas conhecidas

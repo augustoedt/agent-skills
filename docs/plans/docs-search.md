@@ -6,8 +6,9 @@
 - schema de avaliação v2: implementado e validado;
 - executor e métricas: implementados; somente relatório v2 é suportado;
 - baseline real do `lexical-bm25-v1`: medido e preservado no relatório de referência;
-- diversidade por path: cap 1 selecionado como candidato nos corpora de desenvolvimento, ainda opt-in;
-- revisão humana dos julgamentos locais e gate de holdout: próximos passos obrigatórios;
+- diversidade por path: cap 1 selecionado e congelado como candidato, ainda opt-in;
+- julgamentos de desenvolvimento: revisados diretamente contra as fontes e congelados;
+- datasets e gate de holdout: próximos passos obrigatórios;
 - SQLite/FTS5: adiado até ampliar o benchmark e uma lacuna medida justificar persistência;
 - embeddings/RRF: bloqueado até existir uma lacuna semântica comprovada;
 - MCP: fora do escopo enquanto a CLI atender os clientes.
@@ -379,9 +380,10 @@ Foram comparados ilimitado, cap 1 e cap 2 na fixture e no corpus público. Cap 1
 - entregou a mesma qualidade que cap 2 com menos contexto nos dois corpora.
 
 Avaliações adicionais foram executadas somente no ambiente privado; quantidade de corpora, métricas
-e direção dos resultados não são versionadas. Cap 1 é a configuração candidata, mas continua
-opt-in. Nenhum holdout foi executado. Antes do gate, concluir a revisão humana pendente dos
-julgamentos locais, congelar código/configuração/datasets e usar uma tag imutável.
+e direção dos resultados não são versionadas. Os julgamentos de desenvolvimento foram revisados
+contra as fontes, e o candidato cap 1 foi congelado com código, parâmetros, revisões e checksums.
+Ele continua opt-in e nenhum holdout foi executado. Antes do gate, criar e revisar os datasets de
+holdout sem busca, incorporá-los ao freeze e usar uma tag imutável.
 
 ### Critério de aceitação do tuning
 

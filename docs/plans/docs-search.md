@@ -4,9 +4,10 @@
 
 - baseline lexical: implementado e preservado sem tuning;
 - schema de avaliação v2: implementado e validado;
-- executor, métricas e relatório v1: implementados em `docs-search 0.2.0`;
+- executor e métricas: implementados; relatório v2 registra diversidade e rank bruto, com v1 arquivado;
 - baseline real do `lexical-bm25-v1`: medido e preservado no relatório de referência;
-- ampliação de casos ambíguos/no-answer: próximo trabalho obrigatório;
+- diversidade por path: cap 1 selecionado como candidato nos corpora de desenvolvimento, ainda opt-in;
+- revisão humana dos julgamentos locais e gate de holdout: próximos passos obrigatórios;
 - SQLite/FTS5: adiado até ampliar o benchmark e uma lacuna medida justificar persistência;
 - embeddings/RRF: bloqueado até existir uma lacuna semântica comprovada;
 - MCP: fora do escopo enquanto a CLI atender os clientes.
@@ -202,7 +203,8 @@ caracteres usado pelo CLI.
 
 ### 1.5 Versionar o relatório
 
-**Status:** contrato v1 implementado e formalizado em `evaluation/report.schema.json`.
+**Status:** contrato v1 preservado em `evaluation/report-v1.schema.json`; o contrato atual v2 está
+formalizado em `evaluation/report.schema.json`.
 
 O JSON de avaliação deve ter schema próprio e independente do schema de busca. Campos mínimos:
 
@@ -319,7 +321,7 @@ produzir métricas artificialmente altas ou instáveis.
 
 - [x] baseline original preservado sem tuning;
 - [ ] benchmark ampliado com cobertura suficiente de no-answer e ambiguidade;
-- [ ] segundo corpus medido;
+- [x] segundo corpus medido localmente sem versionar metadados privados;
 - [x] limitações lexicais documentadas com exemplos concretos;
 - [ ] decisão registrada: manter baseline, ajustar lexical ou investigar busca híbrida.
 
@@ -366,6 +368,25 @@ Alterar uma variável por experimento:
 
 Cada experimento deve gerar relatório comparável. Não manter mudanças que melhorem uma categoria
 escondendo regressão relevante em outra.
+
+### 3.3 Diversidade por path — candidato medido
+
+O `docs-search 0.3.0` introduz `--max-results-per-path N` como seleção opt-in após o ranking BM25. O
+seletor pode avançar além dos cinco primeiros chunks brutos, limita contribuições repetidas de um
+path e devolve ranks finais contíguos. O relatório v2 preserva `raw_rank`; o contrato JSON de busca
+permanece v1 e o comportamento sem flag não muda.
+
+Foram comparados ilimitado, cap 1 e cap 2 na fixture e no corpus público. Cap 1:
+
+- melhorou Recall@5 na fixture;
+- manteve Hit@1, MRR e falsos positivos no-answer sem regressão nos dois corpora;
+- reduziu contexto na fixture e no corpus público;
+- entregou a mesma qualidade que cap 2 com menos contexto nos dois corpora.
+
+Avaliações adicionais foram executadas somente no ambiente privado; quantidade de corpora, métricas
+e direção dos resultados não são versionadas. Cap 1 é a configuração candidata, mas continua
+opt-in. Nenhum holdout foi executado. Antes do gate, concluir a revisão humana pendente dos
+julgamentos locais, congelar código/configuração/datasets e usar uma tag imutável.
 
 ### Critério de aceitação do tuning
 

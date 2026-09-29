@@ -11,7 +11,7 @@ use crate::evaluation::{EvaluationCategory, EvaluationQuery, parse_evaluation_se
 use crate::search::search;
 use crate::types::{ENGINE, SearchRequest, SearchResult};
 
-pub const EVALUATION_REPORT_SCHEMA_VERSION: u32 = 1;
+pub const EVALUATION_REPORT_SCHEMA_VERSION: u32 = 2;
 const RECALL_CUTOFF: usize = 5;
 
 #[derive(Debug, Clone)]
@@ -20,6 +20,7 @@ pub struct EvaluateRequest {
     pub queries_path: PathBuf,
     pub limit: usize,
     pub max_excerpt_chars: usize,
+    pub max_results_per_path: Option<usize>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -55,6 +56,7 @@ pub struct EvaluationCorpus {
 pub struct EvaluationConfig {
     pub limit: usize,
     pub max_excerpt_chars: usize,
+    pub max_results_per_path: Option<usize>,
     pub recall_cutoff: usize,
     pub execution_model: &'static str,
 }
@@ -128,6 +130,7 @@ pub enum QueryStatus {
 #[derive(Debug, Clone, Serialize)]
 pub struct EvaluationResult {
     pub rank: usize,
+    pub raw_rank: usize,
     pub path: String,
     pub heading: Option<String>,
     pub line_start: usize,
@@ -142,6 +145,12 @@ pub fn evaluate(request: EvaluateRequest) -> Result<EvaluationReport> {
     }
     if request.max_excerpt_chars < 80 {
         bail!("max_excerpt_chars must be at least 80");
+    }
+    if request
+        .max_results_per_path
+        .is_some_and(|maximum| maximum == 0 || maximum > 100)
+    {
+        bail!("max_results_per_path must be between 1 and 100");
     }
 
     let dataset = fs::read_to_string(&request.queries_path).with_context(|| {
@@ -195,6 +204,7 @@ pub fn evaluate(request: EvaluateRequest) -> Result<EvaluationReport> {
         config: EvaluationConfig {
             limit: request.limit,
             max_excerpt_chars: request.max_excerpt_chars,
+            max_results_per_path: request.max_results_per_path,
             recall_cutoff: RECALL_CUTOFF,
             execution_model: "full_corpus_scan_per_query",
         },
@@ -215,6 +225,7 @@ fn evaluate_query(request: &EvaluateRequest, query: EvaluationQuery) -> QueryEva
         query: query.query.clone(),
         limit: request.limit,
         max_excerpt_chars: request.max_excerpt_chars,
+        max_results_per_path: request.max_results_per_path,
     });
     let elapsed_ms = duration_ms(started.elapsed().as_secs_f64() * 1_000.0);
 
@@ -242,6 +253,7 @@ fn successful_query_evaluation(
         .iter()
         .map(|result| EvaluationResult {
             rank: result.rank,
+            raw_rank: result.raw_rank,
             path: result.path.clone(),
             heading: result.heading.clone(),
             line_start: result.line_start,
@@ -594,6 +606,30 @@ mod tests {
     }
 
     #[test]
+    fn diversified_metrics_use_selected_rank_and_preserve_raw_rank() {
+        let mut relevant = result(2, "target.md", Some("Target"));
+        relevant.raw_rank = 7;
+        let evaluation = successful_query_evaluation(
+            EvaluationQuery {
+                id: "diversified-rank".to_owned(),
+                category: EvaluationCategory::Exact,
+                query: "target".to_owned(),
+                expected_paths: vec!["target.md".to_owned()],
+                expected_headings: BTreeMap::new(),
+                notes: None,
+                tags: Vec::new(),
+                disabled_reason: None,
+            },
+            vec![result(1, "distractor.md", Some("Distractor")), relevant],
+            1.0,
+        );
+
+        assert_eq!(evaluation.first_relevant_rank, Some(2));
+        assert_eq!(evaluation.reciprocal_rank_at_5, Some(0.5));
+        assert_eq!(evaluation.results[1].raw_rank, 7);
+    }
+
+    #[test]
     fn no_answer_results_are_counted_as_false_positives() {
         let evaluation = successful_query_evaluation(
             EvaluationQuery {
@@ -666,6 +702,7 @@ mod tests {
     fn result(rank: usize, path: &str, heading: Option<&str>) -> SearchResult {
         SearchResult {
             rank,
+            raw_rank: rank,
             path: path.to_owned(),
             heading: heading.map(str::to_owned),
             line_start: 1,

@@ -89,5 +89,12 @@ docs-search --version
 - Resultado vazio significa “não encontrado neste corpus”, não prova que a informação inexiste.
 - Nunca trate índice, excerpt ou documentação antiga como substituto da realidade do código.
 
+## Diversidade por path
+
+A opção `--max-results-per-path N` existe para avaliação explícita e limita quantos chunks do mesmo
+arquivo entram no resultado final. Ela é opt-in: não a aplique silenciosamente à busca normal. Ao
+comparar configurações, use `docs-search evaluate`; o relatório v2 preserva rank final e rank BM25
+bruto para auditoria.
+
 O runbook operacional correspondente é `docs/runbooks/buscar-documentacao-de-projetos.md` no
 repositório `agent-skills`; mantenha ambos sincronizados quando o processo mudar.

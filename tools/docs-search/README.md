@@ -6,8 +6,8 @@ confira a fonte original antes de alterar código.
 
 ## Estado atual
 
-A versão 0.2.1 mantém o baseline lexical sem banco e sem embeddings, adiciona um executor de
-avaliação reproduzível e corrige o chunking de Markdown:
+A versão 0.3.0 mantém o baseline lexical sem banco e sem embeddings, adiciona diversidade por path
+opt-in ao executor e preserva o hardening do chunking de Markdown:
 
 - corpus: `docs/**/*.md` e, na raiz, `README.md`, `CLAUDE.md`, `AGENTS.md` e `pi-warden.md`;
 - chunking por headings Markdown, preservando breadcrumbs e ignorando headings aparentes dentro de
@@ -17,7 +17,8 @@ avaliação reproduzível e corrige o chunking de Markdown:
 - evidência com path, heading, linhas, excerpt, hashes BLAKE3, score e termos encontrados;
 - leitura direta dos documentos a cada busca: `docs/` continua sendo a fonte da verdade;
 - `evaluate` com Hit@1, Recall@5 macro/micro, MRR@5, falsos positivos de no-answer, latência e
-  volume de contexto.
+  volume de contexto;
+- `--max-results-per-path N` para medir seleção diversificada sem alterar o comportamento padrão.
 
 Arquivos fora desse corpus, incluindo `.env`, código e `skills/**`, não entram na busca padrão.
 Isso não detecta secrets escritos dentro dos próprios Markdown; credenciais nunca devem ser
@@ -56,7 +57,9 @@ de zero. O contrato inclui:
 - `file_hash`, `chunk_hash`, `score` e `matched_terms`.
 
 As linhas são inclusivas e começam em 1. `heading` pode ser `null` para texto anterior ao primeiro
-heading. `matched_terms` contém termos normalizados, sem acentos e sem stopwords comuns.
+heading. `matched_terms` contém termos normalizados, sem acentos e sem stopwords comuns. O cap
+experimental é opt-in; quando usado, o output mantém ranks finais contíguos e o modo humano mostra
+o rank bruto quando ele difere.
 
 Para executar o benchmark versionado:
 
@@ -66,11 +69,14 @@ docs-search evaluate \
   --queries evaluation/queries.json \
   --limit 5 \
   --max-excerpt-chars 1200 \
+  --max-results-per-path 1 \
   --json
 ```
 
-O relatório usa contrato independente `schema_version: 1`, formalizado em
-`evaluation/report.schema.json`. Sem `--json`, o comando mostra um resumo humano. `--output
+O cap é opcional; omita-o para reproduzir o ranking original. O relatório atual usa contrato
+independente `schema_version: 2`, formalizado em `evaluation/report.schema.json`, e registra
+`max_results_per_path`, o rank final e o rank bruto. O schema histórico v1 permanece em
+`evaluation/report-v1.schema.json`. Sem `--json`, o comando mostra um resumo humano. `--output
 <arquivo>` grava explicitamente o relatório JSON; nada é persistido automaticamente. O comando
 continua após falhas individuais, inclui o erro no caso correspondente e termina com status não
 zero se alguma consulta falhar. Para relatórios versionados, execute com um `--root` relativo para

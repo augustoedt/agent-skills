@@ -60,6 +60,40 @@ configuração, hashes e evidências por consulta são os campos primários para
 - O contraste entre `exact` e `semantic` registra uma limitação lexical concreta, mas ainda não
   justifica embeddings sem ampliar casos ambíguos/no-answer e medir um segundo corpus.
 
+## Experimento de diversidade por path
+
+O `docs-search 0.3.0` comparou ranking ilimitado, cap 1 e cap 2 no mesmo estado de cada corpus. O
+relatório v2 distingue `rank` final de `raw_rank` BM25 e mantém o JSON de busca em schema v1.
+
+### Fixture estável
+
+| Configuração | Hit@1 | Recall@5 macro | Recall@5 micro | MRR@5 | FP no-answer | Contexto |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| ilimitado | 0,705882 | 0,617647 | 0,619048 | 0,705882 | 0/3 | 7.453 |
+| cap 1 | 0,705882 | 0,676471 | 0,714286 | 0,705882 | 0/3 | 3.995 |
+| cap 2 | 0,705882 | 0,676471 | 0,714286 | 0,705882 | 0/3 | 6.043 |
+
+### Corpus público atual
+
+| Configuração | Hit@1 | Recall@5 macro | Recall@5 micro | MRR@5 | FP no-answer | Contexto |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| ilimitado | 0,647059 | 0,588235 | 0,619048 | 0,647059 | 0/3 | 19.667 |
+| cap 1 | 0,647059 | 0,588235 | 0,619048 | 0,647059 | 0/3 | 14.929 |
+| cap 2 | 0,647059 | 0,588235 | 0,619048 | 0,647059 | 0/3 | 15.483 |
+
+Avaliações adicionais de desenvolvimento foram executadas somente no ambiente privado. Quantidade
+de corpora, métricas e direção dos resultados permanecem fora do Git. Nenhum holdout foi executado.
+
+**Decisão de desenvolvimento:** cap 1 é a configuração candidata porque melhorou a fixture e usou
+menos contexto que cap 2 nos dois corpora públicos apresentados acima. Ela ainda não é default da
+busca. Antes do gate de holdout, os julgamentos locais pendentes devem ser revisados e a configuração
+deve ser congelada sem observar resultados reservados.
+
+Os relatórios públicos v2 são imutáveis e identificam cada configuração no nome. A fixture reutiliza
+o dataset canônico, portanto `corpus.name` permanece `agent-skills`; nome do arquivo, root e
+fingerprint distinguem a execução sintética. O baseline v1 original continua preservado e deve ser
+validado com `../report-v1.schema.json`; relatórios v2 usam `../report.schema.json`.
+
 ## Reprodução
 
 A partir de `tools/docs-search`, gere um relatório novo fora do baseline preservado:

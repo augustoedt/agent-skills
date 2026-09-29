@@ -37,6 +37,12 @@ pub fn search(request: SearchRequest) -> Result<SearchResponse> {
     if request.max_excerpt_chars < 80 {
         bail!("max excerpt size must be at least 80 characters");
     }
+    if request
+        .max_results_per_path
+        .is_some_and(|maximum| maximum == 0 || maximum > 100)
+    {
+        bail!("max results per path must be between 1 and 100");
+    }
 
     let corpus = load(&request.root)?;
     let query_normalized = normalize(&request.query);
@@ -96,30 +102,35 @@ pub fn search(request: SearchRequest) -> Result<SearchResponse> {
             })
     });
 
-    let results = ranked
-        .into_iter()
-        .take(request.limit)
-        .enumerate()
-        .map(|(index, ranked)| {
-            let (excerpt, line_start, line_end) = excerpt(
-                ranked.prepared.chunk,
-                &query_tokens,
-                request.max_excerpt_chars,
-            );
-            SearchResult {
-                rank: index + 1,
-                path: ranked.prepared.chunk.path.clone(),
-                heading: ranked.prepared.chunk.heading.clone(),
-                line_start,
-                line_end,
-                excerpt,
-                file_hash: ranked.prepared.chunk.file_hash.clone(),
-                chunk_hash: ranked.prepared.chunk.chunk_hash.clone(),
-                score: round_score(ranked.score),
-                matched_terms: ranked.matched_terms,
-            }
-        })
-        .collect();
+    let results = select_with_path_diversity(
+        ranked,
+        request.limit,
+        request.max_results_per_path,
+        |ranked| ranked.prepared.chunk.path.as_str(),
+    )
+    .into_iter()
+    .enumerate()
+    .map(|(index, (raw_rank, ranked))| {
+        let (excerpt, line_start, line_end) = excerpt(
+            ranked.prepared.chunk,
+            &query_tokens,
+            request.max_excerpt_chars,
+        );
+        SearchResult {
+            rank: index + 1,
+            raw_rank,
+            path: ranked.prepared.chunk.path.clone(),
+            heading: ranked.prepared.chunk.heading.clone(),
+            line_start,
+            line_end,
+            excerpt,
+            file_hash: ranked.prepared.chunk.file_hash.clone(),
+            chunk_hash: ranked.prepared.chunk.chunk_hash.clone(),
+            score: round_score(ranked.score),
+            matched_terms: ranked.matched_terms,
+        }
+    })
+    .collect();
 
     Ok(SearchResponse {
         schema_version: SCHEMA_VERSION,
@@ -132,6 +143,36 @@ pub fn search(request: SearchRequest) -> Result<SearchResponse> {
         },
         results,
     })
+}
+
+fn select_with_path_diversity<T, F>(
+    ranked: Vec<T>,
+    limit: usize,
+    max_results_per_path: Option<usize>,
+    path: F,
+) -> Vec<(usize, T)>
+where
+    F: Fn(&T) -> &str,
+{
+    let mut selected = Vec::with_capacity(limit);
+    let mut path_counts = HashMap::new();
+
+    for (index, item) in ranked.into_iter().enumerate() {
+        if let Some(maximum) = max_results_per_path {
+            let count = path_counts.entry(path(&item).to_owned()).or_insert(0usize);
+            if *count >= maximum {
+                continue;
+            }
+            *count += 1;
+        }
+
+        selected.push((index + 1, item));
+        if selected.len() == limit {
+            break;
+        }
+    }
+
+    selected
 }
 
 fn document_frequencies(
@@ -386,5 +427,23 @@ mod tests {
     fn phrase_matching_respects_token_boundaries() {
         assert!(contains_phrase("local api client", "api client"));
         assert!(!contains_phrase("capital gains", "api"));
+    }
+
+    #[test]
+    fn path_diversity_looks_beyond_the_initial_limit_and_preserves_raw_ranks() {
+        let ranked = vec!["a", "a", "a", "b", "c", "c"];
+
+        let selected = select_with_path_diversity(ranked, 4, Some(2), |path| path);
+
+        assert_eq!(selected, vec![(1, "a"), (2, "a"), (4, "b"), (5, "c")]);
+    }
+
+    #[test]
+    fn unlimited_selection_preserves_the_original_top_results() {
+        let ranked = vec!["a", "a", "b", "c"];
+
+        let selected = select_with_path_diversity(ranked, 3, None, |path| path);
+
+        assert_eq!(selected, vec![(1, "a"), (2, "a"), (3, "b")]);
     }
 }

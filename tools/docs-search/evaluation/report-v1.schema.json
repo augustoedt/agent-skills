@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/augustoedt/agent-skills/tools/docs-search/evaluation/report.schema.json",
-  "title": "docs-search evaluation report v2",
+  "$id": "https://github.com/augustoedt/agent-skills/tools/docs-search/evaluation/report-v1.schema.json",
+  "title": "docs-search evaluation report",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -17,7 +17,7 @@
     "queries"
   ],
   "properties": {
-    "schema_version": { "const": 2 },
+    "schema_version": { "const": 1 },
     "tool_version": { "type": "string", "minLength": 1 },
     "engine": { "type": "string", "minLength": 1 },
     "queries_schema_version": { "type": "integer", "minimum": 1 },
@@ -78,21 +78,10 @@
     "config": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "limit",
-        "max_excerpt_chars",
-        "max_results_per_path",
-        "recall_cutoff",
-        "execution_model"
-      ],
+      "required": ["limit", "max_excerpt_chars", "recall_cutoff", "execution_model"],
       "properties": {
         "limit": { "type": "integer", "minimum": 5, "maximum": 100 },
         "max_excerpt_chars": { "type": "integer", "minimum": 80 },
-        "max_results_per_path": {
-          "type": ["integer", "null"],
-          "minimum": 1,
-          "maximum": 100
-        },
         "recall_cutoff": { "const": 5 },
         "execution_model": { "const": "full_corpus_scan_per_query" }
       }
@@ -161,7 +150,6 @@
       "additionalProperties": false,
       "required": [
         "rank",
-        "raw_rank",
         "path",
         "heading",
         "line_start",
@@ -171,7 +159,6 @@
       ],
       "properties": {
         "rank": { "type": "integer", "minimum": 1 },
-        "raw_rank": { "type": "integer", "minimum": 1 },
         "path": { "type": "string", "minLength": 1 },
         "heading": { "type": ["string", "null"] },
         "line_start": { "type": "integer", "minimum": 1 },

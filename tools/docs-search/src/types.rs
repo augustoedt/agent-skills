@@ -11,6 +11,8 @@ pub struct SearchRequest {
     pub query: String,
     pub limit: usize,
     pub max_excerpt_chars: usize,
+    /// Optional post-ranking cap; `None` preserves the original ranking.
+    pub max_results_per_path: Option<usize>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -22,6 +24,9 @@ pub struct CorpusSummary {
 #[derive(Debug, Clone, Serialize)]
 pub struct SearchResult {
     pub rank: usize,
+    /// Pre-diversity BM25 position, kept internal so search JSON remains schema v1.
+    #[serde(skip_serializing)]
+    pub raw_rank: usize,
     pub path: String,
     pub heading: Option<String>,
     pub line_start: usize,

@@ -1,0 +1,956 @@
+{
+  "schema_version": 2,
+  "tool_version": "0.3.0",
+  "engine": "lexical-bm25-v1",
+  "queries_schema_version": 2,
+  "dataset_hash": "7c068e714df8b59ada8af85a235522b41f77eb23860a463ef30ac3fd6d62485f",
+  "corpus": {
+    "name": "agent-skills",
+    "root": "evaluation/fixtures/stable-v1",
+    "files": 5,
+    "chunks": 23,
+    "fingerprint": "039f62d5fa48565fdf458006c20749ebe376ecfc58ce1c4a24d1cad63061f2e5"
+  },
+  "config": {
+    "limit": 5,
+    "max_excerpt_chars": 1200,
+    "max_results_per_path": 2,
+    "recall_cutoff": 5,
+    "execution_model": "full_corpus_scan_per_query"
+  },
+  "summary": {
+    "queries_total": 20,
+    "executed": 20,
+    "skipped": 0,
+    "failed": 0,
+    "answerable": 17,
+    "no_answer": 3,
+    "hit_at_1": 0.705882,
+    "recall_at_5_macro": 0.676471,
+    "recall_at_5_micro": 0.714286,
+    "mrr_at_5": 0.705882,
+    "no_answer_false_positives": 0,
+    "no_answer_false_positive_rate": 0.0,
+    "latency_ms": {
+      "mean": 4.42775,
+      "p50": 4.154,
+      "p95": 5.756,
+      "max": 6.447,
+      "total": 88.555
+    },
+    "context_chars": {
+      "mean": 302.15,
+      "p95": 929,
+      "max": 1109,
+      "total": 6043
+    }
+  },
+  "per_category": {
+    "ambiguous": {
+      "queries_total": 3,
+      "executed": 3,
+      "skipped": 0,
+      "failed": 0,
+      "answerable": 3,
+      "no_answer": 0,
+      "hit_at_1": 0.666667,
+      "recall_at_5_macro": 0.666667,
+      "recall_at_5_micro": 0.8,
+      "mrr_at_5": 0.666667,
+      "no_answer_false_positives": 0,
+      "no_answer_false_positive_rate": null,
+      "latency_ms": {
+        "mean": 3.746,
+        "p50": 3.742,
+        "p95": 3.824,
+        "max": 3.824,
+        "total": 11.238
+      },
+      "context_chars": {
+        "mean": 434.0,
+        "p95": 682,
+        "max": 682,
+        "total": 1302
+      }
+    },
+    "exact": {
+      "queries_total": 8,
+      "executed": 8,
+      "skipped": 0,
+      "failed": 0,
+      "answerable": 8,
+      "no_answer": 0,
+      "hit_at_1": 0.75,
+      "recall_at_5_macro": 0.6875,
+      "recall_at_5_micro": 0.7,
+      "mrr_at_5": 0.75,
+      "no_answer_false_positives": 0,
+      "no_answer_false_positive_rate": null,
+      "latency_ms": {
+        "mean": 5.099375,
+        "p50": 4.856,
+        "p95": 6.447,
+        "max": 6.447,
+        "total": 40.795
+      },
+      "context_chars": {
+        "mean": 436.125,
+        "p95": 1109,
+        "max": 1109,
+        "total": 3489
+      }
+    },
+    "no_answer": {
+      "queries_total": 3,
+      "executed": 3,
+      "skipped": 0,
+      "failed": 0,
+      "answerable": 0,
+      "no_answer": 3,
+      "hit_at_1": null,
+      "recall_at_5_macro": null,
+      "recall_at_5_micro": null,
+      "mrr_at_5": null,
+      "no_answer_false_positives": 0,
+      "no_answer_false_positive_rate": 0.0,
+      "latency_ms": {
+        "mean": 3.877667,
+        "p50": 3.896,
+        "p95": 4.029,
+        "max": 4.029,
+        "total": 11.633
+      },
+      "context_chars": {
+        "mean": 0.0,
+        "p95": 0,
+        "max": 0,
+        "total": 0
+      }
+    },
+    "semantic": {
+      "queries_total": 6,
+      "executed": 6,
+      "skipped": 0,
+      "failed": 0,
+      "answerable": 6,
+      "no_answer": 0,
+      "hit_at_1": 0.666667,
+      "recall_at_5_macro": 0.666667,
+      "recall_at_5_micro": 0.666667,
+      "mrr_at_5": 0.666667,
+      "no_answer_false_positives": 0,
+      "no_answer_false_positive_rate": null,
+      "latency_ms": {
+        "mean": 4.148167,
+        "p50": 4.116,
+        "p95": 4.44,
+        "max": 4.44,
+        "total": 24.889
+      },
+      "context_chars": {
+        "mean": 208.666667,
+        "p95": 401,
+        "max": 401,
+        "total": 1252
+      }
+    }
+  },
+  "queries": [
+    {
+      "id": "exact-01",
+      "category": "exact",
+      "query": "como sincronizar skills próprias",
+      "status": "ok",
+      "expected_paths": [
+        "README.md",
+        "docs/runbooks/sincronizar-e-deduplicar-skills.md"
+      ],
+      "expected_headings": {
+        "README.md": [
+          "Agent Skills > Editar e sincronizar uma skill própria"
+        ],
+        "docs/runbooks/sincronizar-e-deduplicar-skills.md": [
+          "Runbook — Sincronizar skills e eliminar conflitos de nome > Passos"
+        ]
+      },
+      "results": [
+        {
+          "rank": 1,
+          "raw_rank": 1,
+          "path": "docs/runbooks/sincronizar-e-deduplicar-skills.md",
+          "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome > Passos",
+          "line_start": 17,
+          "line_end": 25,
+          "score": 7.677677,
+          "excerpt_chars": 447
+        },
+        {
+          "rank": 2,
+          "raw_rank": 2,
+          "path": "docs/runbooks/sincronizar-e-deduplicar-skills.md",
+          "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome > Não fazer",
+          "line_start": 27,
+          "line_end": 30,
+          "score": 5.436869,
+          "excerpt_chars": 180
+        },
+        {
+          "rank": 3,
+          "raw_rank": 6,
+          "path": "README.md",
+          "heading": "Agent Skills > Estrutura",
+          "line_start": 5,
+          "line_end": 8,
+          "score": 3.1217,
+          "excerpt_chars": 186
+        },
+        {
+          "rank": 4,
+          "raw_rank": 7,
+          "path": "README.md",
+          "heading": "Agent Skills > Editar e sincronizar uma skill própria",
+          "line_start": 26,
+          "line_end": 30,
+          "score": 2.908965,
+          "excerpt_chars": 296
+        }
+      ],
+      "result_count": 4,
+      "first_relevant_rank": 1,
+      "first_relevant_heading_rank": 1,
+      "relevant_paths_found": 2,
+      "hit_at_1": true,
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0,
+      "no_answer_false_positive": null,
+      "latency_ms": 6.447,
+      "context_chars": 1109,
+      "error": null,
+      "disabled_reason": null
+    },
+    {
+      "id": "exact-02",
+      "category": "exact",
+      "query": "fonte da verdade das skills",
+      "status": "ok",
+      "expected_paths": [
+        "README.md"
+      ],
+      "expected_headings": {
+        "README.md": [
+          "Agent Skills > Estrutura",
+          "Agent Skills > Editar e sincronizar uma skill própria"
+        ]
+      },
+      "results": [
+        {
+          "rank": 1,
+          "raw_rank": 1,
+          "path": "README.md",
+          "heading": "Agent Skills > Estrutura",
+          "line_start": 5,
+          "line_end": 8,
+          "score": 5.601002,
+          "excerpt_chars": 186
+        },
+        {
+          "rank": 2,
+          "raw_rank": 2,
+          "path": "README.md",
+          "heading": "Agent Skills > Editar e sincronizar uma skill própria",
+          "line_start": 26,
+          "line_end": 30,
+          "score": 4.456155,
+          "excerpt_chars": 296
+        },
+        {
+          "rank": 3,
+          "raw_rank": 3,
+          "path": "docs/runbooks/sincronizar-e-deduplicar-skills.md",
+          "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome > Passos",
+          "line_start": 17,
+          "line_end": 25,
+          "score": 2.304768,
+          "excerpt_chars": 447
+        }
+      ],
+      "result_count": 3,
+      "first_relevant_rank": 1,
+      "first_relevant_heading_rank": 1,
+      "relevant_paths_found": 1,
+      "hit_at_1": true,
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0,
+      "no_answer_false_positive": null,
+      "latency_ms": 5.756,
+      "context_chars": 929,
+      "error": null,
+      "disabled_reason": null
+    },
+    {
+      "id": "exact-03",
+      "category": "exact",
+      "query": "eliminar conflitos de nome",
+      "status": "ok",
+      "expected_paths": [
+        "docs/runbooks/sincronizar-e-deduplicar-skills.md"
+      ],
+      "expected_headings": {
+        "docs/runbooks/sincronizar-e-deduplicar-skills.md": [
+          "Runbook — Sincronizar skills e eliminar conflitos de nome",
+          "Runbook — Sincronizar skills e eliminar conflitos de nome > Quando"
+        ]
+      },
+      "results": [
+        {
+          "rank": 1,
+          "raw_rank": 1,
+          "path": "docs/runbooks/sincronizar-e-deduplicar-skills.md",
+          "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome",
+          "line_start": 1,
+          "line_end": 4,
+          "score": 13.199457,
+          "excerpt_chars": 161
+        },
+        {
+          "rank": 2,
+          "raw_rank": 2,
+          "path": "docs/runbooks/sincronizar-e-deduplicar-skills.md",
+          "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome > Passos",
+          "line_start": 17,
+          "line_end": 25,
+          "score": 11.085244,
+          "excerpt_chars": 447
+        }
+      ],
+      "result_count": 2,
+      "first_relevant_rank": 1,
+      "first_relevant_heading_rank": 1,
+      "relevant_paths_found": 1,
+      "hit_at_1": true,
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0,
+      "no_answer_false_positive": null,
+      "latency_ms": 5.382,
+      "context_chars": 608,
+      "error": null,
+      "disabled_reason": null
+    },
+    {
+      "id": "exact-04",
+      "category": "exact",
+      "query": "instalar skill de terceiro",
+      "status": "ok",
+      "expected_paths": [
+        "README.md"
+      ],
+      "expected_headings": {
+        "README.md": [
+          "Agent Skills > Skills de terceiros"
+        ]
+      },
+      "results": [],
+      "result_count": 0,
+      "first_relevant_rank": null,
+      "first_relevant_heading_rank": null,
+      "relevant_paths_found": 0,
+      "hit_at_1": false,
+      "recall_at_5": 0.0,
+      "reciprocal_rank_at_5": 0.0,
+      "no_answer_false_positive": null,
+      "latency_ms": 4.942,
+      "context_chars": 0,
+      "error": null,
+      "disabled_reason": null
+    },
+    {
+      "id": "exact-05",
+      "category": "exact",
+      "query": "quais agentes recebem symlinks",
+      "status": "ok",
+      "expected_paths": [
+        "README.md"
+      ],
+      "expected_headings": {
+        "README.md": [
+          "Agent Skills > Como as skills são instaladas"
+        ]
+      },
+      "results": [],
+      "result_count": 0,
+      "first_relevant_rank": null,
+      "first_relevant_heading_rank": null,
+      "relevant_paths_found": 0,
+      "hit_at_1": false,
+      "recall_at_5": 0.0,
+      "reciprocal_rank_at_5": 0.0,
+      "no_answer_false_positive": null,
+      "latency_ms": 4.856,
+      "context_chars": 0,
+      "error": null,
+      "disabled_reason": null
+    },
+    {
+      "id": "exact-06",
+      "category": "exact",
+      "query": "compatibilidade macOS Linux",
+      "status": "ok",
+      "expected_paths": [
+        "README.md"
+      ],
+      "expected_headings": {
+        "README.md": [
+          "Agent Skills > Compatibilidade (macOS + Linux)"
+        ]
+      },
+      "results": [
+        {
+          "rank": 1,
+          "raw_rank": 1,
+          "path": "README.md",
+          "heading": "Agent Skills > Compatibilidade (macOS + Linux)",
+          "line_start": 32,
+          "line_end": 35,
+          "score": 19.989476,
+          "excerpt_chars": 158
+        }
+      ],
+      "result_count": 1,
+      "first_relevant_rank": 1,
+      "first_relevant_heading_rank": 1,
+      "relevant_paths_found": 1,
+      "hit_at_1": true,
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0,
+      "no_answer_false_positive": null,
+      "latency_ms": 4.486,
+      "context_chars": 158,
+      "error": null,
+      "disabled_reason": null
+    },
+    {
+      "id": "exact-07",
+      "category": "exact",
+      "query": "como verificar symlink quebrado",
+      "status": "ok",
+      "expected_paths": [
+        "docs/runbooks/sincronizar-e-deduplicar-skills.md"
+      ],
+      "expected_headings": {
+        "docs/runbooks/sincronizar-e-deduplicar-skills.md": [
+          "Runbook — Sincronizar skills e eliminar conflitos de nome > Passos"
+        ]
+      },
+      "results": [
+        {
+          "rank": 1,
+          "raw_rank": 1,
+          "path": "docs/runbooks/sincronizar-e-deduplicar-skills.md",
+          "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome > Passos",
+          "line_start": 17,
+          "line_end": 25,
+          "score": 7.639497,
+          "excerpt_chars": 447
+        }
+      ],
+      "result_count": 1,
+      "first_relevant_rank": 1,
+      "first_relevant_heading_rank": 1,
+      "relevant_paths_found": 1,
+      "hit_at_1": true,
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0,
+      "no_answer_false_positive": null,
+      "latency_ms": 4.471,
+      "context_chars": 447,
+      "error": null,
+      "disabled_reason": null
+    },
+    {
+      "id": "exact-08",
+      "category": "exact",
+      "query": "diretório canônico agents skills",
+      "status": "ok",
+      "expected_paths": [
+        "README.md",
+        "docs/runbooks/sincronizar-e-deduplicar-skills.md"
+      ],
+      "expected_headings": {
+        "README.md": [
+          "Agent Skills > Como as skills são instaladas"
+        ],
+        "docs/runbooks/sincronizar-e-deduplicar-skills.md": [
+          "Runbook — Sincronizar skills e eliminar conflitos de nome > Contexto"
+        ]
+      },
+      "results": [
+        {
+          "rank": 1,
+          "raw_rank": 1,
+          "path": "docs/runbooks/sincronizar-e-deduplicar-skills.md",
+          "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome > Contexto",
+          "line_start": 11,
+          "line_end": 15,
+          "score": 7.559479,
+          "excerpt_chars": 238
+        }
+      ],
+      "result_count": 1,
+      "first_relevant_rank": 1,
+      "first_relevant_heading_rank": 1,
+      "relevant_paths_found": 1,
+      "hit_at_1": true,
+      "recall_at_5": 0.5,
+      "reciprocal_rank_at_5": 1.0,
+      "no_answer_false_positive": null,
+      "latency_ms": 4.455,
+      "context_chars": 238,
+      "error": null,
+      "disabled_reason": null
+    },
+    {
+      "id": "semantic-01",
+      "category": "semantic",
+      "query": "onde alterar uma skill sem perder mudanças",
+      "status": "ok",
+      "expected_paths": [
+        "README.md"
+      ],
+      "expected_headings": {
+        "README.md": [
+          "Agent Skills > Editar e sincronizar uma skill própria"
+        ]
+      },
+      "results": [],
+      "result_count": 0,
+      "first_relevant_rank": null,
+      "first_relevant_heading_rank": null,
+      "relevant_paths_found": 0,
+      "hit_at_1": false,
+      "recall_at_5": 0.0,
+      "reciprocal_rank_at_5": 0.0,
+      "no_answer_false_positive": null,
+      "latency_ms": 4.44,
+      "context_chars": 0,
+      "error": null,
+      "disabled_reason": null
+    },
+    {
+      "id": "semantic-02",
+      "category": "semantic",
+      "query": "distribuir uma skill para vários assistentes",
+      "status": "ok",
+      "expected_paths": [
+        "README.md"
+      ],
+      "expected_headings": {
+        "README.md": [
+          "Agent Skills > Como as skills são instaladas"
+        ]
+      },
+      "results": [
+        {
+          "rank": 1,
+          "raw_rank": 1,
+          "path": "README.md",
+          "heading": "Agent Skills > Como as skills são instaladas",
+          "line_start": 10,
+          "line_end": 14,
+          "score": 5.755042,
+          "excerpt_chars": 283
+        }
+      ],
+      "result_count": 1,
+      "first_relevant_rank": 1,
+      "first_relevant_heading_rank": 1,
+      "relevant_paths_found": 1,
+      "hit_at_1": true,
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0,
+      "no_answer_false_positive": null,
+      "latency_ms": 4.189,
+      "context_chars": 283,
+      "error": null,
+      "disabled_reason": null
+    },
+    {
+      "id": "semantic-03",
+      "category": "semantic",
+      "query": "evitar cópias duplicadas no pi",
+      "status": "ok",
+      "expected_paths": [
+        "docs/runbooks/sincronizar-e-deduplicar-skills.md"
+      ],
+      "expected_headings": {
+        "docs/runbooks/sincronizar-e-deduplicar-skills.md": [
+          "Runbook — Sincronizar skills e eliminar conflitos de nome > Contexto"
+        ]
+      },
+      "results": [
+        {
+          "rank": 1,
+          "raw_rank": 1,
+          "path": "docs/runbooks/sincronizar-e-deduplicar-skills.md",
+          "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome > Quando",
+          "line_start": 6,
+          "line_end": 9,
+          "score": 5.754859,
+          "excerpt_chars": 163
+        },
+        {
+          "rank": 2,
+          "raw_rank": 2,
+          "path": "docs/runbooks/sincronizar-e-deduplicar-skills.md",
+          "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome > Contexto",
+          "line_start": 11,
+          "line_end": 15,
+          "score": 4.9919,
+          "excerpt_chars": 238
+        }
+      ],
+      "result_count": 2,
+      "first_relevant_rank": 1,
+      "first_relevant_heading_rank": 2,
+      "relevant_paths_found": 1,
+      "hit_at_1": true,
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0,
+      "no_answer_false_positive": null,
+      "latency_ms": 4.154,
+      "context_chars": 401,
+      "error": null,
+      "disabled_reason": null
+    },
+    {
+      "id": "semantic-04",
+      "category": "semantic",
+      "query": "adicionar uma ferramenta encontrada no marketplace",
+      "status": "ok",
+      "expected_paths": [
+        "README.md"
+      ],
+      "expected_headings": {
+        "README.md": [
+          "Agent Skills > Skills de terceiros"
+        ]
+      },
+      "results": [],
+      "result_count": 0,
+      "first_relevant_rank": null,
+      "first_relevant_heading_rank": null,
+      "relevant_paths_found": 0,
+      "hit_at_1": false,
+      "recall_at_5": 0.0,
+      "reciprocal_rank_at_5": 0.0,
+      "no_answer_false_positive": null,
+      "latency_ms": 4.004,
+      "context_chars": 0,
+      "error": null,
+      "disabled_reason": null
+    },
+    {
+      "id": "semantic-05",
+      "category": "semantic",
+      "query": "mudar a pasta do repositório em outra máquina",
+      "status": "ok",
+      "expected_paths": [
+        "README.md"
+      ],
+      "expected_headings": {
+        "README.md": [
+          "Agent Skills > Repo portátil (`AGENT_SKILLS_REPO`)",
+          "Agent Skills > Clonar em outra máquina"
+        ]
+      },
+      "results": [
+        {
+          "rank": 1,
+          "raw_rank": 1,
+          "path": "README.md",
+          "heading": "Agent Skills > Clonar em outra máquina",
+          "line_start": 21,
+          "line_end": 24,
+          "score": 13.089599,
+          "excerpt_chars": 198
+        },
+        {
+          "rank": 2,
+          "raw_rank": 2,
+          "path": "README.md",
+          "heading": "Agent Skills > Repo portátil (`AGENT_SKILLS_REPO`)",
+          "line_start": 16,
+          "line_end": 19,
+          "score": 6.269447,
+          "excerpt_chars": 190
+        }
+      ],
+      "result_count": 2,
+      "first_relevant_rank": 1,
+      "first_relevant_heading_rank": 1,
+      "relevant_paths_found": 1,
+      "hit_at_1": true,
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0,
+      "no_answer_false_positive": null,
+      "latency_ms": 4.116,
+      "context_chars": 388,
+      "error": null,
+      "disabled_reason": null
+    },
+    {
+      "id": "semantic-06",
+      "category": "semantic",
+      "query": "não sobrescrever uma skill diferente",
+      "status": "ok",
+      "expected_paths": [
+        "docs/runbooks/sincronizar-e-deduplicar-skills.md"
+      ],
+      "expected_headings": {
+        "docs/runbooks/sincronizar-e-deduplicar-skills.md": [
+          "Runbook — Sincronizar skills e eliminar conflitos de nome > Não fazer"
+        ]
+      },
+      "results": [
+        {
+          "rank": 1,
+          "raw_rank": 1,
+          "path": "docs/runbooks/sincronizar-e-deduplicar-skills.md",
+          "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome > Não fazer",
+          "line_start": 27,
+          "line_end": 30,
+          "score": 7.50935,
+          "excerpt_chars": 180
+        }
+      ],
+      "result_count": 1,
+      "first_relevant_rank": 1,
+      "first_relevant_heading_rank": 1,
+      "relevant_paths_found": 1,
+      "hit_at_1": true,
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0,
+      "no_answer_false_positive": null,
+      "latency_ms": 3.986,
+      "context_chars": 180,
+      "error": null,
+      "disabled_reason": null
+    },
+    {
+      "id": "ambiguous-01",
+      "category": "ambiguous",
+      "query": "instalar skill",
+      "status": "ok",
+      "expected_paths": [
+        "README.md"
+      ],
+      "expected_headings": {
+        "README.md": [
+          "Agent Skills > Como as skills são instaladas",
+          "Agent Skills > Skills de terceiros"
+        ]
+      },
+      "results": [],
+      "result_count": 0,
+      "first_relevant_rank": null,
+      "first_relevant_heading_rank": null,
+      "relevant_paths_found": 0,
+      "hit_at_1": false,
+      "recall_at_5": 0.0,
+      "reciprocal_rank_at_5": 0.0,
+      "no_answer_false_positive": null,
+      "latency_ms": 3.742,
+      "context_chars": 0,
+      "error": null,
+      "disabled_reason": null
+    },
+    {
+      "id": "ambiguous-02",
+      "category": "ambiguous",
+      "query": "sincronizar",
+      "status": "ok",
+      "expected_paths": [
+        "README.md",
+        "docs/runbooks/sincronizar-e-deduplicar-skills.md"
+      ],
+      "expected_headings": {
+        "README.md": [
+          "Agent Skills > Editar e sincronizar uma skill própria"
+        ],
+        "docs/runbooks/sincronizar-e-deduplicar-skills.md": [
+          "Runbook — Sincronizar skills e eliminar conflitos de nome",
+          "Runbook — Sincronizar skills e eliminar conflitos de nome > Quando",
+          "Runbook — Sincronizar skills e eliminar conflitos de nome > Passos"
+        ]
+      },
+      "results": [
+        {
+          "rank": 1,
+          "raw_rank": 1,
+          "path": "docs/runbooks/sincronizar-e-deduplicar-skills.md",
+          "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome",
+          "line_start": 1,
+          "line_end": 4,
+          "score": 2.480792,
+          "excerpt_chars": 161
+        },
+        {
+          "rank": 2,
+          "raw_rank": 2,
+          "path": "docs/runbooks/sincronizar-e-deduplicar-skills.md",
+          "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome > Quando",
+          "line_start": 6,
+          "line_end": 9,
+          "score": 2.380809,
+          "excerpt_chars": 163
+        },
+        {
+          "rank": 3,
+          "raw_rank": 6,
+          "path": "README.md",
+          "heading": "Agent Skills > Editar e sincronizar uma skill própria",
+          "line_start": 26,
+          "line_end": 30,
+          "score": 2.073317,
+          "excerpt_chars": 296
+        }
+      ],
+      "result_count": 3,
+      "first_relevant_rank": 1,
+      "first_relevant_heading_rank": 1,
+      "relevant_paths_found": 2,
+      "hit_at_1": true,
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0,
+      "no_answer_false_positive": null,
+      "latency_ms": 3.672,
+      "context_chars": 620,
+      "error": null,
+      "disabled_reason": null
+    },
+    {
+      "id": "ambiguous-03",
+      "category": "ambiguous",
+      "query": "cópia canônica",
+      "status": "ok",
+      "expected_paths": [
+        "README.md",
+        "docs/runbooks/sincronizar-e-deduplicar-skills.md"
+      ],
+      "expected_headings": {
+        "README.md": [
+          "Agent Skills > Como as skills são instaladas"
+        ],
+        "docs/runbooks/sincronizar-e-deduplicar-skills.md": [
+          "Runbook — Sincronizar skills e eliminar conflitos de nome > Contexto"
+        ]
+      },
+      "results": [
+        {
+          "rank": 1,
+          "raw_rank": 1,
+          "path": "docs/runbooks/sincronizar-e-deduplicar-skills.md",
+          "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome",
+          "line_start": 1,
+          "line_end": 4,
+          "score": 5.823684,
+          "excerpt_chars": 161
+        },
+        {
+          "rank": 2,
+          "raw_rank": 2,
+          "path": "docs/runbooks/sincronizar-e-deduplicar-skills.md",
+          "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome > Contexto",
+          "line_start": 11,
+          "line_end": 15,
+          "score": 5.818654,
+          "excerpt_chars": 238
+        },
+        {
+          "rank": 3,
+          "raw_rank": 4,
+          "path": "README.md",
+          "heading": "Agent Skills > Como as skills são instaladas",
+          "line_start": 10,
+          "line_end": 14,
+          "score": 2.605834,
+          "excerpt_chars": 283
+        }
+      ],
+      "result_count": 3,
+      "first_relevant_rank": 1,
+      "first_relevant_heading_rank": 2,
+      "relevant_paths_found": 2,
+      "hit_at_1": true,
+      "recall_at_5": 1.0,
+      "reciprocal_rank_at_5": 1.0,
+      "no_answer_false_positive": null,
+      "latency_ms": 3.824,
+      "context_chars": 682,
+      "error": null,
+      "disabled_reason": null
+    },
+    {
+      "id": "no-answer-01",
+      "category": "no_answer",
+      "query": "como emitir nota fiscal no Tiny",
+      "status": "ok",
+      "expected_paths": [],
+      "expected_headings": {},
+      "results": [],
+      "result_count": 0,
+      "first_relevant_rank": null,
+      "first_relevant_heading_rank": null,
+      "relevant_paths_found": null,
+      "hit_at_1": null,
+      "recall_at_5": null,
+      "reciprocal_rank_at_5": null,
+      "no_answer_false_positive": false,
+      "latency_ms": 4.029,
+      "context_chars": 0,
+      "error": null,
+      "disabled_reason": null
+    },
+    {
+      "id": "no-answer-02",
+      "category": "no_answer",
+      "query": "senha do banco de produção",
+      "status": "ok",
+      "expected_paths": [],
+      "expected_headings": {},
+      "results": [],
+      "result_count": 0,
+      "first_relevant_rank": null,
+      "first_relevant_heading_rank": null,
+      "relevant_paths_found": null,
+      "hit_at_1": null,
+      "recall_at_5": null,
+      "reciprocal_rank_at_5": null,
+      "no_answer_false_positive": false,
+      "latency_ms": 3.896,
+      "context_chars": 0,
+      "error": null,
+      "disabled_reason": null
+    },
+    {
+      "id": "no-answer-03",
+      "category": "no_answer",
+      "query": "como configurar Kubernetes",
+      "status": "ok",
+      "expected_paths": [],
+      "expected_headings": {},
+      "results": [],
+      "result_count": 0,
+      "first_relevant_rank": null,
+      "first_relevant_heading_rank": null,
+      "relevant_paths_found": null,
+      "hit_at_1": null,
+      "recall_at_5": null,
+      "reciprocal_rank_at_5": null,
+      "no_answer_false_positive": false,
+      "latency_ms": 3.708,
+      "context_chars": 0,
+      "error": null,
+      "disabled_reason": null
+    }
+  ]
+}

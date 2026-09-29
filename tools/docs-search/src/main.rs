@@ -38,6 +38,10 @@ enum Command {
         #[arg(long, default_value_t = 1_200)]
         max_excerpt_chars: usize,
 
+        /// Optional maximum number of selected chunks from the same path.
+        #[arg(long)]
+        max_results_per_path: Option<usize>,
+
         /// Emit the stable machine-readable JSON contract.
         #[arg(long)]
         json: bool,
@@ -61,6 +65,10 @@ enum Command {
         #[arg(long, default_value_t = 1_200)]
         max_excerpt_chars: usize,
 
+        /// Optional maximum number of selected chunks from the same path.
+        #[arg(long)]
+        max_results_per_path: Option<usize>,
+
         /// Emit the versioned machine-readable evaluation report.
         #[arg(long)]
         json: bool,
@@ -79,6 +87,7 @@ fn main() -> Result<()> {
             query,
             limit,
             max_excerpt_chars,
+            max_results_per_path,
             json,
         } => {
             let response = search(SearchRequest {
@@ -86,6 +95,7 @@ fn main() -> Result<()> {
                 query,
                 limit,
                 max_excerpt_chars,
+                max_results_per_path,
             })?;
             if json {
                 println!("{}", serde_json::to_string_pretty(&response)?);
@@ -98,6 +108,7 @@ fn main() -> Result<()> {
             queries,
             limit,
             max_excerpt_chars,
+            max_results_per_path,
             json,
             output,
         } => {
@@ -106,6 +117,7 @@ fn main() -> Result<()> {
                 queries_path: queries,
                 limit,
                 max_excerpt_chars,
+                max_results_per_path,
             })?;
             let report_json = serde_json::to_string_pretty(&report)?;
             if let Some(path) = output {
@@ -142,9 +154,20 @@ fn print_human(response: &SearchResponse) {
             .as_deref()
             .map(|value| format!(" — {value}"))
             .unwrap_or_default();
+        let raw_rank = if result.raw_rank != result.rank {
+            format!(", raw rank {}", result.raw_rank)
+        } else {
+            String::new()
+        };
         println!(
-            "\n{}. {}:{}-{}{} [score {:.6}]",
-            result.rank, result.path, result.line_start, result.line_end, heading, result.score
+            "\n{}. {}:{}-{}{} [score {:.6}{}]",
+            result.rank,
+            result.path,
+            result.line_start,
+            result.line_end,
+            heading,
+            result.score,
+            raw_rank
         );
         println!("{}", result.excerpt);
     }

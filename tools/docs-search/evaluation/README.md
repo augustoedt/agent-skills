@@ -57,6 +57,13 @@ cargo run -- evaluate \
   --limit 5 \
   --max-excerpt-chars 1200 \
   --json
+
+# Experimento opt-in: no máximo um chunk por arquivo no resultado final
+cargo run -- evaluate \
+  --root evaluation/fixtures/stable-v1 \
+  --queries evaluation/queries.json \
+  --max-results-per-path 1 \
+  --json
 ```
 
 The runner validates the dataset, preserves query order, invokes the same public `search()` function
@@ -64,28 +71,34 @@ used by the CLI, and reports individual failures without aborting later queries.
 global errors, and any failed query produce a non-zero exit status. Disabled cases are reported as
 skipped and excluded from metric denominators.
 
-Path metrics deduplicate repeated chunks from the same file while preserving that file's best raw
-chunk rank. The cutoff is applied to raw ranks 1–5; deduplication does not compress rank gaps. Hit@1,
-macro and micro Recall@5, and MRR@5 use answerable queries. No-answer false-positive rate uses
-`no_answer` queries. Heading rank scans all chunks returned by the configured limit and preserves
-its raw rank; it is not a cutoff metric. If a query fails, affected aggregate quality metrics are
-`null` and the command exits non-zero instead of reporting an artificially improved score. Latency
-uses a monotonic clock around each attempted search. Context aggregates include only successful
-queries and count Unicode characters across returned excerpts. `execution_model:
-full_corpus_scan_per_query`
-makes explicit that baseline latency includes corpus I/O for every query.
+Path metrics deduplicate repeated chunks from the same file without renumbering the selected result
+list. In report schema v2, `rank` is the final position presented to the caller and drives Hit@1,
+Recall@5 and MRR@5; `raw_rank` preserves the position before optional path diversity. Without a cap,
+`rank` and `raw_rank` are equal, preserving the baseline semantics. With
+`--max-results-per-path N`, the selector scans beyond the initial top 5, keeps at most `N` chunks per
+path and then assigns contiguous final ranks. Heading diagnostics use the final selected rank while
+retaining `raw_rank` per result for audit.
 
-## Evaluation report v1
+Hit@1, macro and micro Recall@5, and MRR@5 use answerable queries. No-answer false-positive rate uses
+`no_answer` queries. If a query fails, affected aggregate quality metrics are `null` and the command
+exits non-zero instead of reporting an artificially improved score. Latency uses a monotonic clock
+around each attempted search. Context aggregates include only successful queries and count Unicode
+characters across returned excerpts. `execution_model: full_corpus_scan_per_query` makes explicit
+that baseline latency includes corpus I/O for every query.
 
-`report.schema.json` formalizes a contract independent from both search-response schema v1 and
-query-dataset schema v2. The report records:
+## Evaluation report v2
+
+`report.schema.json` formalizes the current contract independently from search-response schema v1
+and query-dataset schema v2. Report v2 adds `config.max_results_per_path` and `results[].raw_rank` so
+path-diversity experiments remain reproducible without changing search JSON. The v1 schema is
+preserved in `report-v1.schema.json` for historical baselines. The report records:
 
 - tool version, engine, dataset hash and query schema version;
 - logical corpus name, caller-provided root, file/chunk counts, and a reproducible fingerprint;
-- effective limits and execution model;
+- effective limits, path-diversity cap and execution model;
 - global and per-category metrics;
-- expected evidence, returned ranks, section diagnostics, latency, context volume, and errors for
-  every query.
+- expected evidence, final rank, raw rank, section diagnostics, latency, context volume, and errors
+  for every query.
 
 `--output <path>` is the only way the runner writes a report. Use a relative `--root` when the JSON
 will be committed so it does not contain a machine-specific absolute path. Latency is intentionally

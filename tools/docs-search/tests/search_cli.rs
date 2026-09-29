@@ -10,6 +10,7 @@ fn request(root: &std::path::Path, query: &str) -> SearchRequest {
         query: query.to_owned(),
         limit: 5,
         max_excerpt_chars: 300,
+        max_results_per_path: None,
     }
 }
 
@@ -80,6 +81,44 @@ fn excludes_markdown_outside_the_documentation_corpus() {
 }
 
 #[test]
+fn path_diversity_limits_chunks_per_file_and_preserves_raw_rank() {
+    let directory = tempdir().unwrap();
+    fs::create_dir(directory.path().join("docs")).unwrap();
+    fs::write(
+        directory.path().join("docs/orion-nebula.md"),
+        "# Orion Nebula\norion nebula orion nebula.\n\n## First\norion nebula orion nebula.\n\n## Second\norion nebula orion nebula.\n\n## Third\norion nebula orion nebula.\n",
+    )
+    .unwrap();
+    fs::write(
+        directory.path().join("docs/reference.md"),
+        "# Reference\nA short note about orion nebula.\n",
+    )
+    .unwrap();
+
+    let mut diversified = request(directory.path(), "orion nebula");
+    diversified.max_results_per_path = Some(1);
+    let response = search(diversified).unwrap();
+
+    assert_eq!(response.results.len(), 2);
+    assert_eq!(response.results[0].rank, 1);
+    assert_eq!(response.results[1].rank, 2);
+    assert_ne!(response.results[0].path, response.results[1].path);
+    assert!(response.results[1].raw_rank > response.results[1].rank);
+}
+
+#[test]
+fn rejects_an_invalid_path_diversity_limit() {
+    let directory = tempdir().unwrap();
+    fs::write(directory.path().join("README.md"), "# Project\nDocs.\n").unwrap();
+    let mut invalid = request(directory.path(), "project");
+    invalid.max_results_per_path = Some(0);
+
+    let error = search(invalid).unwrap_err();
+
+    assert!(error.to_string().contains("max results per path"));
+}
+
+#[test]
 fn cli_emits_the_versioned_json_contract() {
     let directory = tempdir().unwrap();
     fs::write(
@@ -105,6 +144,7 @@ fn cli_emits_the_versioned_json_contract() {
     assert_eq!(json["schema_version"], 1);
     assert_eq!(json["engine"], "lexical-bm25-v1");
     assert_eq!(json["results"][0]["path"], "README.md");
+    assert!(json["results"][0].get("raw_rank").is_none());
 }
 
 #[test]
@@ -131,10 +171,14 @@ fn cli_evaluates_the_stable_fixture_and_emits_metrics() {
         String::from_utf8_lossy(&output.stderr)
     );
     let json: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
-    assert_eq!(json["schema_version"], 1);
+    assert_eq!(json["schema_version"], 2);
     assert_eq!(json["engine"], "lexical-bm25-v1");
     assert_eq!(json["tool_version"], env!("CARGO_PKG_VERSION"));
     assert_eq!(json["queries_schema_version"], 2);
+    assert_eq!(
+        json["config"]["max_results_per_path"],
+        serde_json::Value::Null
+    );
     assert_eq!(json["corpus"]["files"], 5);
     assert_eq!(json["summary"]["queries_total"], 20);
     assert_eq!(json["summary"]["executed"], 20);
@@ -153,6 +197,7 @@ fn cli_evaluates_the_stable_fixture_and_emits_metrics() {
     assert_eq!(json["queries"][19]["id"], "no-answer-03");
     assert_eq!(json["queries"][0]["results"][0]["line_start"], 17);
     assert_eq!(json["queries"][0]["results"][0]["line_end"], 25);
+    assert!(json["queries"][0]["results"][0]["raw_rank"].is_number());
     assert!(json["queries"][0]["result_count"].as_u64().unwrap() > 0);
 }
 
@@ -171,6 +216,8 @@ fn cli_writes_an_evaluation_report_only_when_output_is_explicit() {
             root.to_str().unwrap(),
             "--queries",
             queries.to_str().unwrap(),
+            "--max-results-per-path",
+            "1",
             "--output",
             report.to_str().unwrap(),
         ])
@@ -181,7 +228,8 @@ fn cli_writes_an_evaluation_report_only_when_output_is_explicit() {
     assert!(String::from_utf8_lossy(&output.stdout).contains("Hit@1"));
     let json: serde_json::Value =
         serde_json::from_str(&fs::read_to_string(report).unwrap()).unwrap();
-    assert_eq!(json["schema_version"], 1);
+    assert_eq!(json["schema_version"], 2);
+    assert_eq!(json["config"]["max_results_per_path"], 1);
     assert_eq!(json["summary"]["queries_total"], 20);
 }
 

@@ -363,7 +363,7 @@
   <section class="block" id="visao-geral">
     <div class="block-head">
       <h2>Visão geral</h2>
-      <span class="status done">v0.2.1</span>
+      <span class="status done">v0.3.0</span>
     </div>
     <div class="prose">
       <p><span class="chip-code">docs-search</span> transforma documentação Markdown em uma lista curta de evidências rastreáveis. O agente não recebe um resumo opaco: recebe arquivo, seção, linhas, hashes e trecho para conferir a fonte original.</p>
@@ -423,7 +423,7 @@
           <text class="label-sub" x="404" y="102" text-anchor="middle">headings + breadcrumbs</text>
           <rect class="node accent" x="580" y="52" width="196" height="72" rx="3"></rect>
           <text class="label label-title" x="678" y="80" text-anchor="middle">Ranking</text>
-          <text class="label-sub" x="678" y="102" text-anchor="middle">BM25 + pesos + frase</text>
+          <text class="label-sub" x="678" y="102" text-anchor="middle">BM25 + cap por path opt-in</text>
           <rect class="node" x="854" y="52" width="154" height="72" rx="3"></rect>
           <text class="label label-title" x="931" y="80" text-anchor="middle">Saída</text>
           <text class="label-sub" x="931" y="102" text-anchor="middle">humana ou JSON</text>
@@ -480,7 +480,7 @@
       <span class="status done">runner ativo</span>
     </div>
     <div class="prose">
-      <p>O subcomando <span class="chip-code">evaluate</span> executa consultas exatas, semânticas, ambíguas e sem resposta. Cada experimento preserva seu relatório e muda uma variável por vez.</p>
+      <p>O subcomando <span class="chip-code">evaluate</span> executa consultas exatas, semânticas, ambíguas e sem resposta. Cada experimento preserva seu relatório e muda uma variável por vez. O relatório v2 distingue o rank final do rank BM25 bruto.</p>
     </div>
     <div class="figure-wrap">
       <figure>
@@ -512,6 +512,16 @@
         </svg>
         <figcaption>Holdouts não participam do tuning. Uma mudança só chega ao gate depois de congelar código, parâmetros e datasets.</figcaption>
       </figure>
+    </div>
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Corpus</th><th>Configuração</th><th>Recall@5 macro</th><th>Contexto</th></tr></thead>
+        <tbody>
+          <tr><td>Fixture estável</td><td>ilimitado → cap 1</td><td class="new">0,617647 → 0,676471</td><td class="new">7.453 → 3.995</td></tr>
+          <tr><td>Corpus público</td><td>ilimitado → cap 1</td><td>0,588235 → 0,588235</td><td class="new">19.667 → 14.929</td></tr>
+          <tr><td>Validação local</td><td>fora do Git</td><td>métricas não publicadas</td><td>holdouts bloqueados</td></tr>
+        </tbody>
+      </table>
     </div>
   </section>
 
@@ -604,13 +614,13 @@
     <div class="next-grid">
       <div class="next-card current">
         <p class="kicker">Agora</p>
-        <h3>Diversidade por path</h3>
-        <p>Evitar que chunks repetidos do mesmo arquivo ocupem todo o top 5, medindo limite de um ou dois resultados por path.</p>
+        <h3>Revisar e congelar</h3>
+        <p>Cap 1 venceu a comparação de desenvolvimento. Falta revisar julgamentos locais e congelar código, configuração e datasets.</p>
       </div>
       <div class="next-card">
         <p class="kicker">Gate</p>
         <h3>Generalização</h3>
-        <p>Congelar a melhor configuração, executar holdouts uma vez e não retunar com seus resultados.</p>
+        <p>Executar holdouts uma vez, sem retunar com seus resultados, antes de considerar cap 1 como default.</p>
       </div>
       <div class="next-card future">
         <p class="kicker">Condicional</p>
@@ -625,7 +635,7 @@
       <h2>Onde estamos</h2>
     </div>
     <div class="prose">
-      <p>O baseline lexical, o avaliador, a separação privada e o hardening de fenced code estão concluídos. A próxima hipótese isolada é diversidade por path.</p>
+      <p>O baseline lexical, o avaliador, a separação privada, o hardening de fenced code e o experimento de diversidade estão concluídos. Cap 1 é candidato opt-in; o gate de generalização ainda não foi aberto.</p>
     </div>
     <div class="stepper-wrap">
       <div class="stepper">
@@ -633,8 +643,8 @@
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">2</span>Avaliador</div></div>
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">3</span>Privacidade local</div></div>
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">4</span>Fenced code</div></div>
-        <div class="step wip"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">5</span>Diversidade por path</div></div>
-        <div class="step"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">6</span>Gate holdout</div></div>
+        <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">5</span>Diversidade por path</div></div>
+        <div class="step wip"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">6</span>Revisão e gate</div></div>
       </div>
     </div>
     <div class="callout"><strong>Regra de decisão:</strong> mais complexidade só entra quando melhora recuperação sem piorar abstention, contexto ou generalização.</div>

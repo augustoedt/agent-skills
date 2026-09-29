@@ -243,6 +243,18 @@ fn published_report_schema_tracks_the_runtime_contract() {
         EVALUATION_REPORT_SCHEMA_VERSION
     );
     assert_eq!(schema["properties"]["config"]["$ref"], "#/$defs/config");
+    assert!(
+        schema["$defs"]["config"]["required"]
+            .as_array()
+            .unwrap()
+            .contains(&Value::from("max_results_per_path"))
+    );
+    assert!(
+        schema["$defs"]["result"]["required"]
+            .as_array()
+            .unwrap()
+            .contains(&Value::from("raw_rank"))
+    );
 
     let required = schema["required"]
         .as_array()
@@ -260,4 +272,23 @@ fn published_report_schema_tracks_the_runtime_contract() {
     ] {
         assert!(required.contains(&Value::from(field)), "missing {field}");
     }
+}
+
+#[test]
+fn archived_v1_report_schema_matches_the_preserved_baseline() {
+    let schema: Value = serde_json::from_str(include_str!("../evaluation/report-v1.schema.json"))
+        .expect("archived report schema should be valid JSON");
+    let baseline: Value = serde_json::from_str(include_str!(
+        "../evaluation/reports/agent-skills-lexical-bm25-v1-baseline.json"
+    ))
+    .expect("preserved baseline should be valid JSON");
+
+    assert_eq!(schema["properties"]["schema_version"]["const"], 1);
+    assert_eq!(baseline["schema_version"], 1);
+    assert!(baseline["config"].get("max_results_per_path").is_none());
+    assert!(
+        baseline["queries"][0]["results"][0]
+            .get("raw_rank")
+            .is_none()
+    );
 }

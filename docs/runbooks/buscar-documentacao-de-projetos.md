@@ -79,7 +79,18 @@ cargo test
 
 As consultas de avaliação ficam em `tools/docs-search/evaluation/queries.json`. Medir Hit@1,
 Recall@5, MRR, falsos positivos em consultas sem resposta, latência e caracteres retornados antes
-de trocar o motor de busca.
+de trocar o motor de busca. Para um experimento explícito de diversidade por arquivo:
+
+```bash
+cargo run -- evaluate \
+  --root evaluation/fixtures/stable-v1 \
+  --queries evaluation/queries.json \
+  --max-results-per-path 1 \
+  --json
+```
+
+O cap é opt-in e não deve ser aplicado silenciosamente à busca normal. Relatórios v2 registram o
+rank final e o rank BM25 bruto; baselines v1 continuam vinculados ao schema arquivado.
 
 ## Não fazer
 

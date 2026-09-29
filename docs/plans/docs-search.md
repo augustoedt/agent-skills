@@ -43,7 +43,7 @@ O sistema deve responder a três perguntas antes de ganhar complexidade:
 - [x] Normalização Unicode e remoção de acentos.
 - [x] Ranking BM25 com pesos para body, heading, path e frase exata.
 - [x] Cobertura mínima de termos para reduzir evidência acidental.
-- [x] Contrato JSON v1 com hashes BLAKE3.
+- [x] Contrato JSON v2 autocontido com seleção, rank bruto e hashes BLAKE3.
 - [x] Saída humana e saída JSON.
 - [x] 20 consultas de avaliação migradas para schema v2 com headings, notas e tags.
 - [x] Parser/validador compatível com schemas v1 e v2.
@@ -373,8 +373,9 @@ escondendo regressão relevante em outra.
 
 O `docs-search 0.3.0` introduz `--max-results-per-path N` como seleção opt-in após o ranking BM25. O
 seletor pode avançar além dos cinco primeiros chunks brutos, limita contribuições repetidas de um
-path e devolve ranks finais contíguos. O relatório v2 preserva `raw_rank`; o contrato JSON de busca
-permanece v1 e o comportamento sem flag não muda.
+path e devolve ranks finais contíguos. O relatório v2 preserva `raw_rank`; desde o `docs-search
+0.4.0`, a resposta de busca v2 também expõe `selection.max_results_per_path` e `raw_rank`. A quebra
+do contrato de busca foi direta porque não havia consumidores; o comportamento sem flag não muda.
 
 Foram comparados ilimitado, cap 1 e cap 2 na fixture e no corpus público. Cap 1:
 
@@ -451,7 +452,7 @@ docs-search status --root <projeto>
 ```
 
 `search` deve preservar o contrato de evidência. O campo `engine` pode mudar para identificar FTS5,
-mas `schema_version: 1` só permanece se os campos continuarem compatíveis.
+mas `schema_version: 2` só permanece se os campos continuarem compatíveis.
 
 ### 4.5 Testes
 

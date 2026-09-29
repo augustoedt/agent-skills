@@ -6,8 +6,8 @@ confira a fonte original antes de alterar código.
 
 ## Estado atual
 
-A versão 0.3.0 mantém o baseline lexical sem banco e sem embeddings, adiciona diversidade por path
-opt-in ao executor e preserva o hardening do chunking de Markdown:
+A versão 0.4.0 mantém o baseline lexical sem banco e sem embeddings, publica a resposta de busca v2
+com diversidade auditável e preserva o hardening do chunking de Markdown:
 
 - corpus: `docs/**/*.md` e, na raiz, `README.md`, `CLAUDE.md`, `AGENTS.md` e `pi-warden.md`;
 - chunking por headings Markdown, preservando breadcrumbs e ignorando headings aparentes dentro de
@@ -49,17 +49,19 @@ docs-search search \
 ```
 
 Sem `--json`, o binário imprime uma visualização humana. Respostas bem-sucedidas com `--json`
-usam o contrato `schema_version: 1`; erros são escritos em stderr e retornam exit code diferente
-de zero. O contrato inclui:
+usam o contrato `schema_version: 2`, formalizado em `evaluation/search-response.schema.json`;
+erros são escritos em stderr e retornam exit code diferente de zero. O contrato inclui:
 
 - `engine`, `query`, `root` e resumo do corpus;
-- `rank`, `path`, `heading`, `line_start`, `line_end` e `excerpt`;
+- `selection.max_results_per_path`, com `null` quando não há cap;
+- `rank`, `raw_rank`, `path`, `heading`, `line_start`, `line_end` e `excerpt`;
 - `file_hash`, `chunk_hash`, `score` e `matched_terms`.
 
 As linhas são inclusivas e começam em 1. `heading` pode ser `null` para texto anterior ao primeiro
 heading. `matched_terms` contém termos normalizados, sem acentos e sem stopwords comuns. O cap
-experimental é opt-in; quando usado, o output mantém ranks finais contíguos e o modo humano mostra
-o rank bruto quando ele difere.
+experimental é opt-in; quando usado, o output mantém ranks finais contíguos, registra o rank bruto
+no JSON e também o mostra no modo humano quando ele difere. Não há contrato de busca v1 arquivado,
+pois a migração foi deliberadamente direta e não havia consumidores.
 
 Para executar o benchmark versionado:
 

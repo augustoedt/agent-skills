@@ -10,4 +10,4 @@ pub use evaluation::{
     parse_evaluation_set, validate_evaluation_set,
 };
 pub use search::search;
-pub use types::{SearchRequest, SearchResponse};
+pub use types::{SCHEMA_VERSION, SearchRequest, SearchResponse};

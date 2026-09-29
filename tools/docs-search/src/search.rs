@@ -6,6 +6,7 @@ use unicode_normalization::{UnicodeNormalization, char::is_combining_mark};
 use crate::corpus::{Chunk, load};
 use crate::types::{
     CorpusSummary, ENGINE, SCHEMA_VERSION, SearchRequest, SearchResponse, SearchResult,
+    SearchSelection,
 };
 
 const K1: f64 = 1.2;
@@ -140,6 +141,9 @@ pub fn search(request: SearchRequest) -> Result<SearchResponse> {
         corpus: CorpusSummary {
             files: corpus.files,
             chunks: corpus.chunks.len(),
+        },
+        selection: SearchSelection {
+            max_results_per_path: request.max_results_per_path,
         },
         results,
     })

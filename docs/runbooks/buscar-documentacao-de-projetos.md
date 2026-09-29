@@ -55,7 +55,8 @@ docs-search --version
    ```
 
 5. Selecionar pelos campos `path`, `heading`, `line_start`, `line_end`, `score` e
-   `matched_terms`.
+   `matched_terms`. Na resposta v2, `selection` registra o cap efetivo e `raw_rank` permite auditar
+   resultados promovidos pela diversidade.
 6. Ler o trecho correspondente no arquivo original e confirmar o hash/frescor quando isso for
    relevante.
 7. Se necessário, reformular a consulta uma vez; só então ampliar a leitura.

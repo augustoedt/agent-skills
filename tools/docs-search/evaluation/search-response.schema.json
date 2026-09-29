@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/augustoedt/agent-skills/tools/docs-search/evaluation/search-response.schema.json",
+  "title": "docs-search response v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "engine",
+    "query",
+    "root",
+    "corpus",
+    "selection",
+    "results"
+  ],
+  "properties": {
+    "schema_version": { "const": 2 },
+    "engine": { "type": "string", "minLength": 1 },
+    "query": { "type": "string", "minLength": 1 },
+    "root": { "type": "string", "minLength": 1 },
+    "corpus": { "$ref": "#/$defs/corpus" },
+    "selection": { "$ref": "#/$defs/selection" },
+    "results": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/result" }
+    }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "corpus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["files", "chunks"],
+      "properties": {
+        "files": { "type": "integer", "minimum": 0 },
+        "chunks": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_results_per_path"],
+      "properties": {
+        "max_results_per_path": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "maximum": 100
+        }
+      }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rank",
+        "raw_rank",
+        "path",
+        "heading",
+        "line_start",
+        "line_end",
+        "excerpt",
+        "file_hash",
+        "chunk_hash",
+        "score",
+        "matched_terms"
+      ],
+      "properties": {
+        "rank": { "type": "integer", "minimum": 1 },
+        "raw_rank": { "type": "integer", "minimum": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "heading": { "type": ["string", "null"] },
+        "line_start": { "type": "integer", "minimum": 1 },
+        "line_end": { "type": "integer", "minimum": 1 },
+        "excerpt": { "type": "string" },
+        "file_hash": { "$ref": "#/$defs/hash" },
+        "chunk_hash": { "$ref": "#/$defs/hash" },
+        "score": { "type": "number" },
+        "matched_terms": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

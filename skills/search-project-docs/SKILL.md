@@ -35,8 +35,10 @@ leitura da fonte nem a verificação do código atual.
    "$DOCS_SEARCH_BIN" search --root "$ROOT" --query "<pergunta objetiva>" --limit 5 --json
    ```
 
-4. Examine primeiro `path`, `heading`, linhas, `score` e `matched_terms`. Leia no arquivo original
-   somente os trechos relevantes. O excerpt é evidência de seleção, não fonte autoritativa.
+4. Examine primeiro `path`, `heading`, linhas, `score` e `matched_terms`. Na resposta v2,
+   `selection` registra o cap efetivo e `raw_rank` permite auditar promoções por diversidade. Leia
+   no arquivo original somente os trechos relevantes. O excerpt é evidência de seleção, não fonte
+   autoritativa.
 5. Se a evidência for insuficiente, reformule uma vez com termos do domínio ou aumente o limite.
    Só depois recorra a uma leitura documental ampla.
 6. Antes de editar, confira o código/configuração atual relacionado à documentação encontrada.

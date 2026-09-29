@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use serde::Serialize;
 
-pub const SCHEMA_VERSION: u32 = 1;
+pub const SCHEMA_VERSION: u32 = 2;
 pub const ENGINE: &str = "lexical-bm25-v1";
 
 #[derive(Debug, Clone)]
@@ -24,8 +24,7 @@ pub struct CorpusSummary {
 #[derive(Debug, Clone, Serialize)]
 pub struct SearchResult {
     pub rank: usize,
-    /// Pre-diversity BM25 position, kept internal so search JSON remains schema v1.
-    #[serde(skip_serializing)]
+    /// Pre-diversity BM25 position for auditing the final selection.
     pub raw_rank: usize,
     pub path: String,
     pub heading: Option<String>,
@@ -39,11 +38,17 @@ pub struct SearchResult {
 }
 
 #[derive(Debug, Clone, Serialize)]
+pub struct SearchSelection {
+    pub max_results_per_path: Option<usize>,
+}
+
+#[derive(Debug, Clone, Serialize)]
 pub struct SearchResponse {
     pub schema_version: u32,
     pub engine: &'static str,
     pub query: String,
     pub root: String,
     pub corpus: CorpusSummary,
+    pub selection: SearchSelection,
     pub results: Vec<SearchResult>,
 }

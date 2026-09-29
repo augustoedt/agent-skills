@@ -63,7 +63,8 @@ configuração, hashes e evidências por consulta são os campos primários para
 ## Experimento de diversidade por path
 
 O `docs-search 0.3.0` comparou ranking ilimitado, cap 1 e cap 2 no mesmo estado de cada corpus. O
-relatório v2 distingue `rank` final de `raw_rank` BM25 e mantém o JSON de busca em schema v1.
+relatório v2 distingue `rank` final de `raw_rank` BM25. Naquela execução, o JSON de busca ainda era
+v1; o `docs-search 0.4.0` passou a expor esses campos na resposta de busca v2.
 
 ### Fixture estável
 

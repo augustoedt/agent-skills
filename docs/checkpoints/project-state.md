@@ -6,18 +6,19 @@ O repositório é a fonte oficial das skills próprias e agora também abriga
 `tools/docs-search`, um binário Rust para recuperação documental independente de modelo.
 
 O motor lexical preserva o ranking BM25 original como default, com chunking por headings,
-normalização Unicode, contrato de busca JSON v1 e hashes BLAKE3. O código-fonte `docs-search` v0.3.0
-adiciona diversidade por path opt-in com `--max-results-per-path`, sem alterar o output padrão. O
-relatório de avaliação v2 registra a configuração, o rank final e o rank BM25 bruto; o schema v1 foi
-arquivado para validar baselines históricos. As 20 consultas usam o schema de avaliação v2; o parser
-mantém leitura do schema v1.
+normalização Unicode e hashes BLAKE3. O código-fonte `docs-search` v0.4.0 publica resposta de busca
+JSON v2 com `selection.max_results_per_path`, rank final e rank BM25 bruto. A quebra foi direta, sem
+arquivar o contrato de busca v1, porque não havia consumidores. O relatório de avaliação permanece
+em v2; seu schema v1 continua arquivado somente para validar baselines históricos. As 20 consultas
+usam o schema de dataset v2; o parser mantém leitura do dataset v1.
 
 A fixture estável e versionada `evaluation/fixtures/stable-v1` separa regressão determinística do
 corpus real. Um smoke test completo da fixture executou 20/20 consultas sem erro: Hit@1 0,705882,
 Recall@5 macro 0,617647, Recall@5 micro 0,619048, MRR@5 0,705882, zero falsos positivos em três
 casos no-answer e 7.453 caracteres de contexto. Com cap 1, Recall@5 macro/micro subiu para
 0,676471/0,714286 e o contexto caiu para 3.995 caracteres, sem alterar Hit@1, MRR ou no-answer.
-`fmt`, `clippy` e 43 testes passam; relatórios v2 usam `evaluation/report.schema.json`.
+`fmt`, `clippy` e 44 testes passam; busca v2 usa `evaluation/search-response.schema.json` e
+relatórios v2 usam `evaluation/report.schema.json`.
 
 O primeiro baseline do corpus real foi preservado em
 `tools/docs-search/evaluation/reports/agent-skills-lexical-bm25-v1-baseline.json`, sobre o commit
@@ -51,7 +52,7 @@ fluxo de busca, contrato de evidência, avaliação, privacidade, manifesto loca
 nomes ou paths privados.
 
 O binário instalado via Rust 1.98.1 gerenciado por `asdf` continua na versão 0.1.0; ele não foi
-atualizado automaticamente. O v0.3.0 pode ser executado no checkout com `cargo run -- evaluate` até
+atualizado automaticamente. O v0.4.0 pode ser executado no checkout com `cargo run -- evaluate` até
 uma instalação ser solicitada.
 
 A skill `search-project-docs` também está sincronizada em `~/.agents/skills/` e ligada aos agentes
@@ -80,5 +81,6 @@ decisão; cap 1 não deve virar default antes da validação de generalização.
 - Nunca versionar nomes, paths, queries, headings, fingerprints ou relatórios derivados de projetos
   privados; nem paths absolutos, porque a configuração muda entre computadores.
 - O baseline v0.2.0 preserva a regressão histórica de headings dentro de fenced code; não o
-  sobrescrever. O v0.2.1 corrige o parser; relatórios v2 de diversidade identificam o v0.3.0.
+  sobrescrever. O v0.2.1 corrige o parser; relatórios v2 de diversidade identificam o v0.3.0 e a
+  resposta de busca autocontida entra no v0.4.0.
 - Runbook e `skills/search-project-docs/SKILL.md` descrevem o mesmo processo e devem mudar juntos.

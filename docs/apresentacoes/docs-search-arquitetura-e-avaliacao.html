@@ -363,7 +363,7 @@
   <section class="block" id="visao-geral">
     <div class="block-head">
       <h2>Visão geral</h2>
-      <span class="status done">v0.3.0</span>
+      <span class="status done">v0.4.0</span>
     </div>
     <div class="prose">
       <p><span class="chip-code">docs-search</span> transforma documentação Markdown em uma lista curta de evidências rastreáveis. O agente não recebe um resumo opaco: recebe arquivo, seção, linhas, hashes e trecho para conferir a fonte original.</p>
@@ -454,10 +454,10 @@
     <div class="block-head">
       <span class="index">02</span>
       <h2>Contrato de evidência</h2>
-      <span class="status done">schema v1</span>
+      <span class="status done">schema v2</span>
     </div>
     <div class="prose">
-      <p>Cada resultado informa o suficiente para reproduzir e conferir a seleção. Score e excerpt ajudam a navegar, mas não substituem o documento original.</p>
+      <p>Cada resposta informa a seleção aplicada e cada resultado preserva rank final e rank BM25 bruto. Score e excerpt ajudam a navegar, mas não substituem o documento original.</p>
     </div>
     <div class="data-table-wrap">
       <table class="data-table">
@@ -466,6 +466,8 @@
           <tr><td><code>path</code> + <code>heading</code></td><td>Localiza arquivo e seção.</td><td>Breadcrumb derivado do Markdown.</td></tr>
           <tr><td><code>line_start</code> + <code>line_end</code></td><td>Delimita a evidência.</td><td>Linhas inclusivas, começando em 1.</td></tr>
           <tr><td><code>file_hash</code> + <code>chunk_hash</code></td><td>Detecta mudança da fonte.</td><td>BLAKE3 do conteúdo lido.</td></tr>
+          <tr><td><code>selection</code></td><td>Registra o cap por path.</td><td><code>null</code> quando desativado.</td></tr>
+          <tr><td><code>rank</code> + <code>raw_rank</code></td><td>Separa posição final da posição BM25.</td><td>Auditável no JSON v2.</td></tr>
           <tr><td><code>score</code> + <code>matched_terms</code></td><td>Explica o ranking lexical.</td><td>Diagnóstico, não verdade.</td></tr>
           <tr><td><code>excerpt</code></td><td>Entrega contexto mínimo.</td><td>Limitado por caracteres.</td></tr>
         </tbody>

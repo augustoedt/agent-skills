@@ -88,10 +88,12 @@ that baseline latency includes corpus I/O for every query.
 
 ## Evaluation report v2
 
-`report.schema.json` formalizes the current contract independently from search-response schema v1
-and query-dataset schema v2. Report v2 adds `config.max_results_per_path` and `results[].raw_rank` so
-path-diversity experiments remain reproducible without changing search JSON. The v1 schema is
-preserved in `report-v1.schema.json` for historical baselines. The report records:
+`report.schema.json` formalizes the current contract independently from search-response schema v2
+and query-dataset schema v2. Report v2 records `config.max_results_per_path` and
+`results[].raw_rank` so path-diversity experiments remain reproducible. Search-response schema v2 is
+formalized separately in `search-response.schema.json`. The report v1 schema remains in
+`report-v1.schema.json` only because historical evaluation baselines already use it. The report
+records:
 
 - tool version, engine, dataset hash and query schema version;
 - logical corpus name, caller-provided root, file/chunk counts, and a reproducible fingerprint;

@@ -31,7 +31,7 @@ fn ranks_the_relevant_heading_and_returns_evidence() {
 
     let response = search(request(directory.path(), "recuperacao banco")).unwrap();
 
-    assert_eq!(response.schema_version, 1);
+    assert_eq!(response.schema_version, 2);
     assert_eq!(response.results[0].path, "docs/runbook.md");
     assert_eq!(
         response.results[0].heading.as_deref(),
@@ -99,6 +99,7 @@ fn path_diversity_limits_chunks_per_file_and_preserves_raw_rank() {
     diversified.max_results_per_path = Some(1);
     let response = search(diversified).unwrap();
 
+    assert_eq!(response.selection.max_results_per_path, Some(1));
     assert_eq!(response.results.len(), 2);
     assert_eq!(response.results[0].rank, 1);
     assert_eq!(response.results[1].rank, 2);
@@ -141,10 +142,14 @@ fn cli_emits_the_versioned_json_contract() {
 
     assert!(output.status.success());
     let json: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
-    assert_eq!(json["schema_version"], 1);
+    assert_eq!(json["schema_version"], 2);
     assert_eq!(json["engine"], "lexical-bm25-v1");
+    assert_eq!(
+        json["selection"]["max_results_per_path"],
+        serde_json::Value::Null
+    );
     assert_eq!(json["results"][0]["path"], "README.md");
-    assert!(json["results"][0].get("raw_rank").is_none());
+    assert_eq!(json["results"][0]["raw_rank"], 1);
 }
 
 #[test]

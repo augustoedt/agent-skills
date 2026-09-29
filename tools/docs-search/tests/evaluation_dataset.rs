@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use docs_search::corpus;
 use docs_search::{
     EVALUATION_REPORT_SCHEMA_VERSION, EVALUATION_SCHEMA_VERSION, EvaluationCategory,
-    parse_evaluation_set,
+    SCHEMA_VERSION, parse_evaluation_set,
 };
 use serde::Deserialize;
 use serde_json::Value;
@@ -231,6 +231,30 @@ fn published_query_schema_tracks_the_runtime_contract() {
     for field in ["id", "category", "query", "expected_paths"] {
         assert!(required.contains(&Value::from(field)), "missing {field}");
     }
+}
+
+#[test]
+fn published_search_response_schema_tracks_the_runtime_contract() {
+    let schema: Value =
+        serde_json::from_str(include_str!("../evaluation/search-response.schema.json"))
+            .expect("published search response schema should be valid JSON");
+
+    assert_eq!(
+        schema["properties"]["schema_version"]["const"],
+        SCHEMA_VERSION
+    );
+    assert!(
+        schema["required"]
+            .as_array()
+            .unwrap()
+            .contains(&Value::from("selection"))
+    );
+    assert!(
+        schema["$defs"]["result"]["required"]
+            .as_array()
+            .unwrap()
+            .contains(&Value::from("raw_rank"))
+    );
 }
 
 #[test]

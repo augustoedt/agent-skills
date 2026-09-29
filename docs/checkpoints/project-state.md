@@ -23,20 +23,22 @@ relatórios v2 usam `evaluation/report.schema.json`. As medições públicas atu
 Avaliações de checkouts privados são estado local da máquina: datasets, nomes, roots, headings,
 fingerprints e relatórios ficam fora deste repositório público, em armazenamento local criptografado.
 Um manifesto local associa IDs neutros aos paths disponíveis em cada computador. Seu contrato v1
-está em `evaluation/local-manifest.schema.json`; o runner local bloqueia holdouts e não sobrescreve
-relatórios. O Git mantém apenas fixtures sintéticas e corpora explicitamente públicos.
+está em `evaluation/local-manifest.schema.json`; o runner local não sobrescreve relatórios e só
+libera um holdout mediante gate explícito, congelado e de execução única. O Git mantém apenas
+fixtures sintéticas e corpora explicitamente públicos.
 
 O chunker ignora comentários `#` dentro de fenced code com crases ou tils, incluindo cercas
 indentadas, fechamentos compatíveis e blocos não encerrados. A fixture cobre esses casos. Avaliações
-privadas permanecem fora do Git e nenhum holdout foi executado.
+privadas permanecem fora do Git; cada holdout congelado foi executado uma única vez.
 
 O experimento público de diversidade comparou ilimitado, cap 1 e cap 2 na fixture e no corpus do
 próprio repositório. Cap 1 melhorou Recall@5 na fixture, manteve a qualidade no corpus público e usou
 menos contexto que cap 2 nos dois. Avaliações adicionais ficaram integralmente no ambiente privado:
-quantidade de corpora, métricas e direção dos resultados não foram versionadas. Os julgamentos de
-desenvolvimento e holdout foram revisados diretamente contra as fontes; o candidato cap 1 foi
-congelado com commit, parâmetros, revisões e checksums. Cap 1 continua opt-in, o gate permanece
-fechado e nenhum holdout foi executado.
+identidades, quantidade de corpora, métricas detalhadas e diagnósticos por consulta não foram
+versionados. Os julgamentos de desenvolvimento e holdout foram revisados diretamente contra as
+fontes; o candidato cap 1 foi congelado com commit, parâmetros, revisões e checksums. O gate executou
+cada holdout uma vez e fechou automaticamente. O conjunto falhou os pisos de qualidade predefinidos,
+portanto cap 1 não será promovido a default e continua somente opt-in.
 
 A apresentação editorial `docs/apresentacoes/docs-search-arquitetura-e-avaliacao.html` explica o
 fluxo de busca, contrato de evidência, avaliação, privacidade, manifesto local e roadmap sem expor
@@ -52,15 +54,16 @@ métricas, relatórios, testes, gates e critérios para SQLite/FTS5, embeddings/
 
 ## Em andamento
 
-- manter cap 1 como candidato opt-in enquanto o gate não for concluído;
-- preservar o freeze privado do candidato e de todos os datasets;
-- manter os holdouts bloqueados até autorização explícita.
+- manter cap 1 apenas como opção explícita, sem alterar o default;
+- preservar o freeze, o gate fechado e os relatórios privados imutáveis;
+- não usar os holdouts consumidos para retuning ou mudança de julgamentos.
 
 ## Próximo passo
 
-Decidir explicitamente se o gate de holdout deve ser aberto para o candidato cap 1. Se autorizado,
-cada holdout será executado uma única vez com a configuração congelada e sem retuning posterior.
-Cap 1 não deve virar default antes dessa validação de generalização.
+Formular qualquer hipótese futura somente nos corpora de desenvolvimento e apenas se houver lacuna
+medida que justifique outro experimento isolado. Antes de um novo gate, reservar holdouts novos e
+congelá-los sem observar rankings. A decisão atual está registrada em
+[`0002-manter-cap-1-opt-in-apos-holdout.md`](../decisions/0002-manter-cap-1-opt-in-apos-holdout.md).
 
 ## Armadilhas conhecidas
 

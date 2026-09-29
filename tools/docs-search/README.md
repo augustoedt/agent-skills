@@ -99,6 +99,7 @@ está documentado em `evaluation/README.md` e formalizado por
 `evaluation/queries.schema.json`. As 20 consultas incluem casos exatos, semânticos, ambíguos e sem
 resposta, com headings esperados, notas e tags diagnósticas. A fixture estável e versionada
 `evaluation/fixtures/stable-v1` sustenta testes de regressão. As medições atuais do corpus real e da
-fixture estão analisadas em [`evaluation/reports/`](evaluation/reports/README.md). O benchmark ainda
-precisa de mais casos ambíguos/no-answer e do gate de holdout antes de justificar SQLite FTS5,
-embeddings ou um classificador/router.
+fixture estão analisadas em [`evaluation/reports/`](evaluation/reports/README.md). O primeiro gate
+de holdout rejeitou a promoção do cap 1 a default. SQLite FTS5, embeddings ou um classificador/router
+continuam bloqueados até uma hipótese isolada demonstrar necessidade nos corpora de desenvolvimento
+e existir um novo gate com holdouts ainda não consumidos.

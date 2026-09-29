@@ -14,6 +14,7 @@ Estado autoritativo para retomada do trabalho.
 Decisões arquiteturais permanentes e suas consequências.
 
 - `0001-docs-search-como-binario-local.md` — adoção de Rust, CLI/JSON e evolução medida do motor de busca.
+- `0002-manter-cap-1-opt-in-apos-holdout.md` — não promoção do cap 1 após o gate e preservação dos holdouts consumidos.
 
 ## plans/
 

@@ -166,9 +166,10 @@ Corpus fields:
   directory. It requires `queries` and is descriptive; new experiments receive new report files.
 
 IDs must be unique. Relative paths must stay inside the private evaluation directory and must not use
-`..` to escape it. A safe local runner executes only `development`; holdouts remain registered but
-blocked until the explicit generalization gate. Report tags should be kebab-case and outputs must not
-silently overwrite a previous measurement.
+`..` to escape it. A safe local runner executes `development` normally and only releases a frozen
+holdout through an explicit one-shot gate; after success, that holdout is consumed and rerun remains
+blocked. Report tags should be kebab-case and outputs must not silently overwrite a previous
+measurement.
 
 ### Lifecycle across computers
 

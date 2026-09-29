@@ -521,7 +521,7 @@
         <tbody>
           <tr><td>Fixture estável</td><td>ilimitado → cap 1</td><td class="new">0,617647 → 0,676471</td><td class="new">7.453 → 3.995</td></tr>
           <tr><td>Corpus público</td><td>ilimitado → cap 1</td><td>0,588235 → 0,588235</td><td class="new">18.626 → 13.951</td></tr>
-          <tr><td>Validação local</td><td>fora do Git</td><td>métricas não publicadas</td><td>holdouts bloqueados</td></tr>
+          <tr><td>Validação local</td><td>fora do Git</td><td>métricas não publicadas</td><td>gate concluído · no-go</td></tr>
         </tbody>
       </table>
     </div>
@@ -582,7 +582,7 @@
         <thead><tr><th>Campo</th><th>Exemplo neutro</th><th>Regra</th></tr></thead>
         <tbody>
           <tr><td><code>id</code></td><td><code>corpus-001</code></td><td>Não codifica cliente, domínio ou produto.</td></tr>
-          <tr><td><code>role</code></td><td><code>development</code></td><td>Holdout, deferred e excluded ficam bloqueados.</td></tr>
+          <tr><td><code>role</code></td><td><code>development</code></td><td>Holdout exige gate one-shot; deferred e excluded ficam bloqueados.</td></tr>
           <tr><td><code>root</code></td><td><code>/path/local/projeto-a</code></td><td>Absoluto e específico da máquina.</td></tr>
           <tr><td><code>queries</code></td><td><code>corpus-001/queries.json</code></td><td>Relativo ao diretório privado.</td></tr>
           <tr><td><code>baseline_report</code></td><td><code>reports/corpus-001-baseline.json</code></td><td>Imutável; experimentos usam outra tag.</td></tr>
@@ -616,13 +616,13 @@
     <div class="next-grid">
       <div class="next-card current">
         <p class="kicker">Agora</p>
-        <h3>Abrir o gate</h3>
-        <p>O candidato e todos os julgamentos estão congelados. Os holdouts seguem bloqueados até autorização explícita.</p>
+        <h3>Preservar o no-go</h3>
+        <p>O gate terminou sem promover cap 1. A opção continua explícita e os holdouts consumidos não orientam retuning.</p>
       </div>
       <div class="next-card">
-        <p class="kicker">Gate</p>
-        <h3>Generalização</h3>
-        <p>Com os julgamentos congelados, abrir o gate explicitamente e executar cada holdout uma vez, sem retuning.</p>
+        <p class="kicker">Próximo ciclo</p>
+        <h3>Evidência de desenvolvimento</h3>
+        <p>Qualquer nova hipótese nasce nos corpora de development e exige novos holdouts antes de outro gate.</p>
       </div>
       <div class="next-card future">
         <p class="kicker">Condicional</p>
@@ -637,7 +637,7 @@
       <h2>Onde estamos</h2>
     </div>
     <div class="prose">
-      <p>O baseline lexical, o avaliador, a separação privada, o hardening de fenced code e o experimento de diversidade estão concluídos. Cap 1 é candidato opt-in; o gate de generalização ainda não foi aberto.</p>
+      <p>O baseline lexical, o avaliador, a separação privada, o hardening de fenced code e o gate de diversidade estão concluídos. Cap 1 permanece opt-in e não foi promovido a default.</p>
     </div>
     <div class="stepper-wrap">
       <div class="stepper">
@@ -646,7 +646,7 @@
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">3</span>Privacidade local</div></div>
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">4</span>Fenced code</div></div>
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">5</span>Diversidade por path</div></div>
-        <div class="step wip"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">6</span>Revisão e gate</div></div>
+        <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">6</span>Gate de holdout</div></div>
       </div>
     </div>
     <div class="callout"><strong>Regra de decisão:</strong> mais complexidade só entra quando melhora recuperação sem piorar abstention, contexto ou generalização.</div>

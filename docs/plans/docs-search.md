@@ -6,9 +6,9 @@
 - schema de avaliação v2: implementado e validado;
 - executor e métricas: implementados; somente relatório v2 é suportado;
 - baseline real do `lexical-bm25-v1`: medido e preservado no relatório de referência;
-- diversidade por path: cap 1 selecionado e congelado como candidato, ainda opt-in;
+- diversidade por path: cap 1 medido, mantido opt-in e rejeitado para promoção a default;
 - julgamentos de desenvolvimento e holdout: revisados diretamente contra as fontes e congelados;
-- gate de holdout: fechado até autorização explícita;
+- gate de holdout: concluído uma única vez e fechado; holdouts consumidos não orientam retuning;
 - SQLite/FTS5: adiado até ampliar o benchmark e uma lacuna medida justificar persistência;
 - embeddings/RRF: bloqueado até existir uma lacuna semântica comprovada;
 - MCP: fora do escopo enquanto a CLI atender os clientes.
@@ -317,10 +317,10 @@ produzir métricas artificialmente altas ou instáveis.
 ### Gate da Etapa 2
 
 - [x] baseline atual medido sem tuning no contrato v2;
-- [ ] benchmark ampliado com cobertura suficiente de no-answer e ambiguidade;
+- [x] benchmark ampliado com cobertura suficiente de no-answer e ambiguidade;
 - [x] segundo corpus medido localmente sem versionar metadados privados;
 - [x] limitações lexicais documentadas com exemplos concretos;
-- [ ] decisão registrada: manter baseline, ajustar lexical ou investigar busca híbrida.
+- [x] decisão registrada: manter baseline e cap 1 opt-in, sem promover o candidato.
 
 ---
 
@@ -347,7 +347,7 @@ Adicionar cobertura para:
 O item de fenced code foi concluído para cercas de crases e tils, incluindo fechamento com marcador
 compatível, comprimento suficiente, indentação de até três espaços e fence não encerrada. A fixture
 e os testes focados cobrem esses casos; os relatórios atuais registram o efeito no corpus público.
-Holdouts não foram executados.
+A correção permaneceu inalterada durante o gate posterior de holdout.
 
 ### 3.2 Avaliar melhorias lexicais isoladamente
 
@@ -379,11 +379,13 @@ Foram comparados ilimitado, cap 1 e cap 2 na fixture e no corpus público. Cap 1
 - reduziu contexto na fixture e no corpus público;
 - entregou a mesma qualidade que cap 2 com menos contexto nos dois corpora.
 
-Avaliações adicionais foram executadas somente no ambiente privado; quantidade de corpora, métricas
-e direção dos resultados não são versionadas. Os julgamentos de desenvolvimento e holdout foram
-revisados contra as fontes, e o candidato cap 1 foi congelado com código, parâmetros, revisões e
-checksums. Ele continua opt-in, o gate permanece fechado e nenhum holdout foi executado. A execução
-exige autorização explícita e uma tag imutável para cada holdout.
+Avaliações adicionais foram executadas somente no ambiente privado; identidades, quantidade de
+corpora, métricas detalhadas e diagnósticos por consulta não são versionados. Os julgamentos de
+desenvolvimento e holdout foram revisados contra as fontes, e o candidato cap 1 foi congelado com
+código, parâmetros, revisões e checksums. Após autorização explícita, cada holdout executou uma única
+vez e o gate fechou automaticamente. O conjunto falhou os pisos de qualidade predefinidos. Cap 1
+permanece opt-in, não será o default e os holdouts consumidos não podem orientar retuning. A decisão
+está no [ADR 0002](../decisions/0002-manter-cap-1-opt-in-apos-holdout.md).
 
 ### Critério de aceitação do tuning
 

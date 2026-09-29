@@ -29,7 +29,7 @@ posição final; `raw_rank` preserva a posição BM25 antes da seleção por pat
 
 ### Corpus público atual
 
-Corpus medido: 7 arquivos e 88 chunks.
+Corpus medido: 8 arquivos e 92 chunks.
 
 | Configuração | Hit@1 | Recall@5 macro | Recall@5 micro | MRR@5 | FP no-answer | Contexto |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -38,15 +38,15 @@ Corpus medido: 7 arquivos e 88 chunks.
 | cap 2 | 0,647059 | 0,588235 | 0,619048 | 0,647059 | 0/3 | 14.442 |
 
 No ranking ilimitado, casos exatos tiveram Hit@1 0,875000; semânticos, 0,166667; ambíguos,
-1,000000. A lacuna semântica permanece mensurável, mas não justifica busca híbrida antes de ampliar
-casos ambíguos/no-answer e concluir o gate de holdout.
+1,000000. A lacuna semântica permanece mensurável, mas não autoriza busca híbrida sem uma hipótese
+isolada nos corpora de desenvolvimento e um novo gate.
 
-Avaliações adicionais de desenvolvimento são executadas somente no ambiente privado. Quantidade de
-corpora, métricas, queries, paths, fingerprints e direção dos resultados permanecem fora do Git.
-Nenhum holdout foi executado.
+Avaliações adicionais e o gate de holdout foram executados somente no ambiente privado. Identidades,
+quantidade de corpora, métricas detalhadas, queries, paths, fingerprints e diagnósticos por consulta
+permanecem fora do Git. Cada holdout executou uma única vez e agora está consumido.
 
-**Decisão de desenvolvimento:** cap 1 continua candidato porque melhora a fixture e usa menos
-contexto que cap 2 nos dois corpora públicos. Ele permanece opt-in até o gate de holdout.
+**Decisão após o gate:** cap 1 não será promovido a default porque falhou os pisos de qualidade
+predefinidos nos holdouts. A flag permanece opt-in pelos ganhos públicos de recall e contexto.
 
 A fixture reutiliza o dataset canônico, portanto `corpus.name` permanece `agent-skills`; nome do
 arquivo, root e fingerprint distinguem a execução sintética.

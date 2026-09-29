@@ -38,8 +38,12 @@ subiram de 4/17 para 9/17, sem alterar Hit@1, Recall@5, MRR@5 ou falsos positivo
 corpora privados de desenvolvimento também foram medidos localmente sem regressão nas métricas
 primárias; nenhum holdout foi executado e os relatórios ficaram fora do Git.
 
+A apresentação editorial `docs/apresentacoes/docs-search-arquitetura-e-avaliacao.html` explica o
+fluxo de busca, contrato de evidência, avaliação, privacidade, manifesto local e roadmap sem expor
+nomes ou paths privados.
+
 O binário instalado via Rust 1.98.1 gerenciado por `asdf` continua na versão 0.1.0; ele não foi
-atualizado automaticamente. O v0.2.0 pode ser executado no checkout com `cargo run -- evaluate` até
+atualizado automaticamente. O v0.2.1 pode ser executado no checkout com `cargo run -- evaluate` até
 uma instalação ser solicitada.
 
 A skill `search-project-docs` também está sincronizada em `~/.agents/skills/` e ligada aos agentes

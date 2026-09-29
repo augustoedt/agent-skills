@@ -30,3 +30,10 @@ atualizar quando a rotina mudar.
 - `sincronizar-e-deduplicar-skills.md` — sync das skills via
   `scripts/install.sh` e eliminação de conflitos de nome (duplicatas) entre
   `~/.pi/agent/skills/` e `~/.agents/skills/`.
+
+## apresentacoes/
+
+Material HTML editorial criado sob demanda para explicar arquitetura, fluxos e estado do projeto.
+
+- `docs-search-arquitetura-e-avaliacao.html` — fluxo completo da busca documental, contrato de
+  evidência, avaliação, separação público/privado, manifesto local e roadmap.

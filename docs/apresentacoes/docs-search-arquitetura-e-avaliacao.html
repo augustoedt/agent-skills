@@ -1,0 +1,665 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>docs-search — arquitetura, avaliação e privacidade</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&amp;family=Public+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#efefe6;
+    --paper-raised:#f8f8f2;
+    --ink:#1b241f;
+    --ink-muted:#5c6459;
+    --line:#d7d8c9;
+    --flow:#1f6f63;
+    --flow-soft:#dceae5;
+    --amber:#a9691b;
+    --amber-soft:#f1e1c9;
+    --surface:#ffffff;
+    --shadow: 0 1px 0 rgba(27,36,31,0.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#14170f;
+      --paper-raised:#1a1f17;
+      --ink:#eceae0;
+      --ink-muted:#9ba096;
+      --line:#2b2f24;
+      --flow:#57cdba;
+      --flow-soft:#1c342e;
+      --amber:#e3a857;
+      --amber-soft:#3a2e17;
+      --surface:#1b1f18;
+      --shadow: 0 1px 0 rgba(0,0,0,0.3);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#14170f;
+    --paper-raised:#1a1f17;
+    --ink:#eceae0;
+    --ink-muted:#9ba096;
+    --line:#2b2f24;
+    --flow:#57cdba;
+    --flow-soft:#1c342e;
+    --amber:#e3a857;
+    --amber-soft:#3a2e17;
+    --surface:#1b1f18;
+    --shadow: 0 1px 0 rgba(0,0,0,0.3);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Public Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size:16px;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{
+    font-family:'Fraunces', Georgia, 'Times New Roman', serif;
+    color:var(--ink);
+    text-wrap:balance;
+    margin:0;
+  }
+  a{color:var(--flow);}
+  code, .mono{
+    font-family:'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    font-size:0.86em;
+  }
+  .chip-code{
+    font-family:'IBM Plex Mono', ui-monospace, monospace;
+    font-size:0.78rem;
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:0.1em 0.45em;
+    color:var(--ink-muted);
+    white-space:nowrap;
+  }
+
+  .cover{
+    max-width:760px;
+    margin:0 auto;
+    padding:88px 28px 56px;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.72rem;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--flow);
+    margin:0 0 18px;
+  }
+  .cover h1{
+    font-size:clamp(2.1rem, 5vw, 3.15rem);
+    font-weight:600;
+    line-height:1.06;
+    letter-spacing:-0.01em;
+  }
+  .cover .lede{
+    margin-top:20px;
+    max-width:60ch;
+    font-size:1.14rem;
+    color:var(--ink-muted);
+  }
+  .cover .meta{
+    margin-top:28px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.78rem;
+    color:var(--ink-muted);
+    letter-spacing:0.02em;
+  }
+
+  nav.toc{
+    position:sticky;
+    top:0;
+    z-index:20;
+    background:color-mix(in srgb, var(--paper) 92%, transparent);
+    backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--line);
+  }
+  nav.toc .row{
+    display:flex;
+    gap:2px;
+    overflow-x:auto;
+    max-width:1040px;
+    margin:0 auto;
+    padding:0 20px;
+    scrollbar-width:thin;
+  }
+  nav.toc a{
+    flex:0 0 auto;
+    display:inline-flex;
+    align-items:center;
+    padding:13px 12px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.74rem;
+    letter-spacing:0.03em;
+    color:var(--ink-muted);
+    text-decoration:none;
+    border-bottom:2px solid transparent;
+    white-space:nowrap;
+  }
+  nav.toc a:hover{color:var(--ink);}
+  nav.toc a.current{color:var(--flow); border-bottom-color:var(--flow);}
+
+  main{max-width:1040px; margin:0 auto; padding:0 20px 120px;}
+
+  section.block{
+    padding:64px 0;
+    border-bottom:1px solid var(--line);
+    scroll-margin-top:56px;
+  }
+  section.block:last-of-type{border-bottom:none;}
+
+  .block-head{
+    display:flex;
+    align-items:baseline;
+    gap:16px;
+    flex-wrap:wrap;
+    margin-bottom:10px;
+  }
+  .index{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.95rem;
+    color:var(--flow);
+    letter-spacing:0.02em;
+  }
+  .block-head h2{
+    font-size:1.55rem;
+    font-weight:600;
+  }
+  .status{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.68rem;
+    letter-spacing:0.05em;
+    text-transform:uppercase;
+    padding:3px 9px 4px;
+    border-radius:3px;
+    white-space:nowrap;
+  }
+  .status.done{background:var(--flow-soft); color:var(--flow); border:1px solid transparent;}
+  .status.wip{background:transparent; color:var(--amber); border:1px dashed var(--amber);}
+  .status.todo{background:transparent; color:var(--ink-muted); border:1px solid var(--line);}
+
+  .prose{max-width:64ch; margin-top:14px;}
+  .prose p{margin:0 0 12px; color:var(--ink);}
+  .prose p:last-child{margin-bottom:0;}
+  .prose .muted{color:var(--ink-muted);}
+  .prose ul{margin:10px 0 0; padding-left:20px;}
+  .prose li{margin-bottom:6px;}
+
+  .figure-wrap{
+    margin-top:28px;
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:20px 20px 16px;
+    overflow-x:auto;
+  }
+  figure{margin:0; min-width:560px;}
+  figcaption{
+    margin-top:12px;
+    font-size:0.82rem;
+    color:var(--ink-muted);
+    max-width:70ch;
+  }
+  svg.dgm{display:block; width:100%; height:auto;}
+  .dgm .node{fill:var(--surface); stroke:var(--ink-muted); stroke-width:1.4;}
+  .dgm .node.accent{stroke:var(--flow); stroke-width:2;}
+  .dgm .node.amber{stroke:var(--amber); stroke-width:1.6;}
+  .dgm .node.dashed{stroke-dasharray:4 3; stroke:var(--ink-muted);}
+  .dgm .label{font-family:'Public Sans', sans-serif; fill:var(--ink); font-size:12.5px;}
+  .dgm .label-title{font-weight:600;}
+  .dgm .label-sub{fill:var(--ink-muted); font-size:11px;}
+  .dgm .label-mono{font-family:'IBM Plex Mono', monospace; fill:var(--ink-muted); font-size:10.5px;}
+  .dgm .edge{stroke:var(--ink-muted); stroke-width:1.4; fill:none;}
+  .dgm .edge.accent{stroke:var(--flow); stroke-width:1.8;}
+  .dgm .edge.amber{stroke:var(--amber); stroke-width:1.6;}
+  .dgm .edge.dashed{stroke-dasharray:4 3;}
+  .dgm .arrowhead{fill:var(--ink-muted);}
+  .dgm .arrowhead.accent{fill:var(--flow);}
+  .dgm .arrowhead.amber{fill:var(--amber);}
+  .dgm .edge-label{font-family:'IBM Plex Mono', monospace; fill:var(--ink-muted); font-size:10px;}
+  .dgm .edge-label.amber{fill:var(--amber);}
+
+  .callout{
+    margin-top:18px;
+    padding:12px 16px;
+    border-left:2px solid var(--amber);
+    background:var(--amber-soft);
+    border-radius:0 3px 3px 0;
+    font-size:0.9rem;
+  }
+  .callout strong{color:var(--amber);}
+
+  .next-grid{
+    display:grid;
+    grid-template-columns:repeat(3, minmax(0, 1fr));
+    gap:12px;
+    margin-top:24px;
+  }
+  .next-card{
+    padding:18px;
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:4px;
+  }
+  .next-card.current{border-color:var(--flow);}
+  .next-card.future{border-style:dashed;}
+  .next-card .kicker{
+    margin:0 0 8px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.68rem;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--flow);
+  }
+  .next-card.future .kicker{color:var(--amber);}
+  .next-card h3{font-size:1.1rem; margin-bottom:8px;}
+  .next-card p{margin:0; color:var(--ink-muted); font-size:0.9rem; line-height:1.45;}
+  @media (max-width:760px){
+    .next-grid{grid-template-columns:1fr;}
+  }
+  .comparison-grid{
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+    gap:14px;
+    margin-top:26px;
+  }
+  .comparison-grid .figure-wrap{margin-top:0;}
+  .comparison-grid figure{min-width:0;}
+  .comparison-label{
+    margin:0 0 10px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.7rem;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--ink-muted);
+  }
+  .comparison-label.before{color:var(--amber);}
+  .comparison-label.after{color:var(--flow);}
+  .data-table-wrap{overflow-x:auto; margin-top:24px;}
+  table.data-table{width:100%; min-width:680px; border-collapse:collapse; font-size:0.9rem;}
+  .data-table th,.data-table td{padding:11px 13px; border:1px solid var(--line); text-align:left; vertical-align:top;}
+  .data-table th{background:var(--paper-raised); font-family:'IBM Plex Mono', monospace; font-size:0.7rem; letter-spacing:0.05em; text-transform:uppercase; color:var(--ink-muted);}
+  .data-table td:first-child{font-weight:600; width:22%;}
+  .data-table .old{color:var(--amber);}
+  .data-table .new{color:var(--flow);}
+  @media (max-width:760px){
+    .comparison-grid{grid-template-columns:1fr;}
+  }
+
+  .stepper-wrap{overflow-x:auto; margin-top:24px;}
+  .stepper{display:flex; min-width:760px; gap:0;}
+  .step{flex:1; position:relative; padding:0 10px 0 0;}
+  .step .track{display:flex; align-items:center;}
+  .step .dot{
+    width:15px; height:15px; border-radius:50%;
+    border:2px solid var(--ink-muted);
+    background:var(--paper-raised);
+    flex:0 0 auto;
+  }
+  .step.done .dot{background:var(--flow); border-color:var(--flow);}
+  .step.wip .dot{border-color:var(--amber); border-style:dashed; background:var(--amber-soft);}
+  .step .line{flex:1; height:2px; background:var(--line);}
+  .step.done .line{background:var(--flow);}
+  .step:last-child .line{display:none;}
+  .step .step-label{
+    margin-top:10px;
+    font-size:0.76rem;
+    line-height:1.35;
+    color:var(--ink-muted);
+    padding-right:8px;
+  }
+  .step.done .step-label, .step.wip .step-label{color:var(--ink);}
+  .step .step-num{
+    display:block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.68rem;
+    color:var(--ink-muted);
+    margin-bottom:2px;
+  }
+
+  footer{
+    max-width:1040px; margin:0 auto; padding:40px 20px 80px;
+    color:var(--ink-muted); font-size:0.82rem;
+  }
+
+  @media (max-width:640px){
+    .cover{padding:56px 20px 40px;}
+    section.block{padding:44px 0;}
+  }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <p class="eyebrow">agent-skills · recuperação documental</p>
+  <h1>docs-search: do Markdown à evidência verificável</h1>
+  <p class="lede">Uma busca local e independente de modelo que seleciona contexto mínimo, mede a própria qualidade e mantém avaliações privadas fora do Git.</p>
+  <p class="meta">Atualizado em 29 de setembro de 2026 · apresentação técnica</p>
+</div>
+
+<nav class="toc" aria-label="Sumário">
+  <div class="row" id="tocRow">
+    <a href="#visao-geral">Visão geral</a>
+    <a href="#busca">Fluxo de busca</a>
+    <a href="#evidencia">Evidência</a>
+    <a href="#avaliacao">Avaliação</a>
+    <a href="#privacidade">Privacidade</a>
+    <a href="#manifesto">Manifesto local</a>
+    <a href="#proximos">Próximos passos</a>
+    <a href="#status">Onde estamos</a>
+  </div>
+</nav>
+
+<main>
+  <section class="block" id="visao-geral">
+    <div class="block-head">
+      <h2>Visão geral</h2>
+      <span class="status done">v0.2.1</span>
+    </div>
+    <div class="prose">
+      <p><span class="chip-code">docs-search</span> transforma documentação Markdown em uma lista curta de evidências rastreáveis. O agente não recebe um resumo opaco: recebe arquivo, seção, linhas, hashes e trecho para conferir a fonte original.</p>
+      <p class="muted">O desenho separa três responsabilidades: selecionar o corpus seguro, ranquear os chunks e validar o comportamento com datasets independentes.</p>
+    </div>
+    <div class="figure-wrap">
+      <figure>
+        <svg class="dgm" viewBox="0 0 1040 300" role="img" aria-label="Pergunta entra no docs-search, passa pelo corpus e ranking, e produz evidências verificáveis.">
+          <defs>
+            <marker id="arr-overview" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrowhead"></path></marker>
+            <marker id="arr-overview-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrowhead accent"></path></marker>
+          </defs>
+          <rect class="node" x="30" y="98" width="180" height="76" rx="3"></rect>
+          <text class="label label-title" x="120" y="126" text-anchor="middle">Pergunta</text>
+          <text class="label-sub" x="120" y="148" text-anchor="middle">linguagem natural</text>
+          <rect class="node accent" x="280" y="78" width="230" height="116" rx="3"></rect>
+          <text class="label label-title" x="395" y="112" text-anchor="middle">docs-search</text>
+          <text class="label-sub" x="395" y="136" text-anchor="middle">seleção · chunking · BM25</text>
+          <text class="label-mono" x="395" y="160" text-anchor="middle">lexical-bm25-v1</text>
+          <rect class="node" x="580" y="98" width="190" height="76" rx="3"></rect>
+          <text class="label label-title" x="675" y="126" text-anchor="middle">Evidências</text>
+          <text class="label-sub" x="675" y="148" text-anchor="middle">path · heading · linhas</text>
+          <rect class="node" x="840" y="98" width="170" height="76" rx="3"></rect>
+          <text class="label label-title" x="925" y="126" text-anchor="middle">Verificação</text>
+          <text class="label-sub" x="925" y="148" text-anchor="middle">fonte + código atual</text>
+          <path class="edge accent" d="M210,136 L280,136" marker-end="url(#arr-overview-a)"></path>
+          <path class="edge accent" d="M510,136 L580,136" marker-end="url(#arr-overview-a)"></path>
+          <path class="edge" d="M770,136 L840,136" marker-end="url(#arr-overview)"></path>
+          <text class="edge-label" x="245" y="124" text-anchor="middle">query</text>
+          <text class="edge-label" x="545" y="124" text-anchor="middle">top 5</text>
+        </svg>
+        <figcaption>A busca reduz contexto antes da leitura detalhada; a fonte documental continua autoritativa.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="block" id="busca">
+    <div class="block-head">
+      <span class="index">01</span>
+      <h2>Fluxo de busca</h2>
+      <span class="status done">implementado</span>
+    </div>
+    <div class="prose">
+      <p>O comando <span class="chip-code">docs-search search</span> lê somente documentação permitida, divide o Markdown por seções e calcula um ranking lexical determinístico.</p>
+    </div>
+    <div class="figure-wrap">
+      <figure>
+        <svg class="dgm" viewBox="0 0 1040 390" role="img" aria-label="Pipeline da busca documental, da seleção de arquivos até a saída JSON ou humana.">
+          <defs>
+            <marker id="arr-search" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrowhead accent"></path></marker>
+          </defs>
+          <rect class="node" x="32" y="52" width="196" height="72" rx="3"></rect>
+          <text class="label label-title" x="130" y="80" text-anchor="middle">Corpus seguro</text>
+          <text class="label-sub" x="130" y="102" text-anchor="middle">docs/**/*.md + raiz</text>
+          <rect class="node accent" x="306" y="52" width="196" height="72" rx="3"></rect>
+          <text class="label label-title" x="404" y="80" text-anchor="middle">Chunking</text>
+          <text class="label-sub" x="404" y="102" text-anchor="middle">headings + breadcrumbs</text>
+          <rect class="node accent" x="580" y="52" width="196" height="72" rx="3"></rect>
+          <text class="label label-title" x="678" y="80" text-anchor="middle">Ranking</text>
+          <text class="label-sub" x="678" y="102" text-anchor="middle">BM25 + pesos + frase</text>
+          <rect class="node" x="854" y="52" width="154" height="72" rx="3"></rect>
+          <text class="label label-title" x="931" y="80" text-anchor="middle">Saída</text>
+          <text class="label-sub" x="931" y="102" text-anchor="middle">humana ou JSON</text>
+          <path class="edge accent" d="M228,88 L306,88" marker-end="url(#arr-search)"></path>
+          <path class="edge accent" d="M502,88 L580,88" marker-end="url(#arr-search)"></path>
+          <path class="edge accent" d="M776,88 L854,88" marker-end="url(#arr-search)"></path>
+
+          <rect class="node" x="70" y="232" width="250" height="94" rx="3"></rect>
+          <text class="label label-title" x="195" y="258" text-anchor="middle">Incluído</text>
+          <text class="label-mono" x="195" y="281" text-anchor="middle">README · AGENTS · docs/**</text>
+          <text class="label-sub" x="195" y="305" text-anchor="middle">Markdown verificável</text>
+          <rect class="node amber" x="395" y="232" width="250" height="94" rx="3"></rect>
+          <text class="label label-title" x="520" y="258" text-anchor="middle">Excluído</text>
+          <text class="label-mono" x="520" y="281" text-anchor="middle">código · .env · skills/**</text>
+          <text class="label-sub" x="520" y="305" text-anchor="middle">sem symlinks ou segredos</text>
+          <rect class="node" x="720" y="232" width="250" height="94" rx="3"></rect>
+          <text class="label label-title" x="845" y="258" text-anchor="middle">Normalizado</text>
+          <text class="label-mono" x="845" y="281" text-anchor="middle">Unicode · acentos · tokens</text>
+          <text class="label-sub" x="845" y="305" text-anchor="middle">mesma regra em toda execução</text>
+        </svg>
+        <figcaption>O corpus é deliberadamente menor que o repositório: a busca documental não tenta substituir busca de código.</figcaption>
+      </figure>
+    </div>
+    <div class="callout"><strong>Hardening v0.2.1:</strong> linhas iniciadas por <code>#</code> dentro de fenced code com crases ou tils não alteram mais os breadcrumbs.</div>
+  </section>
+
+  <section class="block" id="evidencia">
+    <div class="block-head">
+      <span class="index">02</span>
+      <h2>Contrato de evidência</h2>
+      <span class="status done">schema v1</span>
+    </div>
+    <div class="prose">
+      <p>Cada resultado informa o suficiente para reproduzir e conferir a seleção. Score e excerpt ajudam a navegar, mas não substituem o documento original.</p>
+    </div>
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Campo</th><th>Papel</th><th>Garantia</th></tr></thead>
+        <tbody>
+          <tr><td><code>path</code> + <code>heading</code></td><td>Localiza arquivo e seção.</td><td>Breadcrumb derivado do Markdown.</td></tr>
+          <tr><td><code>line_start</code> + <code>line_end</code></td><td>Delimita a evidência.</td><td>Linhas inclusivas, começando em 1.</td></tr>
+          <tr><td><code>file_hash</code> + <code>chunk_hash</code></td><td>Detecta mudança da fonte.</td><td>BLAKE3 do conteúdo lido.</td></tr>
+          <tr><td><code>score</code> + <code>matched_terms</code></td><td>Explica o ranking lexical.</td><td>Diagnóstico, não verdade.</td></tr>
+          <tr><td><code>excerpt</code></td><td>Entrega contexto mínimo.</td><td>Limitado por caracteres.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="block" id="avaliacao">
+    <div class="block-head">
+      <span class="index">03</span>
+      <h2>Avaliação antes de complexidade</h2>
+      <span class="status done">runner ativo</span>
+    </div>
+    <div class="prose">
+      <p>O subcomando <span class="chip-code">evaluate</span> executa consultas exatas, semânticas, ambíguas e sem resposta. Cada experimento preserva seu relatório e muda uma variável por vez.</p>
+    </div>
+    <div class="figure-wrap">
+      <figure>
+        <svg class="dgm" viewBox="0 0 1040 360" role="img" aria-label="Experimento passa por corpora de desenvolvimento, critérios de aceitação e somente depois pelo gate de holdouts.">
+          <defs>
+            <marker id="arr-eval" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrowhead accent"></path></marker>
+            <marker id="arr-eval-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrowhead amber"></path></marker>
+          </defs>
+          <rect class="node" x="38" y="62" width="190" height="78" rx="3"></rect>
+          <text class="label label-title" x="133" y="92" text-anchor="middle">Hipótese</text>
+          <text class="label-sub" x="133" y="115" text-anchor="middle">uma variável isolada</text>
+          <rect class="node accent" x="300" y="62" width="220" height="78" rx="3"></rect>
+          <text class="label label-title" x="410" y="92" text-anchor="middle">Development</text>
+          <text class="label-sub" x="410" y="115" text-anchor="middle">fixture + corpora locais</text>
+          <rect class="node" x="592" y="62" width="190" height="78" rx="3"></rect>
+          <text class="label label-title" x="687" y="92" text-anchor="middle">Critérios</text>
+          <text class="label-sub" x="687" y="115" text-anchor="middle">qualidade · FP · contexto</text>
+          <rect class="node amber dashed" x="854" y="62" width="150" height="78" rx="3"></rect>
+          <text class="label label-title" x="929" y="92" text-anchor="middle">Holdout</text>
+          <text class="label-sub" x="929" y="115" text-anchor="middle">uma execução</text>
+          <path class="edge accent" d="M228,101 L300,101" marker-end="url(#arr-eval)"></path>
+          <path class="edge accent" d="M520,101 L592,101" marker-end="url(#arr-eval)"></path>
+          <path class="edge amber dashed" d="M782,101 L854,101" marker-end="url(#arr-eval-amber)"></path>
+
+          <rect class="node" x="200" y="232" width="640" height="82" rx="3"></rect>
+          <text class="label label-title" x="520" y="259" text-anchor="middle">Relatório versionado</text>
+          <text class="label-sub" x="520" y="282" text-anchor="middle">Hit@1 · Recall@5 · MRR@5 · no-answer · heading · latência · contexto</text>
+          <path class="edge" d="M410,140 L410,205 L520,205 L520,232" marker-end="url(#arr-eval)"></path>
+        </svg>
+        <figcaption>Holdouts não participam do tuning. Uma mudança só chega ao gate depois de congelar código, parâmetros e datasets.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="block" id="privacidade">
+    <div class="block-head">
+      <span class="index">04</span>
+      <h2>Separação público × privado</h2>
+      <span class="status done">isolado</span>
+    </div>
+    <div class="prose">
+      <p>O Git público contém engine, schemas, fixture sintética e baseline do próprio projeto. Avaliações de checkouts privados vivem em armazenamento local criptografado e usam apenas aliases neutros nas automações.</p>
+    </div>
+    <div class="comparison-grid">
+      <div class="figure-wrap">
+        <p class="comparison-label after">Git público</p>
+        <figure>
+          <svg class="dgm" viewBox="0 0 480 250" role="img" aria-label="Conteúdo permitido no repositório público.">
+            <rect class="node accent" x="45" y="30" width="390" height="184" rx="3"></rect>
+            <text class="label label-title" x="240" y="62" text-anchor="middle">Reprodutível e publicável</text>
+            <text class="label" x="82" y="100">✓ engine e CLI</text>
+            <text class="label" x="82" y="128">✓ schemas versionados</text>
+            <text class="label" x="82" y="156">✓ fixture sintética</text>
+            <text class="label" x="82" y="184">✓ documentação genérica</text>
+          </svg>
+          <figcaption>Sem nomes privados, paths locais ou relatórios derivados de clientes.</figcaption>
+        </figure>
+      </div>
+      <div class="figure-wrap">
+        <p class="comparison-label before">Armazenamento local</p>
+        <figure>
+          <svg class="dgm" viewBox="0 0 480 250" role="img" aria-label="Conteúdo privado mantido apenas na máquina local.">
+            <rect class="node amber" x="45" y="30" width="390" height="184" rx="3"></rect>
+            <text class="label label-title" x="240" y="62" text-anchor="middle">Privado e específico da máquina</text>
+            <text class="label" x="82" y="100">• manifest.local.json</text>
+            <text class="label" x="82" y="128">• datasets e headings</text>
+            <text class="label" x="82" y="156">• roots e fingerprints</text>
+            <text class="label" x="82" y="184">• relatórios por experimento</text>
+          </svg>
+          <figcaption>FileVault, permissões restritas, checksums e nenhum vínculo com o Git público.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="manifesto">
+    <div class="block-head">
+      <span class="index">05</span>
+      <h2>Manifesto local por máquina</h2>
+      <span class="status done">schema v1</span>
+    </div>
+    <div class="prose">
+      <p><span class="chip-code">manifest.local.json</span> associa um alias neutro ao path disponível naquele computador. Ele não é consumido automaticamente pela CLI e nunca entra no Git.</p>
+    </div>
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Campo</th><th>Exemplo neutro</th><th>Regra</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td><code>corpus-001</code></td><td>Não codifica cliente, domínio ou produto.</td></tr>
+          <tr><td><code>role</code></td><td><code>development</code></td><td>Holdout, deferred e excluded ficam bloqueados.</td></tr>
+          <tr><td><code>root</code></td><td><code>/path/local/projeto-a</code></td><td>Absoluto e específico da máquina.</td></tr>
+          <tr><td><code>queries</code></td><td><code>corpus-001/queries.json</code></td><td>Relativo ao diretório privado.</td></tr>
+          <tr><td><code>baseline_report</code></td><td><code>reports/corpus-001-baseline.json</code></td><td>Imutável; experimentos usam outra tag.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="figure-wrap">
+      <figure>
+        <svg class="dgm" viewBox="0 0 1040 280" role="img" aria-label="O mesmo alias aponta para paths diferentes em dois computadores sem sincronizar o manifesto.">
+          <defs><marker id="arr-manifest" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrowhead"></path></marker></defs>
+          <rect class="node" x="55" y="45" width="390" height="170" rx="3"></rect>
+          <text class="label label-title" x="250" y="76" text-anchor="middle">Computador A</text>
+          <text class="label-mono" x="250" y="112" text-anchor="middle">corpus-001</text>
+          <text class="label-sub" x="250" y="145" text-anchor="middle">/path/desta-maquina/projeto-a</text>
+          <rect class="node" x="595" y="45" width="390" height="170" rx="3"></rect>
+          <text class="label label-title" x="790" y="76" text-anchor="middle">Computador B</text>
+          <text class="label-mono" x="790" y="112" text-anchor="middle">corpus-001</text>
+          <text class="label-sub" x="790" y="145" text-anchor="middle">/outro/path/local/projeto-a</text>
+          <path class="edge dashed" d="M445,130 L595,130" marker-end="url(#arr-manifest)"></path>
+          <text class="edge-label" x="520" y="116" text-anchor="middle">novo manifesto</text>
+        </svg>
+        <figcaption>O alias representa a função no benchmark; o root é configuração descartável e local.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="block" id="proximos">
+    <div class="block-head">
+      <h2>Próximos passos</h2>
+    </div>
+    <div class="next-grid">
+      <div class="next-card current">
+        <p class="kicker">Agora</p>
+        <h3>Diversidade por path</h3>
+        <p>Evitar que chunks repetidos do mesmo arquivo ocupem todo o top 5, medindo limite de um ou dois resultados por path.</p>
+      </div>
+      <div class="next-card">
+        <p class="kicker">Gate</p>
+        <h3>Generalização</h3>
+        <p>Congelar a melhor configuração, executar holdouts uma vez e não retunar com seus resultados.</p>
+      </div>
+      <div class="next-card future">
+        <p class="kicker">Condicional</p>
+        <h3>FTS5 ou busca híbrida</h3>
+        <p>Adicionar persistência ou embeddings somente se benchmarks demonstrarem ganho necessário.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="status">
+    <div class="block-head">
+      <h2>Onde estamos</h2>
+    </div>
+    <div class="prose">
+      <p>O baseline lexical, o avaliador, a separação privada e o hardening de fenced code estão concluídos. A próxima hipótese isolada é diversidade por path.</p>
+    </div>
+    <div class="stepper-wrap">
+      <div class="stepper">
+        <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">1</span>Busca lexical</div></div>
+        <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">2</span>Avaliador</div></div>
+        <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">3</span>Privacidade local</div></div>
+        <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">4</span>Fenced code</div></div>
+        <div class="step wip"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">5</span>Diversidade por path</div></div>
+        <div class="step"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">6</span>Gate holdout</div></div>
+      </div>
+    </div>
+    <div class="callout"><strong>Regra de decisão:</strong> mais complexidade só entra quando melhora recuperação sem piorar abstention, contexto ou generalização.</div>
+  </section>
+</main>
+
+<footer>
+  agent-skills · docs-search — documentação e código em <code>tools/docs-search/</code>
+</footer>
+
+<script>
+  (function(){
+    var links = Array.prototype.slice.call(document.querySelectorAll('nav.toc a'));
+    var sections = links.map(function(a){ return document.querySelector(a.getAttribute('href')); });
+    function onScroll(){
+      var pos = window.scrollY + 120;
+      var current = 0;
+      for (var i = 0; i < sections.length; i++){
+        if (sections[i] && sections[i].offsetTop <= pos) current = i;
+      }
+      links.forEach(function(a, i){ a.classList.toggle('current', i === current); });
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  })();
+</script>
+</body>
+</html>

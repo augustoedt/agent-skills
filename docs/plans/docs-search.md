@@ -4,7 +4,7 @@
 
 - baseline lexical: implementado e preservado sem tuning;
 - schema de avaliação v2: implementado e validado;
-- executor e métricas: implementados; relatório v2 registra diversidade e rank bruto, com v1 arquivado;
+- executor e métricas: implementados; somente relatório v2 é suportado;
 - baseline real do `lexical-bm25-v1`: medido e preservado no relatório de referência;
 - diversidade por path: cap 1 selecionado como candidato nos corpora de desenvolvimento, ainda opt-in;
 - revisão humana dos julgamentos locais e gate de holdout: próximos passos obrigatórios;
@@ -33,7 +33,7 @@ O sistema deve responder a três perguntas antes de ganhar complexidade:
 - Não tratar score, excerpt, relatório ou índice como fonte da verdade.
 - Não adicionar SQLite, embeddings, classificador ou MCP sem comparação registrada com o baseline.
 - Não copiar thresholds entre motores ou modelos sem calibração própria.
-- Manter compatibilidade do contrato JSON; mudanças incompatíveis exigem nova versão de schema.
+- Versionar mudanças incompatíveis do contrato JSON e manter somente o schema atual enquanto não houver consumidores.
 - Atualizar juntos o runbook e `skills/search-project-docs/SKILL.md` quando o fluxo operacional mudar.
 
 ## Baseline já entregue
@@ -46,12 +46,12 @@ O sistema deve responder a três perguntas antes de ganhar complexidade:
 - [x] Contrato JSON v2 autocontido com seleção, rank bruto e hashes BLAKE3.
 - [x] Saída humana e saída JSON.
 - [x] 20 consultas de avaliação migradas para schema v2 com headings, notas e tags.
-- [x] Parser/validador compatível com schemas v1 e v2.
+- [x] Parser/validador estrito para schema v2.
 - [x] Fixture documental estável e versionada `stable-v1`, separada do corpus real.
-- [x] `fmt`, `clippy` e 37 testes.
+- [x] `fmt`, `clippy` e 42 testes.
 - [x] Instalador compatível com Rust gerenciado por `asdf`.
 - [x] Skill e runbook com preflight obrigatório do binário.
-- [x] Baseline real sem tuning, com relatório JSON v1 e análise por categoria.
+- [x] Baseline atual sem tuning, com relatório JSON v2 e análise por categoria.
 
 ---
 
@@ -64,7 +64,7 @@ busca durante a primeira medição.
 
 ### 1.1 Versionar o schema das consultas — concluído
 
-O dataset foi migrado para schema v2 sem perder leitura do schema v1. Cada consulta continua tendo:
+O dataset usa somente schema v2; versões diferentes são rejeitadas antes da avaliação. Cada consulta tem:
 
 - `id` único e estável;
 - `category`: `exact`, `semantic`, `ambiguous` ou `no_answer`;
@@ -104,8 +104,8 @@ identificação reproduzível do estado avaliado.
 
 ### 1.3 Implementar o executor em Rust
 
-**Status:** concluído no `docs-search` v0.2.0, com saída humana/JSON, `--output` explícito e
-continuação após falhas individuais.
+**Status:** concluído, com saída humana/JSON, `--output` explícito e continuação após falhas
+individuais.
 
 Adicionar um subcomando no mesmo binário, evitando scripts que reimplementem o motor:
 
@@ -134,7 +134,7 @@ confirmar `command -v docs-search` antes da invocação.
 
 ### 1.4 Definir as métricas sem ambiguidade
 
-**Status:** concluído no relatório de avaliação v1; testes cobrem agregação, deduplicação de paths,
+**Status:** concluído no relatório de avaliação v2; testes cobrem agregação, deduplicação de paths,
 no-answer e percentis.
 
 Para métricas por path, resultados repetidos do mesmo arquivo devem ser deduplicados preservando a
@@ -203,8 +203,8 @@ caracteres usado pelo CLI.
 
 ### 1.5 Versionar o relatório
 
-**Status:** contrato v1 preservado em `evaluation/report-v1.schema.json`; o contrato atual v2 está
-formalizado em `evaluation/report.schema.json`.
+**Status:** somente o contrato v2 é suportado e formalizado em
+`evaluation/report.schema.json`.
 
 O JSON de avaliação deve ter schema próprio e independente do schema de busca. Campos mínimos:
 
@@ -268,17 +268,13 @@ Não iniciar SQLite ou embeddings até que:
 
 ## Etapa 2 — ampliar o benchmark e registrar o baseline confiável
 
-### 2.1 Executar a primeira medição sem tuning — concluído
+### 2.1 Executar a medição sem tuning — concluído
 
-O relatório `tools/docs-search/evaluation/reports/agent-skills-lexical-bm25-v1-baseline.json`
-preserva a execução sobre o commit fonte `de77945`: 20/20 consultas sem falha, Hit@1 0,647059,
-Recall@5 macro 0,588235,
-Recall@5 micro 0,619048, MRR@5 0,647059, zero falsos positivos em três casos no-answer e 18.326
-caracteres de contexto. A análise por categoria está em
+O relatório `tools/docs-search/evaluation/reports/agent-skills-lexical-bm25-v1-unlimited-v2.json`
+é a medição corrente sem diversidade. Ele usa somente o contrato v2 e serve como referência para os
+relatórios cap 1 e cap 2 gerados no mesmo estado do corpus. Artefatos de contratos antigos não são
+mantidos neste projeto em desenvolvimento. A análise está em
 `tools/docs-search/evaluation/reports/README.md`.
-
-Rodar a versão atual sem alterar pesos, stopwords ou cobertura mínima. Guardar o relatório como
-referência imutável do motor `lexical-bm25-v1`.
 
 Analisar por categoria, não apenas o total. Em especial:
 
@@ -319,7 +315,7 @@ produzir métricas artificialmente altas ou instáveis.
 
 ### Gate da Etapa 2
 
-- [x] baseline original preservado sem tuning;
+- [x] baseline atual medido sem tuning no contrato v2;
 - [ ] benchmark ampliado com cobertura suficiente de no-answer e ambiguidade;
 - [x] segundo corpus medido localmente sem versionar metadados privados;
 - [x] limitações lexicais documentadas com exemplos concretos;
@@ -347,11 +343,10 @@ Adicionar cobertura para:
 - [x] linha iniciada por `#` dentro de bloco cercado, sem alterar breadcrumbs;
 - instalador quando o binário não fica no `PATH`.
 
-O item de fenced code foi concluído no v0.2.1 para cercas de crases e tils, incluindo fechamento com
-marcador compatível, comprimento suficiente, indentação de até três espaços e fence não encerrada.
-No corpus público real, headings esperados encontrados passaram de 4/17 para 9/17; métricas primárias
-ficaram idênticas e o contexto total subiu de 18.326 para 18.927 caracteres. Fixture e corpora locais
-de desenvolvimento não regrediram nas métricas primárias; holdouts não foram executados.
+O item de fenced code foi concluído para cercas de crases e tils, incluindo fechamento com marcador
+compatível, comprimento suficiente, indentação de até três espaços e fence não encerrada. A fixture
+e os testes focados cobrem esses casos; os relatórios atuais registram o efeito no corpus público.
+Holdouts não foram executados.
 
 ### 3.2 Avaliar melhorias lexicais isoladamente
 
@@ -371,11 +366,10 @@ escondendo regressão relevante em outra.
 
 ### 3.3 Diversidade por path — candidato medido
 
-O `docs-search 0.3.0` introduz `--max-results-per-path N` como seleção opt-in após o ranking BM25. O
+O `docs-search 0.5.0` oferece `--max-results-per-path N` como seleção opt-in após o ranking BM25. O
 seletor pode avançar além dos cinco primeiros chunks brutos, limita contribuições repetidas de um
-path e devolve ranks finais contíguos. O relatório v2 preserva `raw_rank`; desde o `docs-search
-0.4.0`, a resposta de busca v2 também expõe `selection.max_results_per_path` e `raw_rank`. A quebra
-do contrato de busca foi direta porque não havia consumidores; o comportamento sem flag não muda.
+path e devolve ranks finais contíguos. Relatório e resposta de busca v2 preservam `raw_rank`; a
+resposta também expõe `selection.max_results_per_path`. O comportamento sem flag não muda.
 
 Foram comparados ilimitado, cap 1 e cap 2 na fixture e no corpus público. Cap 1:
 

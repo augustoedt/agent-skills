@@ -363,7 +363,7 @@
   <section class="block" id="visao-geral">
     <div class="block-head">
       <h2>Visão geral</h2>
-      <span class="status done">v0.4.0</span>
+      <span class="status done">v0.5.0</span>
     </div>
     <div class="prose">
       <p><span class="chip-code">docs-search</span> transforma documentação Markdown em uma lista curta de evidências rastreáveis. O agente não recebe um resumo opaco: recebe arquivo, seção, linhas, hashes e trecho para conferir a fonte original.</p>
@@ -447,7 +447,7 @@
         <figcaption>O corpus é deliberadamente menor que o repositório: a busca documental não tenta substituir busca de código.</figcaption>
       </figure>
     </div>
-    <div class="callout"><strong>Hardening v0.2.1:</strong> linhas iniciadas por <code>#</code> dentro de fenced code com crases ou tils não alteram mais os breadcrumbs.</div>
+    <div class="callout"><strong>Chunker atual:</strong> linhas iniciadas por <code>#</code> dentro de fenced code com crases ou tils não alteram os breadcrumbs.</div>
   </section>
 
   <section class="block" id="evidencia">
@@ -520,7 +520,7 @@
         <thead><tr><th>Corpus</th><th>Configuração</th><th>Recall@5 macro</th><th>Contexto</th></tr></thead>
         <tbody>
           <tr><td>Fixture estável</td><td>ilimitado → cap 1</td><td class="new">0,617647 → 0,676471</td><td class="new">7.453 → 3.995</td></tr>
-          <tr><td>Corpus público</td><td>ilimitado → cap 1</td><td>0,588235 → 0,588235</td><td class="new">19.667 → 14.929</td></tr>
+          <tr><td>Corpus público</td><td>ilimitado → cap 1</td><td>0,588235 → 0,588235</td><td class="new">18.626 → 13.951</td></tr>
           <tr><td>Validação local</td><td>fora do Git</td><td>métricas não publicadas</td><td>holdouts bloqueados</td></tr>
         </tbody>
       </table>
@@ -572,7 +572,7 @@
     <div class="block-head">
       <span class="index">05</span>
       <h2>Manifesto local por máquina</h2>
-      <span class="status done">schema v1</span>
+      <span class="status done">manifest v1 atual</span>
     </div>
     <div class="prose">
       <p><span class="chip-code">manifest.local.json</span> associa um alias neutro ao path disponível naquele computador. Ele não é consumido automaticamente pela CLI e nunca entra no Git.</p>

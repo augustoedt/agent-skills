@@ -46,9 +46,9 @@ pub fn parse_evaluation_set(input: &str) -> Result<EvaluationSet> {
 }
 
 pub fn validate_evaluation_set(set: &EvaluationSet) -> Result<()> {
-    if !matches!(set.schema_version, 1 | EVALUATION_SCHEMA_VERSION) {
+    if set.schema_version != EVALUATION_SCHEMA_VERSION {
         bail!(
-            "unsupported evaluation schema_version {}; expected 1 or {}",
+            "unsupported evaluation schema_version {}; expected {}",
             set.schema_version,
             EVALUATION_SCHEMA_VERSION
         );
@@ -177,23 +177,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn accepts_schema_v1_for_runner_compatibility() {
-        let input = r#"{
-          "schema_version": 1,
-          "corpus": "fixture",
-          "queries": [{
-            "id": "exact-01",
-            "category": "exact",
-            "query": "where is the runbook",
-            "expected_paths": ["README.md"]
-          }]
-        }"#;
-        let set = parse_evaluation_set(input).expect("schema v1 should remain readable");
-        assert_eq!(set.schema_version, 1);
-        assert!(set.queries[0].expected_headings.is_empty());
-    }
-
-    #[test]
     fn rejects_duplicate_ids() {
         let input = r#"{
           "schema_version": 2,
@@ -244,7 +227,11 @@ mod tests {
     fn rejects_invalid_structural_and_metadata_fields() {
         let cases = [
             (
-                "unsupported schema",
+                "unsupported old schema",
+                r#"{"schema_version":1,"corpus":"fixture","queries":[{"id":"exact-01","category":"exact","query":"one","expected_paths":["README.md"]}]}"#,
+            ),
+            (
+                "unsupported future schema",
                 r#"{"schema_version":3,"corpus":"fixture","queries":[{"id":"exact-01","category":"exact","query":"one","expected_paths":["README.md"]}]}"#,
             ),
             (

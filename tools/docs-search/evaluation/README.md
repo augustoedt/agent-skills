@@ -34,8 +34,7 @@ must also be listed in `expected_paths`.
 - Answerable categories require at least one expected path.
 - `no_answer` requires empty expected paths and no expected headings.
 - Empty notes, tags, headings, and disabled reasons are invalid.
-- Schema v1 remains readable by the Rust parser so the future runner can report a deliberate
-  migration error or upgrade path; the canonical dataset uses schema v2.
+- Only schema v2 is accepted; older or future versions fail before evaluation starts.
 
 ## Corpora
 
@@ -91,9 +90,8 @@ that baseline latency includes corpus I/O for every query.
 `report.schema.json` formalizes the current contract independently from search-response schema v2
 and query-dataset schema v2. Report v2 records `config.max_results_per_path` and
 `results[].raw_rank` so path-diversity experiments remain reproducible. Search-response schema v2 is
-formalized separately in `search-response.schema.json`. The report v1 schema remains in
-`report-v1.schema.json` only because historical evaluation baselines already use it. The report
-records:
+formalized separately in `search-response.schema.json`. No legacy report schema is supported. The
+report records:
 
 - tool version, engine, dataset hash and query schema version;
 - logical corpus name, caller-provided root, file/chunk counts, and a reproducible fingerprint;
@@ -105,7 +103,7 @@ records:
 `--output <path>` is the only way the runner writes a report. Use a relative `--root` when the JSON
 will be committed so it does not contain a machine-specific absolute path. Latency is intentionally
 volatile and should not be snapshot-compared byte for byte. The first real-corpus baseline is
-[`reports/agent-skills-lexical-bm25-v1-baseline.json`](reports/agent-skills-lexical-bm25-v1-baseline.json).
+[`reports/agent-skills-lexical-bm25-v1-unlimited-v2.json`](reports/agent-skills-lexical-bm25-v1-unlimited-v2.json).
 
 ## Private and machine-local corpora
 
@@ -190,5 +188,5 @@ encrypted mounted volume adds isolation while preserving the same manifest contr
 ## Change policy
 
 Do not change a query merely to make a ranking experiment pass. Every relevance change needs a
-human-readable reason. Keep IDs stable so reports remain comparable. Schema-breaking changes must
-increment `schema_version` and preserve an explicit compatibility decision in code and docs.
+human-readable reason. Keep IDs stable so reports remain comparable. Schema-breaking changes must increment `schema_version`; unsupported older versions fail explicitly
+instead of keeping compatibility code.

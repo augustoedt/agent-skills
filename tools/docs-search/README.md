@@ -6,8 +6,8 @@ confira a fonte original antes de alterar código.
 
 ## Estado atual
 
-A versão 0.4.0 mantém o baseline lexical sem banco e sem embeddings, publica a resposta de busca v2
-com diversidade auditável e preserva o hardening do chunking de Markdown:
+A versão 0.5.0 mantém o baseline lexical sem banco e sem embeddings e usa somente os contratos
+atuais: resposta de busca v2, dataset de consultas v2 e relatório v2:
 
 - corpus: `docs/**/*.md` e, na raiz, `README.md`, `CLAUDE.md`, `AGENTS.md` e `pi-warden.md`;
 - chunking por headings Markdown, preservando breadcrumbs e ignorando headings aparentes dentro de
@@ -60,8 +60,7 @@ erros são escritos em stderr e retornam exit code diferente de zero. O contrato
 As linhas são inclusivas e começam em 1. `heading` pode ser `null` para texto anterior ao primeiro
 heading. `matched_terms` contém termos normalizados, sem acentos e sem stopwords comuns. O cap
 experimental é opt-in; quando usado, o output mantém ranks finais contíguos, registra o rank bruto
-no JSON e também o mostra no modo humano quando ele difere. Não há contrato de busca v1 arquivado,
-pois a migração foi deliberadamente direta e não havia consumidores.
+no JSON e também o mostra no modo humano quando ele difere.
 
 Para executar o benchmark versionado:
 
@@ -77,9 +76,9 @@ docs-search evaluate \
 
 O cap é opcional; omita-o para reproduzir o ranking original. O relatório atual usa contrato
 independente `schema_version: 2`, formalizado em `evaluation/report.schema.json`, e registra
-`max_results_per_path`, o rank final e o rank bruto. O schema histórico v1 permanece em
-`evaluation/report-v1.schema.json`. Sem `--json`, o comando mostra um resumo humano. `--output
-<arquivo>` grava explicitamente o relatório JSON; nada é persistido automaticamente. O comando
+`max_results_per_path`, o rank final e o rank bruto. Sem `--json`, o comando mostra um resumo
+humano. `--output <arquivo>` grava explicitamente o relatório JSON; nada é persistido
+automaticamente. O comando
 continua após falhas individuais, inclui o erro no caso correspondente e termina com status não
 zero se alguma consulta falhar. Para relatórios versionados, execute com um `--root` relativo para
 não registrar paths absolutos específicos da máquina. Avaliações derivadas de projetos privados não
@@ -95,11 +94,11 @@ cargo clippy --all-targets --all-features -- -D warnings
 cargo test
 ```
 
-O conjunto inicial de avaliação está em `evaluation/queries.json`. O schema v2 é documentado em
-`evaluation/README.md` e formalizado por `evaluation/queries.schema.json`; o parser Rust também
-mantém leitura do schema v1. As 20 consultas incluem casos exatos, semânticos, ambíguos e sem
+O conjunto inicial de avaliação está em `evaluation/queries.json`. Somente o schema v2 é aceito; ele
+está documentado em `evaluation/README.md` e formalizado por
+`evaluation/queries.schema.json`. As 20 consultas incluem casos exatos, semânticos, ambíguos e sem
 resposta, com headings esperados, notas e tags diagnósticas. A fixture estável e versionada
-`evaluation/fixtures/stable-v1` sustenta testes de regressão. O primeiro baseline do corpus real,
-sem tuning, está preservado e analisado em [`evaluation/reports/`](evaluation/reports/README.md).
-O benchmark ainda precisa de mais casos ambíguos/no-answer e de um segundo corpus antes de
-justificar SQLite FTS5, embeddings ou um classificador/router.
+`evaluation/fixtures/stable-v1` sustenta testes de regressão. As medições atuais do corpus real e da
+fixture estão analisadas em [`evaluation/reports/`](evaluation/reports/README.md). O benchmark ainda
+precisa de mais casos ambíguos/no-answer e do gate de holdout antes de justificar SQLite FTS5,
+embeddings ou um classificador/router.

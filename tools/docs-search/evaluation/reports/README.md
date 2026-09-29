@@ -1,70 +1,23 @@
 # Relatórios de avaliação
 
-Esta pasta preserva medições derivadas e reproduzíveis do `docs-search`. Os documentos Markdown do
-projeto continuam sendo a fonte da verdade; relatórios registram apenas o comportamento de uma
-versão específica do motor sobre um estado identificado do corpus e do dataset.
+Esta pasta contém somente relatórios compatíveis com o contrato atual do `docs-search`. Os Markdown
+do projeto continuam sendo a fonte da verdade; relatórios são artefatos derivados e reconstruíveis.
 
-## Baseline do corpus real
+## Contratos atuais
 
-`agent-skills-lexical-bm25-v1-baseline.json` é a primeira medição sem tuning do corpus real
-`agent-skills`. Ela foi produzida pelo `docs-search 0.2.0` sobre o estado anterior à documentação do
-próprio resultado, no commit fonte `de77945`, com:
-
+- ferramenta: `docs-search 0.5.0`;
 - engine: `lexical-bm25-v1`;
-- dataset: schema v2, hash
-  `7c068e714df8b59ada8af85a235522b41f77eb23860a463ef30ac3fd6d62485f`;
-- corpus: 7 arquivos, 87 chunks, fingerprint
-  `2efca8740d95cebe6829749cb21c17140d3e5647ac0f8279a3edc66aece56dd4`;
-- configuração: `limit=5`, `max_excerpt_chars=1200`;
-- execução: varredura completa do corpus a cada consulta.
+- resposta de busca: schema v2;
+- dataset de consultas: schema v2;
+- relatório de avaliação: schema v2.
 
-### Resultado global
+Schemas antigos e relatórios incompatíveis não são mantidos enquanto o projeto está em
+desenvolvimento e sem consumidores externos.
 
-| Métrica | Resultado |
-| --- | ---: |
-| Consultas executadas | 20/20 |
-| Hit@1 | 0,647059 |
-| Recall@5 macro | 0,588235 |
-| Recall@5 micro | 0,619048 |
-| MRR@5 | 0,647059 |
-| Falsos positivos no-answer | 0/3 |
-| Latência média | 22,009 ms |
-| Latência p50 / p95 | 22,108 / 23,199 ms |
-| Caracteres de contexto | 18.326 |
-| Contexto médio / p95 | 916,3 / 2.439 caracteres |
+## Comparação de diversidade por path
 
-Latência é uma observação da máquina da execução, não um snapshot determinístico. Qualidade,
-configuração, hashes e evidências por consulta são os campos primários para comparação.
-
-### Resultado por categoria
-
-| Categoria | Casos | Hit@1 | Recall@5 macro | Recall@5 micro | MRR@5 |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| exact | 8 | 0,875000 | 0,812500 | 0,800000 | 0,875000 |
-| semantic | 6 | 0,166667 | 0,166667 | 0,166667 | 0,166667 |
-| ambiguous | 3 | 1,000000 | 0,833333 | 0,800000 | 1,000000 |
-| no_answer | 3 | n/a | n/a | n/a | n/a |
-
-### Diagnóstico inicial
-
-- O lexical respondeu bem aos casos exatos e ambíguos, mas encontrou somente 1 dos 6 casos
-  semânticos (`semantic-03`).
-- Houve seis misses path-level: `exact-05`, `semantic-01`, `semantic-02`, `semantic-04`,
-  `semantic-05` e `semantic-06`.
-- `exact-08` e `ambiguous-03` recuperaram apenas um dos dois paths esperados no top 5.
-- Os três casos no-answer retornaram vazio, mas essa amostra ainda é pequena demais para uma
-  conclusão forte sobre abstention.
-- Somente 4 das 17 consultas respondíveis recuperaram um heading esperado. Parte dessa lacuna vem
-  da regressão conhecida em que uma linha `# ...` dentro de bloco cercado altera breadcrumbs do
-  `README.md`; parte vem de seção incorreta ou miss completo.
-- O contraste entre `exact` e `semantic` registra uma limitação lexical concreta, mas ainda não
-  justifica embeddings sem ampliar casos ambíguos/no-answer e medir um segundo corpus.
-
-## Experimento de diversidade por path
-
-O `docs-search 0.3.0` comparou ranking ilimitado, cap 1 e cap 2 no mesmo estado de cada corpus. O
-relatório v2 distingue `rank` final de `raw_rank` BM25. Naquela execução, o JSON de busca ainda era
-v1; o `docs-search 0.4.0` passou a expor esses campos na resposta de busca v2.
+As três configurações foram executadas sobre o mesmo dataset e estado de cada corpus. `rank` é a
+posição final; `raw_rank` preserva a posição BM25 antes da seleção por path.
 
 ### Fixture estável
 
@@ -76,28 +29,31 @@ v1; o `docs-search 0.4.0` passou a expor esses campos na resposta de busca v2.
 
 ### Corpus público atual
 
+Corpus medido: 7 arquivos e 88 chunks.
+
 | Configuração | Hit@1 | Recall@5 macro | Recall@5 micro | MRR@5 | FP no-answer | Contexto |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| ilimitado | 0,647059 | 0,588235 | 0,619048 | 0,647059 | 0/3 | 19.667 |
-| cap 1 | 0,647059 | 0,588235 | 0,619048 | 0,647059 | 0/3 | 14.929 |
-| cap 2 | 0,647059 | 0,588235 | 0,619048 | 0,647059 | 0/3 | 15.483 |
+| ilimitado | 0,647059 | 0,588235 | 0,619048 | 0,647059 | 0/3 | 18.626 |
+| cap 1 | 0,647059 | 0,588235 | 0,619048 | 0,647059 | 0/3 | 13.951 |
+| cap 2 | 0,647059 | 0,588235 | 0,619048 | 0,647059 | 0/3 | 14.442 |
 
-Avaliações adicionais de desenvolvimento foram executadas somente no ambiente privado. Quantidade
-de corpora, métricas e direção dos resultados permanecem fora do Git. Nenhum holdout foi executado.
+No ranking ilimitado, casos exatos tiveram Hit@1 0,875000; semânticos, 0,166667; ambíguos,
+1,000000. A lacuna semântica permanece mensurável, mas não justifica busca híbrida antes de ampliar
+casos ambíguos/no-answer e concluir o gate de holdout.
 
-**Decisão de desenvolvimento:** cap 1 é a configuração candidata porque melhorou a fixture e usou
-menos contexto que cap 2 nos dois corpora públicos apresentados acima. Ela ainda não é default da
-busca. Antes do gate de holdout, os julgamentos locais pendentes devem ser revisados e a configuração
-deve ser congelada sem observar resultados reservados.
+Avaliações adicionais de desenvolvimento são executadas somente no ambiente privado. Quantidade de
+corpora, métricas, queries, paths, fingerprints e direção dos resultados permanecem fora do Git.
+Nenhum holdout foi executado.
 
-Os relatórios públicos v2 são imutáveis e identificam cada configuração no nome. A fixture reutiliza
-o dataset canônico, portanto `corpus.name` permanece `agent-skills`; nome do arquivo, root e
-fingerprint distinguem a execução sintética. O baseline v1 original continua preservado e deve ser
-validado com `../report-v1.schema.json`; relatórios v2 usam `../report.schema.json`.
+**Decisão de desenvolvimento:** cap 1 continua candidato porque melhora a fixture e usa menos
+contexto que cap 2 nos dois corpora públicos. Ele permanece opt-in até o gate de holdout.
+
+A fixture reutiliza o dataset canônico, portanto `corpus.name` permanece `agent-skills`; nome do
+arquivo, root e fingerprint distinguem a execução sintética.
 
 ## Reprodução
 
-A partir de `tools/docs-search`, gere um relatório novo fora do baseline preservado:
+A partir de `tools/docs-search`:
 
 ```bash
 cargo run --quiet -- evaluate \
@@ -105,9 +61,9 @@ cargo run --quiet -- evaluate \
   --queries evaluation/queries.json \
   --limit 5 \
   --max-excerpt-chars 1200 \
-  --output /tmp/agent-skills-lexical-bm25-v1.json
+  --output evaluation/reports/agent-skills-lexical-bm25-v1-unlimited-v2.json
 ```
 
-O relatório deve passar em `../report.schema.json`. Mudanças posteriores do corpus alteram seu
-fingerprint, e latências podem variar. Não sobrescrever o baseline: novos motores, datasets,
-configurações ou estados relevantes recebem outro arquivo e uma justificativa explícita.
+Use `--max-results-per-path 1` ou `2` para as outras configurações. Todo relatório deve passar em
+`../report.schema.json`. Um novo estado relevante substitui os relatórios correntes de forma
+explícita; não há compatibilidade com contratos anteriores.

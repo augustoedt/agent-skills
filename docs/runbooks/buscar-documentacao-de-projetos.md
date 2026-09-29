@@ -91,7 +91,7 @@ cargo run -- evaluate \
 ```
 
 O cap é opt-in e não deve ser aplicado silenciosamente à busca normal. Relatórios v2 registram o
-rank final e o rank BM25 bruto; baselines v1 continuam vinculados ao schema arquivado.
+rank final e o rank BM25 bruto; outras versões de contrato não são aceitas.
 
 ## Não fazer
 

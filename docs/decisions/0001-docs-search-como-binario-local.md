@@ -24,5 +24,4 @@ continuam autoritativos e o banco é sempre reconstruível.
 - o contrato CLI pode ser testado sem depender de um protocolo ou provedor;
 - instalação e releases do binário precisam ser mantidos;
 - busca semântica não existe na primeira etapa;
-- MCP fica adiado até haver necessidade concreta de processo residente ou clientes sem acesso a
-  CLI.
+- integrações adicionais não fazem parte desta decisão; a interface pública permanece a CLI.

@@ -10,9 +10,9 @@
 - julgamentos de desenvolvimento e holdout: revisados diretamente contra as fontes e congelados;
 - gate de holdout: concluído uma única vez e fechado; holdouts consumidos não orientam retuning;
 - prefixo morfológico limitado 7/4: testado duas vezes em development e rejeitado sem ajustes;
-- SQLite/FTS5: adiado até ampliar o benchmark e uma lacuna medida justificar persistência;
-- embeddings/RRF: bloqueado até existir uma lacuna semântica comprovada;
-- MCP: fora do escopo enquanto a CLI atender os clientes.
+- bake-off de engines: aprovado como próximo ciclo, dividido em fases e ainda não implementado;
+- variantes planejadas: BM25 direto, cache SQLite com BM25, FTS5, embeddings locais e híbrido por RRF;
+- adoção: proibida antes da comparação em development e de um novo gate com holdouts frescos.
 
 ## Objetivo
 
@@ -33,7 +33,7 @@ O sistema deve responder a três perguntas antes de ganhar complexidade:
 - Manter avaliações de projetos privados fora do Git, com IDs e roots em manifesto local por máquina.
 - Preservar path, heading, linhas e hashes para conferir a fonte original.
 - Não tratar score, excerpt, relatório ou índice como fonte da verdade.
-- Não adicionar SQLite, embeddings, classificador ou MCP sem comparação registrada com o baseline.
+- Não adotar SQLite, FTS5, embeddings, RRF ou outro motor sem comparação registrada com o baseline.
 - Não copiar thresholds entre motores ou modelos sem calibração própria.
 - Versionar mudanças incompatíveis do contrato JSON e manter somente o schema atual enquanto não houver consumidores.
 - Atualizar juntos o runbook e `skills/search-project-docs/SKILL.md` quando o fluxo operacional mudar.
@@ -447,207 +447,219 @@ Uma mudança lexical só entra quando:
 - não aumenta contexto retornado de forma desproporcional;
 - mantém determinismo e contrato JSON.
 
-Se o lexical atingir qualidade suficiente, registrar a decisão e não implementar embeddings.
+O bake-off posterior pode concluir que o lexical já é suficiente; nesse caso, preservar os
+protótipos apenas como evidência e não adotar a complexidade adicional.
 
 ---
 
-## Etapa 4 — índice SQLite e FTS5
+## Etapa 4 — bake-off experimental de engines
 
-### Pré-condição
+### Objetivo e estado
 
-Etapas 1 e 2 concluídas. Implementar apenas se leitura repetida do corpus tiver custo relevante ou
-se FTS5 demonstrar benefício mensurável.
+Comparar alternativas de armazenamento e recuperação sobre a mesma base documental antes de
+escolher qualquer arquitetura nova. Esta etapa está **planejada e ainda não foi implementada**. O
+`lexical-bm25-v1` continua sendo o default durante todo o bake-off.
 
-### 4.1 Localização e ciclo de vida
+As cinco variantes são:
 
-Usar um SQLite por raiz canônica de projeto em cache externo ao repositório, por exemplo:
+| ID experimental | Variante | Variável isolada |
+| --- | --- | --- |
+| `lexical-bm25-v1` | leitura direta + BM25 atual | baseline congelado |
+| `sqlite-cache-bm25-v1` | chunks em SQLite + mesmo BM25 | persistência e custo de leitura |
+| `fts5-v1` | recuperação lexical por FTS5 | motor lexical indexado |
+| `local-embeddings-v1` | recuperação vetorial local | similaridade semântica |
+| `hybrid-rrf-v1` | FTS5 + embeddings por RRF | fusão dos dois rankings |
+
+Nenhuma variante experimental será instalada globalmente, conectada ao fluxo padrão ou mantida
+como implementação de produção antes da decisão final.
+
+### Fase 4.0 — protocolo e freeze
+
+Antes de escrever as engines:
+
+- congelar fixture, corpora de development, datasets, julgamentos, revisões e fingerprints;
+- registrar hashes e proibir entrada ou saída de corpus durante o bake-off;
+- bloquear explicitamente todos os holdouts já consumidos;
+- fixar chunking, normalização, corpus permitido, limite, excerpt e contrato de evidência;
+- escolher e congelar um único modelo local de embeddings por licença, idioma, tamanho e suporte;
+- fixar parâmetros do FTS5, distância vetorial, profundidade das listas e constante `k` do RRF;
+- definir antes da execução os limites de qualidade e custo que eliminam uma variante;
+- criar tags imutáveis para protocolo, engine, dataset, relatório e rodada.
+
+O primeiro entregável será um manifesto privado de freeze e um contrato de relatório de bake-off.
+Esse contrato será independente da resposta de busca v2 e deverá representar custos que o relatório
+de avaliação v2 atual não contém.
+
+### Fase 4.1 — harness comum e instrumentação
+
+Criar uma fronteira interna de engine usada por todas as variantes, sem alterar o comportamento da
+CLI padrão. O harness deve executar exatamente as mesmas queries e registrar:
+
+- Hit@1, Recall@5 macro/micro e MRR@5, globais e por categoria;
+- falsos positivos absolutos e taxa de `no_answer`;
+- headings corretos, resultados por query e contexto total/médio/p95;
+- latência de startup, leitura/index lookup, ranking e total, separadamente;
+- tempo de build completo e atualização incremental do índice;
+- pico de RAM e tamanho em disco;
+- erros, fallback, versão da engine e configuração integral.
+
+Cada variante executará duas vezes sobre os mesmos inputs congelados. Rankings devem ser idênticos;
+campos voláteis, como tempos, serão comparados por estatística e não por igualdade byte a byte.
+
+### Fase 4.2 — cache SQLite com BM25 preservado
+
+Implementar o braço `sqlite-cache-bm25-v1` sem mudar tokenização, frequências, IDF, fórmula, pesos,
+desempate ou seleção. O objetivo é isolar o efeito de persistência.
+
+O banco ficará fora do repositório:
 
 ```text
 ${XDG_CACHE_HOME:-~/.cache}/docs-search/<hash-da-raiz>/index.sqlite3
 ```
 
-Nunca transformar o banco em fonte da verdade nem gravá-lo dentro de `docs/`. Banco ausente,
-corrompido ou incompatível deve ser reconstruído ou provocar fallback explícito para leitura direta.
+Ele deve ser descartável e reconstruível. A fase cobre criação, rebuild, atualização transacional,
+arquivo novo/alterado/removido/renomeado, schema incompatível, corrupção, concorrência básica e
+fallback explícito. Resultados não voláteis devem equivaler ao baseline direto.
 
-### 4.2 Schema mínimo
+### Fase 4.3 — recuperação FTS5
 
-- `metadata`: schema, engine, versão da ferramenta, raiz e parâmetros do chunker;
-- `files`: path, hash, tamanho e metadados necessários para sincronização;
-- `chunks`: arquivo, heading, linhas, texto e chunk hash;
-- `chunks_fts`: tabela virtual FTS5 ligada aos chunks;
-- índices auxiliares apenas quando medição justificar.
+Implementar `fts5-v1` sobre os mesmos chunks e metadados. Queries do usuário nunca serão tratadas
+como sintaxe FTS bruta. O relatório deve distinguir ganho de latência de qualquer mudança de
+qualidade e preservar path, heading, linhas e hashes verificáveis.
 
-### 4.3 Sincronização incremental
+### Fase 4.4 — embeddings locais
 
-- comparar hashes antes de reprocessar;
-- inserir arquivos novos;
-- atualizar conteúdo alterado;
-- remover arquivos apagados;
-- tratar rename como remoção + inclusão ou identificá-lo por hash;
-- executar mudanças em transação;
-- invalidar tudo quando schema ou parâmetros incompatíveis mudarem;
-- definir comportamento concorrente entre leitores e sincronizador.
+Implementar `local-embeddings-v1` com o único modelo congelado na Fase 4.0. Registrar id, versão,
+licença, dimensão, normalização, hash, requisitos de CPU/RAM e algoritmo de distância. Pesos ficam
+fora do banco; vetores incluem modelo e hash do chunk para invalidação reproduzível.
 
-### 4.4 CLI e fallback
+Não haverá seleção de modelo ou ajuste de threshold depois de observar os resultados congelados.
+Uma nova configuração exigirá outro protocolo e outra tag.
 
-Adicionar comandos explícitos, por exemplo:
+### Fase 4.5 — híbrido por RRF
 
-```text
-docs-search index --root <projeto>
-docs-search index --root <projeto> --rebuild
-docs-search status --root <projeto>
-```
+Implementar `hybrid-rrf-v1` como composição de FTS5 e embeddings, sem um terceiro mecanismo oculto
+de score. O relatório registra constante `k`, profundidade das listas, contribuição de cada ranking
+e candidatos antes da fusão. A lógica de RRF terá testes com rankings sintéticos antes da inferência
+real.
 
-`search` deve preservar o contrato de evidência. O campo `engine` pode mudar para identificar FTS5,
-mas `schema_version: 2` só permanece se os campos continuarem compatíveis.
+### Fase 4.6 — comparação em development
 
-### 4.5 Testes
+Comparar as variantes em pares que preservem interpretação:
 
-- criação e rebuild;
-- arquivo novo, alterado, removido e renomeado;
-- schema incompatível;
-- banco corrompido;
-- concorrência básica;
-- equivalência de evidência com leitura direta;
-- cache nunca sobrepondo documento atual;
-- fallback explícito.
+1. SQLite + BM25 versus leitura direta: efeito de persistência;
+2. FTS5 versus SQLite + BM25: efeito do motor lexical;
+3. embeddings versus FTS5: diferença entre recuperação vetorial e lexical;
+4. híbrido versus FTS5 e embeddings isolados: contribuição da fusão.
+
+A seleção será por fronteira de Pareto, sem score composto opaco. São guardas eliminatórias:
+
+- regressão além do limite pré-registrado em qualidade geral, exata ou ambígua;
+- qualquer piora proibida de `no_answer`;
+- evidência sem path, heading, linhas ou hashes verificáveis;
+- ranking não determinístico;
+- contexto, latência, RAM ou disco acima do orçamento congelado;
+- índice stale apresentado como fonte atual;
+- falha de rebuild ou fallback.
+
+Resultados negativos também serão preservados. Uma variante só vira finalista se entregar ganho
+relevante de recuperação ou custo que não seja dominado por uma opção mais simples.
 
 ### Gate da Etapa 4
 
-- qualidade igual ou superior ao melhor lexical direto;
-- falso positivo de no-answer não piora;
-- hashes, paths e linhas continuam verificáveis;
-- ganho de latência relevante no corpus maior;
-- rebuild e fallback testados;
-- banco comprovadamente descartável.
-
-Sem ganho mensurável, manter leitura direta e encerrar esta etapa sem adoção.
+- protocolo, inputs e parâmetros congelados antes do código experimental;
+- cinco variantes executadas duas vezes em todo o conjunto de development;
+- nenhuma consulta ou relatório de holdout consumido acessado;
+- relatórios imutáveis e comparação reproduzível;
+- default e instalação global inalterados;
+- no máximo duas variantes escolhidas como finalistas, ou nenhuma se todas falharem.
 
 ---
 
-## Etapa 5 — embeddings e busca híbrida por RRF
+## Etapa 5 — holdout novo e decisão
 
-### Pré-condição
+### Fase 5.1 — reservar o gate
 
-Executar somente quando os relatórios mostrarem lacuna semântica relevante que tuning lexical e
-FTS5 não resolveram. A decisão deve citar consultas concretas e métricas nos dois corpora.
+Somente após escolher finalistas em development:
 
-### 5.1 Escolha e versionamento do modelo
+- reservar holdouts inteiramente novos;
+- revisar julgamentos diretamente contra as fontes sem executar rankings;
+- congelar datasets, revisões, fingerprints, engines, parâmetros e critérios;
+- registrar aprovação explícita e execução única no gate local.
 
-Priorizar modelo local, redistribuível e adequado a português/inglês. Registrar:
+Os holdouts anteriores permanecem consumidos e proibidos. Cada finalista executará uma única vez;
+o gate fecha automaticamente e seus resultados não poderão orientar retuning.
 
-- id e versão do modelo;
-- dimensão e normalização do vetor;
-- licença;
-- tamanho e requisitos de CPU/RAM;
-- hash ou mecanismo de integridade;
-- estratégia de download separada do SQLite.
+### Fase 5.2 — decisão
 
-Pesos do modelo ficam fora do banco. O SQLite guarda somente vetores, metadados e identificação do
-modelo que os produziu.
+Registrar um ADR com uma destas saídas:
 
-### 5.2 Schema vetorial
+- promover uma engine vencedora;
+- manter `lexical-bm25-v1` e preservar todas as alternativas apenas como experimento;
+- rejeitar todas as variantes e encerrar o ciclo.
 
-Adicionar metadados suficientes para invalidar vetores quando mudar:
-
-- modelo ou versão;
-- dimensão;
-- normalização;
-- texto/chunk hash;
-- algoritmo de distância.
-
-### 5.3 Fusão de rankings
-
-Combinar ranking lexical e vetorial por Reciprocal Rank Fusion. Registrar no relatório:
-
-- constante `k` do RRF;
-- profundidade de cada lista candidata;
-- contribuição lexical e vetorial;
-- engine e modelo.
-
-Testar a fusão com vetores mockados antes de depender de inferência real.
-
-### Gate da Etapa 5
-
-Adotar busca híbrida somente se:
-
-- Recall@5 e MRR semânticos melhorarem nos dois corpora;
-- no-answer não piorar;
-- crescimento do contexto permanecer dentro do orçamento registrado;
-- latência e memória forem aceitáveis;
-- modo lexical continuar disponível como fallback;
-- índices puderem ser totalmente reconstruídos dos documentos originais.
+Passar em development não garante promoção. Qualquer falha em holdout resulta em no-go para aquela
+configuração, sem ajuste posterior de parâmetros.
 
 ---
 
-## Etapa 6 — integração, distribuição e operação
+## Etapa 6 — integrar somente o vencedor
 
-### 6.1 Compatibilidade e CI
+Esta etapa só começa depois do ADR da Etapa 5. Não será construída uma plataforma de produção para
+engines descartadas.
 
-Criar pipeline para:
+### 6.1 Produto e compatibilidade
 
-- `cargo fmt --check`;
-- `cargo clippy --all-targets --all-features -- -D warnings`;
-- `cargo test`;
-- avaliação na fixture estável;
-- teste do instalador;
-- matriz macOS/Linux e Rust MSRV/versão ativa;
-- verificação do contrato JSON.
+- integrar somente a engine aprovada, inicialmente de forma opt-in;
+- preservar o motor lexical direto como fallback;
+- manter documentos como fonte autoritativa e todo índice reconstruível;
+- versionar qualquer mudança incompatível dos contratos;
+- adicionar testes de corrupção, rebuild, atualização e rollback aplicáveis ao vencedor.
 
-### 6.2 Distribuição
+### 6.2 CI e distribuição
 
-Manter `cargo install --locked` como caminho principal enquanto for suficiente. Adicionar binários
-pré-compilados somente se instalação por Cargo for uma barreira medida. Nesse caso:
+- executar `cargo fmt --check`, Clippy com warnings negados e todos os testes;
+- avaliar a fixture estável e o conjunto público permitido;
+- testar instalador, atualização e rollback;
+- manter `cargo install --locked` enquanto for suficiente;
+- publicar binários somente se a instalação por Cargo se tornar barreira medida;
+- publicar checksums e testar arquiteturas suportadas quando houver artefatos.
 
-- publicar checksums;
-- assinar ou atestar artefatos quando disponível;
-- testar arquiteturas suportadas;
-- preservar `--version` e compatibilidade de schema;
-- documentar atualização e rollback.
+### 6.3 Documentação operacional
 
-### 6.3 Segundo cliente e MCP
-
-Considerar MCP apenas se:
-
-- clientes relevantes não puderem executar a CLI; ou
-- processo residente trouxer ganho mensurável além do SQLite persistente.
-
-MCP deve ser adaptador fino sobre a mesma biblioteca e os mesmos contratos; não deve criar um
-segundo motor de ranking.
-
-### 6.4 Documentação operacional
-
-Ao mudar fluxo ou contrato, atualizar:
+Ao mudar fluxo ou contrato, atualizar juntos:
 
 - `tools/docs-search/README.md`;
 - `docs/runbooks/buscar-documentacao-de-projetos.md`;
 - `skills/search-project-docs/SKILL.md`;
 - `docs/checkpoints/project-state.md`;
-- ADRs e este plano quando decisões arquiteturais mudarem.
+- apresentação, ADRs e este plano.
 
 ---
 
 ## Dependências entre etapas
 
 ```text
-Etapa 1: executor e métricas
+Etapas 1–3: baseline, avaliação e experimentos lexicais concluídos
     ↓
-Etapa 2: baseline confiável + segundo corpus
+Etapa 4.0: protocolo e inputs congelados
     ↓
-Etapa 3: hardening/tuning lexical
-    ├── qualidade suficiente → manter arquitetura simples
-    └── I/O/latência insuficiente → Etapa 4 SQLite/FTS5
-                                   ↓
-                          lacuna semântica comprovada
-                                   ↓
-                          Etapa 5 embeddings/RRF
-                                   ↓
-                          Etapa 6 distribuição/MCP
+Etapas 4.1–4.5: harness + quatro engines experimentais
+    ↓
+Etapa 4.6: comparação em development
+    ├── nenhuma finalista → manter BM25 direto
+    └── até duas finalistas
+              ↓
+Etapa 5: holdouts novos, gate one-shot e ADR
+    ├── no-go → manter BM25 direto
+    └── vencedora aprovada
+              ↓
+Etapa 6: integrar e distribuir somente a vencedora
 ```
 
-SQLite não depende de embeddings. Embeddings dependem de evidência obtida nas etapas anteriores.
-Distribuição básica pode evoluir em paralelo, mas não deve publicar uma arquitetura ainda não
-calibrada como solução definitiva.
+O bake-off compara todas as alternativas planejadas sem confundir armazenamento, ranking lexical,
+recuperação vetorial e fusão. A adoção continua condicionada a evidência; implementar um protótipo
+não o torna parte do produto.
 
 ## Riscos a acompanhar
 

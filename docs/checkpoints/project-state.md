@@ -41,33 +41,38 @@ cada holdout uma vez e fechou automaticamente. O conjunto falhou os pisos de qua
 portanto cap 1 não será promovido a default e continua somente opt-in.
 
 A apresentação editorial `docs/apresentacoes/docs-search-arquitetura-e-avaliacao.html` explica o
-escopo, fluxo de busca, contrato de evidência, avaliação, privacidade, decisões de no-go e estado
-operacional atual sem expor nomes ou paths privados.
+escopo, fluxo de busca, contrato de evidência, avaliação, privacidade, decisões de no-go, plano do
+bake-off e estado operacional atual sem expor nomes ou paths privados.
 
 O binário instalado via Rust 1.98.1 gerenciado por `asdf` continua na versão 0.1.0; ele não foi
 atualizado automaticamente. O v0.5.0 pode ser executado no checkout com `cargo run -- evaluate` até
 uma instalação ser solicitada.
 
 A skill `search-project-docs` também está sincronizada em `~/.agents/skills/` e ligada aos agentes
-locais detectados. O plano detalhado em `docs/plans/docs-search.md` agora define schema de avaliação,
-métricas, relatórios, testes, gates e critérios para SQLite/FTS5, embeddings/RRF e distribuição.
+locais detectados. O plano detalhado em `docs/plans/docs-search.md` agora divide o próximo ciclo em
+um bake-off de cinco braços: BM25 direto, cache SQLite com BM25 preservado, FTS5, embeddings locais
+e híbrido por RRF. A decisão está no ADR 0003; nenhum protótipo foi implementado ainda.
 
 ## Em andamento
 
 - manter cap 1 apenas como opção explícita, sem alterar o default;
 - preservar o freeze, o gate fechado e os relatórios privados imutáveis;
 - preservar a rejeição do prefixo morfológico 7/4 sem retuning de parâmetros;
-- não usar os holdouts consumidos para retuning ou mudança de julgamentos.
+- preparar somente a Fase 4.0 do bake-off; nenhuma engine experimental foi implementada;
+- não usar os holdouts consumidos para seleção, tuning ou mudança de julgamentos.
 
 ## Próximo passo
 
-Não há outro candidato lexical aprovado. A hipótese 7/4 foi executada duas vezes somente em
-development: os rankings foram determinísticos e houve sinal na categoria-alvo, mas guardas de
-segurança, qualidade e custo falharam. O código não entrou em `main` e o default continua
-`lexical-bm25-v1`. Formular outra hipótese exige justificativa independente nos corpora de
-desenvolvimento, uma única variável pré-registrada e holdouts novos antes de qualquer futuro gate.
-Detalhes do experimento ficam no [`plano`](../plans/docs-search.md); a decisão anterior está no
-[`ADR 0002`](../decisions/0002-manter-cap-1-opt-in-apos-holdout.md).
+1. Congelar o protocolo, os corpora de development e as cinco configurações do bake-off.
+2. Definir o contrato do relatório operacional e os limites eliminatórios antes do código.
+3. Implementar o harness comum sem alterar o default ou a instalação global.
+4. Construir e medir separadamente cache SQLite, FTS5, embeddings locais e híbrido por RRF.
+5. Selecionar no máximo duas finalistas em development e só então reservar holdouts novos.
+6. Integrar somente uma vencedora que passe no gate; manter BM25 direto se nenhuma passar.
+
+O default continua `lexical-bm25-v1`. O plano faseado está no [`plano`](../plans/docs-search.md), a
+comparação foi aprovada no [`ADR 0003`](../decisions/0003-comparar-engines-antes-da-adocao.md) e a
+decisão anterior sobre cap 1 permanece no [`ADR 0002`](../decisions/0002-manter-cap-1-opt-in-apos-holdout.md).
 
 ## Armadilhas conhecidas
 

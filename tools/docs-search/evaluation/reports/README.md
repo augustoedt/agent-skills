@@ -29,13 +29,13 @@ posição final; `raw_rank` preserva a posição BM25 antes da seleção por pat
 
 ### Corpus público atual
 
-Corpus medido: 8 arquivos e 93 chunks.
+Corpus medido: 9 arquivos e 95 chunks.
 
 | Configuração | Hit@1 | Recall@5 macro | Recall@5 micro | MRR@5 | FP no-answer | Contexto |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| ilimitado | 0,647059 | 0,588235 | 0,619048 | 0,647059 | 0/3 | 18.626 |
-| cap 1 | 0,647059 | 0,588235 | 0,619048 | 0,647059 | 0/3 | 13.951 |
-| cap 2 | 0,647059 | 0,588235 | 0,619048 | 0,647059 | 0/3 | 14.442 |
+| ilimitado | 0,647059 | 0,588235 | 0,619048 | 0,647059 | 0/3 | 18.282 |
+| cap 1 | 0,647059 | 0,588235 | 0,619048 | 0,647059 | 0/3 | 13.666 |
+| cap 2 | 0,647059 | 0,588235 | 0,619048 | 0,647059 | 0/3 | 14.098 |
 
 No ranking ilimitado, casos exatos tiveram Hit@1 0,875000; semânticos, 0,166667; ambíguos,
 1,000000. A lacuna semântica permanece mensurável, mas não autoriza busca híbrida sem uma hipótese
@@ -48,7 +48,8 @@ permanecem fora do Git. Cada holdout executou uma única vez e agora está consu
 **Decisão após o gate:** cap 1 não será promovido a default porque falhou os pisos de qualidade
 predefinidos nos holdouts. A flag permanece opt-in pelos ganhos públicos de recall e contexto. A
 hipótese posterior de prefixo morfológico limitado foi medida duas vezes somente em development e
-rejeitada sem ajuste de parâmetros; nenhum relatório experimental privado é publicado aqui.
+rejeitada sem ajuste de parâmetros. O próximo ciclo será um bake-off faseado de engines; protocolo
+e configurações serão congelados antes da implementação. Nenhum relatório privado é publicado aqui.
 
 A fixture reutiliza o dataset canônico, portanto `corpus.name` permanece `agent-skills`; nome do
 arquivo, root e fingerprint distinguem a execução sintética.

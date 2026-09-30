@@ -15,12 +15,13 @@ Decisões arquiteturais permanentes e suas consequências.
 
 - `0001-docs-search-como-binario-local.md` — adoção de Rust, CLI/JSON e evolução medida do motor de busca.
 - `0002-manter-cap-1-opt-in-apos-holdout.md` — não promoção do cap 1 após o gate e preservação dos holdouts consumidos.
+- `0003-comparar-engines-antes-da-adocao.md` — bake-off isolado de persistência, recuperação lexical, embeddings e RRF antes de integrar um vencedor.
 
 ## plans/
 
 Planos vivos de trabalho ainda não concluído.
 
-- `docs-search.md` — plano detalhado, métricas, gates e etapas do baseline lexical até busca híbrida e distribuição.
+- `docs-search.md` — plano detalhado, métricas, gates e fases do bake-off de engines até a integração de um vencedor.
 
 ## runbooks/
 
@@ -37,4 +38,4 @@ atualizar quando a rotina mudar.
 Material HTML editorial criado sob demanda para explicar arquitetura, fluxos e estado do projeto.
 
 - `docs-search-arquitetura-e-avaliacao.html` — escopo, fluxo da busca, contrato de evidência,
-  avaliação, decisões dos experimentos e estado operacional atual.
+  avaliação, plano faseado do bake-off, decisões e estado operacional atual.

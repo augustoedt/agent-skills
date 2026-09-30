@@ -16,7 +16,7 @@ corpus real. Um smoke test completo da fixture executou 20/20 consultas sem erro
 Recall@5 macro 0,617647, Recall@5 micro 0,619048, MRR@5 0,705882, zero falsos positivos em três
 casos no-answer e 7.453 caracteres de contexto. Com cap 1, Recall@5 macro/micro subiu para
 0,676471/0,714286 e o contexto caiu para 3.995 caracteres, sem alterar Hit@1, MRR ou no-answer.
-`fmt`, `clippy` e 42 testes passam; busca v2 usa `evaluation/search-response.schema.json` e
+`fmt`, `clippy` e 44 testes passam; busca v2 usa `evaluation/search-response.schema.json` e
 relatórios v2 usam `evaluation/report.schema.json`. As medições públicas atuais ficam em
 `tools/docs-search/evaluation/reports/` e substituem artefatos históricos incompatíveis.
 
@@ -49,24 +49,34 @@ atualizado automaticamente. O v0.5.0 pode ser executado no checkout com `cargo r
 uma instalação ser solicitada.
 
 A skill `search-project-docs` também está sincronizada em `~/.agents/skills/` e ligada aos agentes
-locais detectados. O plano detalhado em `docs/plans/docs-search.md` agora divide o próximo ciclo em
-um bake-off de cinco braços: BM25 direto, cache SQLite com BM25 preservado, FTS5, embeddings locais
-e híbrido por RRF. A decisão está no ADR 0003; nenhum protótipo foi implementado ainda.
+locais detectados. O plano detalhado em `docs/plans/docs-search.md` divide o próximo ciclo em um
+bake-off de cinco braços: BM25 direto, cache SQLite com BM25 preservado, FTS5, embeddings locais e
+híbrido por RRF. A decisão está no ADR 0003; nenhum protótipo foi implementado ainda.
+
+A Fase 4.0 está concluída e congelada. Os contratos públicos
+`engine-bakeoff-protocol.schema.json` e `engine-bakeoff-report.schema.json` separam a
+pré-inscrição dos resultados observados. A instância privada fixa snapshots derivados de revisões
+Git, datasets e baselines, configurações das cinco engines, modelo E5 e hashes, duas rodadas,
+medições, budgets eliminatórios e seleção por Pareto. O registry local e seu verificador conferem
+hashes, conjunto de snapshots e permissões. Uma denylist ativa bloqueia os holdouts consumidos antes
+da resolução de seus paths no runner. A Fase 4.1 pode começar pelo harness comum, sem alterar o
+default ou o binário global.
 
 ## Em andamento
 
 - manter cap 1 apenas como opção explícita, sem alterar o default;
 - preservar o freeze, o gate fechado e os relatórios privados imutáveis;
 - preservar a rejeição do prefixo morfológico 7/4 sem retuning de parâmetros;
-- preparar somente a Fase 4.0 do bake-off; nenhuma engine experimental foi implementada;
+- preservar o freeze concluído da Fase 4.0 sem reinterpretar parâmetros ou budgets;
+- iniciar somente o harness comum da Fase 4.1; nenhuma engine experimental foi implementada;
 - não usar os holdouts consumidos para seleção, tuning ou mudança de julgamentos.
 
 ## Próximo passo
 
-1. Congelar o protocolo, os corpora de development e as cinco configurações do bake-off.
-2. Definir o contrato do relatório operacional e os limites eliminatórios antes do código.
-3. Implementar o harness comum sem alterar o default ou a instalação global.
-4. Construir e medir separadamente cache SQLite, FTS5, embeddings locais e híbrido por RRF.
+1. Implementar o harness comum da Fase 4.1 conforme o protocolo congelado, sem alterar o default.
+2. Validar geração do relatório operacional v1, instrumentação e fault injection na fixture.
+3. Construir e medir separadamente cache SQLite, FTS5, embeddings locais e híbrido por RRF.
+4. Executar duas rodadas imutáveis sobre todo o conjunto congelado de development.
 5. Selecionar no máximo duas finalistas em development e só então reservar holdouts novos.
 6. Integrar somente uma vencedora que passe no gate; manter BM25 direto se nenhuma passar.
 
@@ -77,7 +87,9 @@ decisão anterior sobre cap 1 permanece no [`ADR 0002`](../decisions/0002-manter
 ## Armadilhas conhecidas
 
 - `skills/` é fonte da verdade; não editar cópias em `~/.agents/skills/`.
-- `docs-search` ainda não possui índice persistente, FTS5 nem embeddings.
+- `docs-search` ainda não possui índice persistente, FTS5 nem embeddings; o freeze não é implementação.
+- Não alterar tokenizer, threshold 0,80, profundidade 50, RRF `k = 60`, modelo, inputs ou budgets
+  dentro de `engine-bakeoff-v1`; qualquer mudança exige protocolo e tag novos.
 - O corpus padrão exclui `skills/**`; por isso avaliações devem apontar para documentação em
   `README.md` ou `docs/`, não apenas para conteúdo de `SKILL.md`.
 - Resultado lexical vazio não prova ausência da informação.

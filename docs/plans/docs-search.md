@@ -10,8 +10,10 @@
 - julgamentos de desenvolvimento e holdout: revisados diretamente contra as fontes e congelados;
 - gate de holdout: concluído uma única vez e fechado; holdouts consumidos não orientam retuning;
 - prefixo morfológico limitado 7/4: testado duas vezes em development e rejeitado sem ajustes;
-- bake-off de engines: aprovado como próximo ciclo, dividido em fases e ainda não implementado;
-- variantes planejadas: BM25 direto, cache SQLite com BM25, FTS5, embeddings locais e híbrido por RRF;
+- bake-off de engines: aprovado, com a Fase 4.0 congelada antes de qualquer implementação;
+- protocolo e relatório operacional: contratos públicos v1 formalizados, com instância, snapshots,
+  checksums e verificador mantidos no ambiente privado;
+- variantes congeladas: BM25 direto, cache SQLite com BM25, FTS5, embeddings locais e híbrido por RRF;
 - adoção: proibida antes da comparação em development e de um novo gate com holdouts frescos.
 
 ## Objetivo
@@ -50,7 +52,7 @@ O sistema deve responder a três perguntas antes de ganhar complexidade:
 - [x] 20 consultas de avaliação migradas para schema v2 com headings, notas e tags.
 - [x] Parser/validador estrito para schema v2.
 - [x] Fixture documental estável e versionada `stable-v1`, separada do corpus real.
-- [x] `fmt`, `clippy` e 42 testes.
+- [x] `fmt`, `clippy` e 44 testes.
 - [x] Instalador compatível com Rust gerenciado por `asdf`.
 - [x] Skill e runbook com preflight obrigatório do binário.
 - [x] Baseline atual sem tuning, com relatório JSON v2 e análise por categoria.
@@ -475,20 +477,33 @@ como implementação de produção antes da decisão final.
 
 ### Fase 4.0 — protocolo e freeze
 
-Antes de escrever as engines:
+**Status:** concluída antes da implementação das engines.
 
-- congelar fixture, corpora de development, datasets, julgamentos, revisões e fingerprints;
-- registrar hashes e proibir entrada ou saída de corpus durante o bake-off;
-- bloquear explicitamente todos os holdouts já consumidos;
-- fixar chunking, normalização, corpus permitido, limite, excerpt e contrato de evidência;
-- escolher e congelar um único modelo local de embeddings por licença, idioma, tamanho e suporte;
-- fixar parâmetros do FTS5, distância vetorial, profundidade das listas e constante `k` do RRF;
-- definir antes da execução os limites de qualidade e custo que eliminam uma variante;
-- criar tags imutáveis para protocolo, engine, dataset, relatório e rodada.
+Foram congelados:
 
-O primeiro entregável será um manifesto privado de freeze e um contrato de relatório de bake-off.
-Esse contrato será independente da resposta de busca v2 e deverá representar custos que o relatório
-de avaliação v2 atual não contém.
+- snapshots dos inputs de development extraídos de revisões Git, datasets, fingerprints e baselines;
+- chunking, normalização, corpus, top 5, excerpts de até 1.200 caracteres e evidência verificável;
+- `rusqlite = 0.40.2` com SQLite bundled 3.53.2 e validação runtime de versão, FTS5 e smoke test;
+- FTS5 `unicode61 remove_diacritics 2`, colunas body/heading/path com pesos 1/2/3, lista de 50
+  candidatos e abstention quando `MATCH` não produz linha;
+- `intfloat/multilingual-e5-small` na revisão imutável registrada, com 384 dimensões, máximo de 512
+  tokens, prefixos E5, truncamento à direita, mean pooling pela attention mask, L2 e dot product;
+- busca vetorial exata sobre todos os chunks, top 50 e abstention abaixo de similaridade 0,80;
+- RRF com listas de 50 candidatos, deduplicação por hash de chunk e `k = 60`;
+- duas rodadas em ordens inversas, processos novos, zero warmup e nenhuma cache de resultados;
+- limites eliminatórios de qualidade, `no_answer`, contexto, startup, p95, indexação, memória, disco,
+  determinismo, rebuild, atualização incremental, evidência e fallback;
+- seleção por fronteira de Pareto, ganho significativo explícito e no máximo duas finalistas.
+
+Os contratos públicos independentes são
+`evaluation/engine-bakeoff-protocol.schema.json` e
+`evaluation/engine-bakeoff-report.schema.json`. A instância do protocolo, snapshots, modelo,
+relatórios-base e registry de checksums ficam somente no armazenamento privado. Um verificador local
+confere hashes, conjunto exato de snapshots e permissões. O runner consulta uma denylist ativa antes
+de resolver paths de datasets consumidos; esses holdouts permanecem inacessíveis durante o bake-off.
+
+Qualquer mudança de modelo, threshold, tokenizer, profundidade, RRF, orçamento ou input exige outro
+protocolo/tag. A Fase 4.1 não pode reinterpretar o freeze depois de observar resultados.
 
 ### Fase 4.1 — harness comum e instrumentação
 
@@ -642,7 +657,7 @@ Ao mudar fluxo ou contrato, atualizar juntos:
 ```text
 Etapas 1–3: baseline, avaliação e experimentos lexicais concluídos
     ↓
-Etapa 4.0: protocolo e inputs congelados
+Etapa 4.0: protocolo e inputs congelados ✓
     ↓
 Etapas 4.1–4.5: harness + quatro engines experimentais
     ↓

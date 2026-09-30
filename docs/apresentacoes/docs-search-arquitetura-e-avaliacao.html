@@ -413,8 +413,8 @@
       </div>
       <div class="next-card future">
         <p class="kicker">Próximo ciclo</p>
-        <h3>Bake-off aprovado</h3>
-        <p>Cinco variantes serão comparadas por fases. O protocolo ainda será congelado antes de qualquer código.</p>
+        <h3>Bake-off congelado</h3>
+        <p>Cinco variantes serão comparadas por fases. O protocolo já está congelado; o harness comum vem antes das engines.</p>
       </div>
     </div>
   </section>
@@ -440,7 +440,7 @@
             <text class="label" x="70" y="156">✓ ranking lexical BM25</text>
             <text class="label" x="70" y="186">✓ evidência humana e JSON v2</text>
             <text class="label" x="70" y="216">✓ diversidade por path opt-in</text>
-            <text class="label" x="70" y="246">✓ bake-off de engines planejado</text>
+            <text class="label" x="70" y="246">✓ protocolo do bake-off congelado</text>
           </svg>
           <figcaption>O produto entrega contexto rastreável e reproduzível para leitura posterior.</figcaption>
         </figure>
@@ -585,7 +585,7 @@
         <thead><tr><th>Corpus</th><th>Configuração</th><th>Recall@5 macro</th><th>Contexto</th></tr></thead>
         <tbody>
           <tr><td>Fixture estável</td><td>ilimitado → cap 1</td><td class="new">0,617647 → 0,676471</td><td class="new">7.453 → 3.995</td></tr>
-          <tr><td>Corpus público</td><td>ilimitado → cap 1</td><td>0,588235 → 0,588235</td><td class="new">18.282 → 13.666</td></tr>
+          <tr><td>Corpus público</td><td>ilimitado → cap 1</td><td>0,588235 → 0,588235</td><td class="new">18.489 → 14.048</td></tr>
           <tr><td>Validação local</td><td>fora do Git</td><td>métricas não publicadas</td><td>gate concluído · no-go</td></tr>
         </tbody>
       </table>
@@ -678,7 +678,7 @@
     <div class="block-head">
       <span class="index">07</span>
       <h2>Plano organizado do bake-off</h2>
-      <span class="status todo">ainda não iniciado</span>
+      <span class="status wip">freeze concluído · implementação pendente</span>
     </div>
     <div class="prose">
       <p>O trabalho foi dividido para comparar componentes sem misturar seus efeitos. Todas as variantes usam os mesmos documentos, chunks, queries e contrato de evidência.</p>
@@ -699,7 +699,7 @@
       <div class="next-card current">
         <p class="kicker">Parte 1</p>
         <h3>Congelar e instrumentar</h3>
-        <p>Definir protocolo, parâmetros, limites, relatório operacional e harness comum antes das engines.</p>
+        <p>Protocolo, parâmetros, limites, relatório operacional, snapshots e checksums já estão congelados. O harness comum é o próximo passo.</p>
       </div>
       <div class="next-card">
         <p class="kicker">Parte 2</p>
@@ -714,8 +714,8 @@
     </div>
     <div class="stepper-wrap">
       <div class="stepper">
-        <div class="step wip"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">4.0</span>Protocolo</div></div>
-        <div class="step"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">4.1</span>Harness</div></div>
+        <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">4.0</span>Protocolo</div></div>
+        <div class="step wip"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">4.1</span>Harness</div></div>
         <div class="step"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">4.2</span>SQLite</div></div>
         <div class="step"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">4.3</span>FTS5</div></div>
         <div class="step"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">4.4</span>Embeddings</div></div>
@@ -725,7 +725,7 @@
         <div class="step"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">6</span>Vencedora</div></div>
       </div>
     </div>
-    <div class="callout"><strong>Regra central:</strong> construir um protótipo não significa adotá-lo. O default só muda depois da comparação, de holdouts novos e de uma decisão registrada.</div>
+    <div class="callout"><strong>Freeze v1:</strong> SQLite 3.53.2, FTS5 <code>unicode61</code>, E5 multilíngue fixado por revisão e hashes, 50 candidatos, threshold vetorial 0,80 e RRF <code>k = 60</code>. Alterar qualquer item exige outro protocolo. Construir um protótipo não significa adotá-lo.</div>
   </section>
 
   <section class="block" id="decisoes">
@@ -760,20 +760,20 @@
           <tr><td>BM25 exato</td><td>Baseline reproduzível, contratos estáveis e abstention mensurável.</td><td class="new">Default mantido</td></tr>
           <tr><td>Cap 1</td><td>Melhora pública, sem generalização suficiente no gate.</td><td>Opt-in; não default</td></tr>
           <tr><td>Prefixo 7/4</td><td>Ganho-alvo acompanhado de falhas nas guardas pré-registradas.</td><td class="old">Rejeitado sem retuning</td></tr>
-          <tr><td>Bake-off de engines</td><td>Comparação isolada de persistência, ranking lexical, semântica e fusão.</td><td class="new">Planejado por fases</td></tr>
+          <tr><td>Bake-off de engines</td><td>Protocolo, inputs, budgets e contratos v1 congelados; engines ainda ausentes.</td><td class="new">Fase 4.0 concluída</td></tr>
         </tbody>
       </table>
     </div>
-    <div class="callout"><strong>Adoção ainda bloqueada:</strong> o bake-off foi aprovado, mas nenhum protótipo foi implementado. Primeiro entram protocolo, freeze e limites eliminatórios.</div>
+    <div class="callout"><strong>Adoção ainda bloqueada:</strong> protocolo, freeze e limites eliminatórios já estão fixos, mas nenhum protótipo foi implementado. Agora entra o harness comum, sem mudar default ou instalação global.</div>
   </section>
 
   <section class="block" id="status">
     <div class="block-head">
       <h2>Onde o sistema se encontra agora</h2>
-      <span class="status wip">estável · bake-off planejado</span>
+      <span class="status wip">estável · Fase 4.0 concluída</span>
     </div>
     <div class="prose">
-      <p>O produto funcional está no código-fonte v0.5.0. O motor padrão é lexical, os contratos são v2 e a infraestrutura de avaliação já existe. O bake-off foi aprovado como próximo ciclo, mas começa apenas pelo protocolo: nenhuma engine nova foi implementada.</p>
+      <p>O produto funcional está no código-fonte v0.5.0. O motor padrão é lexical e os contratos de busca e avaliação são v2. O bake-off agora possui protocolo e relatório operacional v1, snapshots e budgets congelados; nenhuma engine nova foi implementada.</p>
     </div>
     <div class="data-table-wrap">
       <table class="data-table">
@@ -782,10 +782,11 @@
           <tr><td>Código-fonte</td><td><code>docs-search 0.5.0</code></td><td>Implementação atual e testada no checkout.</td></tr>
           <tr><td>Binário global</td><td><code>docs-search 0.1.0</code></td><td class="old">Ainda desatualizado; nenhuma instalação automática foi feita.</td></tr>
           <tr><td>Motor default</td><td><code>lexical-bm25-v1</code></td><td>Ranking exato e ilimitado por padrão.</td></tr>
-          <tr><td>Contratos</td><td>busca v2 · queries v2 · relatório v2</td><td>Somente contratos atuais são aceitos.</td></tr>
+          <tr><td>Contratos</td><td>busca/queries/avaliação v2 · bake-off v1</td><td>Pré-inscrição e resultados operacionais são contratos separados.</td></tr>
           <tr><td>Diversidade</td><td><code>--max-results-per-path 1</code></td><td>Disponível apenas quando solicitada explicitamente.</td></tr>
-          <tr><td>Engines experimentais</td><td>não implementadas</td><td>SQLite/BM25, FTS5, embeddings e RRF estão apenas no plano.</td></tr>
-          <tr><td>Próximo marco</td><td>Fase 4.0</td><td>Congelar protocolo, configurações, inputs e limites.</td></tr>
+          <tr><td>Freeze experimental</td><td><code>engine-bakeoff-v1</code></td><td>Configurações, inputs, modelo, budgets e denylist verificados.</td></tr>
+          <tr><td>Engines experimentais</td><td>não implementadas</td><td>SQLite/BM25, FTS5, embeddings e RRF continuam fora do produto.</td></tr>
+          <tr><td>Próximo marco</td><td>Fase 4.1</td><td>Implementar o harness comum conforme o protocolo congelado.</td></tr>
         </tbody>
       </table>
     </div>
@@ -798,10 +799,11 @@
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">5</span>Cap por path</div></div>
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">6</span>Gate cap 1</div></div>
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">7</span>Teste 7/4</div></div>
-        <div class="step wip"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">8</span>Protocolo bake-off</div></div>
+        <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">8</span>Protocolo bake-off</div></div>
+        <div class="step wip"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">9</span>Harness comum</div></div>
       </div>
     </div>
-    <div class="callout"><strong>Leitura correta do estado:</strong> a base está pronta para uso no checkout, mas o executável global ainda é antigo. Existe um plano aprovado de comparação; implementação, holdouts e mudança de default ainda não começaram.</div>
+    <div class="callout"><strong>Leitura correta do estado:</strong> a base está pronta para uso no checkout e o freeze do experimento está verificável, mas o executável global ainda é antigo. Implementação, holdouts novos e mudança de default ainda não começaram.</div>
   </section>
 </main>
 

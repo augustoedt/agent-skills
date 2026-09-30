@@ -29,6 +29,17 @@ Corpus, chunking, datasets, julgamentos, limites e contrato de evidência serão
 terá configuração pré-registrada e duas execuções em development. A comparação incluirá qualidade,
 `no_answer`, contexto, latência, startup, indexação, RAM e disco.
 
+A Fase 4.0 foi congelada antes da implementação. O protocolo fixa SQLite bundled 3.53.2 via
+`rusqlite 0.40.2`; FTS5 com tokenizer `unicode61 remove_diacritics 2`, pesos body/heading/path 1/2/3
+e 50 candidatos; `intfloat/multilingual-e5-small` por revisão e hashes, com contrato E5, vetores de
+384 dimensões, truncamento em 512 tokens, busca exata e threshold 0,80; e RRF com listas de 50 e
+`k = 60`. Também fixa duas rodadas, instrumentação, budgets eliminatórios e seleção por Pareto sem
+score agregado opaco.
+
+O protocolo e o relatório operacional possuem schemas v1 independentes. A instância, snapshots,
+modelo e checksums permanecem privados. O runner aplica uma denylist antes de resolver qualquer
+path de holdout consumido, e um verificador local confere hashes e permissões do freeze.
+
 Os holdouts já usados permanecem proibidos. No máximo duas variantes poderão avançar para um gate
 de execução única com holdouts inteiramente novos. Somente a vencedora aprovada será integrada ao
 produto; o resultado válido também pode ser manter o baseline atual.
@@ -39,6 +50,7 @@ produto; o resultado válido também pode ser manter o baseline atual.
 - (+) alternativas dominadas poderão ser descartadas antes de receber integração de produção;
 - (+) o baseline e os contratos atuais permanecem estáveis durante o experimento;
 - (+) resultados negativos continuarão auditáveis;
+- (+) parâmetros, budgets, inputs e contratos ficaram verificáveis antes da primeira engine;
 - (−) o bake-off exige harness operacional e instrumentação de RAM, disco, startup e indexação;
 - (−) embeddings adicionam dependência de modelo, licença, distribuição e custo computacional;
 - ⚠️ parâmetros e limites devem ser congelados antes de observar os rankings;

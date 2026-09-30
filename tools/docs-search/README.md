@@ -102,7 +102,8 @@ resposta, com headings esperados, notas e tags diagnósticas. A fixture estável
 fixture estão analisadas em [`evaluation/reports/`](evaluation/reports/README.md). O primeiro gate
 de holdout rejeitou a promoção do cap 1 a default. A hipótese seguinte, equivalência por prefixo
 morfológico limitado 7/4, foi testada duas vezes em development e rejeitada pelas guardas
-pré-registradas; seu código não entrou em `main`. O próximo ciclo será um bake-off faseado entre o
-BM25 direto, cache SQLite com BM25 preservado, FTS5, embeddings locais e híbrido por RRF. Primeiro
-serão congelados protocolo e configurações; somente finalistas de development poderão chegar a um
-novo gate com holdouts ainda não consumidos.
+pré-registradas; seu código não entrou em `main`. O próximo ciclo é um bake-off faseado entre o
+BM25 direto, cache SQLite com BM25 preservado, FTS5, embeddings locais e híbrido por RRF. A Fase 4.0
+já congelou protocolo, configurações, inputs, modelo, budgets e contratos públicos de protocolo e
+relatório operacional v1. Nenhuma engine nova foi implementada; somente finalistas de development
+poderão chegar a um novo gate com holdouts ainda não consumidos.

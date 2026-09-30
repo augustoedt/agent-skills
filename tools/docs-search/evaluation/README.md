@@ -105,6 +105,29 @@ will be committed so it does not contain a machine-specific absolute path. Laten
 volatile and should not be snapshot-compared byte for byte. The first real-corpus baseline is
 [`reports/agent-skills-lexical-bm25-v1-unlimited-v2.json`](reports/agent-skills-lexical-bm25-v1-unlimited-v2.json).
 
+## Engine bake-off contracts
+
+The engine comparison has contracts independent from normal search response and evaluation report
+v2:
+
+- `engine-bakeoff-protocol.schema.json` validates the immutable preregistration: engines, exact
+  configurations, development inputs, model artifacts, measurement method, budgets, selection rule,
+  and consumed-holdout isolation;
+- `engine-bakeoff-report.schema.json` validates one observed engine/input/run report: provenance,
+  baseline deltas, per-query evidence, quality, timing phases, indexing workload, RAM, disk,
+  determinism, rebuild, fallback, errors, and budget checks.
+
+`engine-bakeoff-v1` fixes top 5 with 1,200-character excerpts and no path cap. It compares direct
+BM25, SQLite-cached BM25, FTS5, exact local E5 vectors, and FTS5/E5 fused with RRF. Each input/engine
+pair runs twice in fresh processes. The default engine and global installation cannot change during
+the experiment.
+
+Only the schemas are public. Protocol instances, snapshot manifests, private datasets, baseline
+reports, model paths, and checksum registries stay in machine-local encrypted storage. Frozen
+Markdown comes from Git objects rather than live working trees. A local verifier must pass before
+implementation or measurement, and the private runner denies consumed holdouts before resolving
+their dataset paths. Changing any frozen parameter requires a new protocol tag.
+
 ## Private and machine-local corpora
 
 Datasets and reports derived from private checkouts must stay outside this public repository. Project

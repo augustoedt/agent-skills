@@ -297,3 +297,83 @@ fn published_report_schema_tracks_the_runtime_contract() {
         assert!(required.contains(&Value::from(field)), "missing {field}");
     }
 }
+
+#[test]
+fn published_bakeoff_protocol_schema_freezes_engine_configuration() {
+    let schema: Value = serde_json::from_str(include_str!(
+        "../evaluation/engine-bakeoff-protocol.schema.json"
+    ))
+    .expect("published bake-off protocol schema should be valid JSON");
+
+    assert_eq!(schema["properties"]["schema_version"]["const"], 1);
+    assert_eq!(
+        schema["properties"]["protocol_tag"]["const"],
+        "engine-bakeoff-v1"
+    );
+    assert_eq!(schema["properties"]["engines"]["minItems"], 5);
+    assert_eq!(
+        schema["$defs"]["fts5Config"]["properties"]["tokenizer"]["const"],
+        "unicode61 remove_diacritics 2"
+    );
+    assert_eq!(
+        schema["$defs"]["embeddingConfig"]["properties"]["candidate_depth"]["const"],
+        50
+    );
+    assert_eq!(
+        schema["$defs"]["hybridConfig"]["properties"]["rrf_k"]["const"],
+        60
+    );
+    assert_eq!(
+        schema["$defs"]["policy"]["properties"]["holdouts_allowed"]["const"],
+        false
+    );
+}
+
+#[test]
+fn published_bakeoff_report_schema_covers_operational_results() {
+    let schema: Value = serde_json::from_str(include_str!(
+        "../evaluation/engine-bakeoff-report.schema.json"
+    ))
+    .expect("published bake-off report schema should be valid JSON");
+
+    assert_eq!(schema["properties"]["schema_version"]["const"], 1);
+    let required = schema["required"]
+        .as_array()
+        .expect("bake-off report required fields should be an array");
+    for field in [
+        "baseline_comparison",
+        "timing_ms",
+        "indexing",
+        "resources_bytes",
+        "determinism",
+        "evidence_validation",
+        "fallback",
+        "budget_checks",
+    ] {
+        assert!(required.contains(&Value::from(field)), "missing {field}");
+    }
+    assert_eq!(
+        schema["$defs"]["result"]["properties"]["rank"]["maximum"],
+        5
+    );
+    assert_eq!(
+        schema["$defs"]["fallback"]["properties"]["used_during_normal_run"]["const"],
+        false
+    );
+    assert_eq!(
+        schema["$defs"]["retrieval"]["properties"]["engine_configuration"]["oneOf"]
+            .as_array()
+            .expect("engine configuration should be a closed union")
+            .len(),
+        5
+    );
+    let budget_checks = schema["properties"]["budget_checks"]["required"]
+        .as_array()
+        .expect("budget checks should be required");
+    for field in ["run_variation", "shared_model_size"] {
+        assert!(
+            budget_checks.contains(&Value::from(field)),
+            "missing {field}"
+        );
+    }
+}

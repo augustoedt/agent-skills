@@ -93,12 +93,31 @@ cargo run -- evaluate \
 O cap é opt-in e não deve ser aplicado silenciosamente à busca normal. Relatórios v2 registram o
 rank final e o rank BM25 bruto; outras versões de contrato não são aceitas.
 
+### Validar o freeze do bake-off
+
+Esta rotina é somente para desenvolvimento do `docs-search`; não faz parte da busca normal. Defina
+o diretório privado local sem gravá-lo no Git e execute o verificador antes de implementar ou medir
+qualquer braço:
+
+```bash
+PRIVATE_EVAL_ROOT="${DOCS_SEARCH_PRIVATE_EVAL_ROOT:?defina o diretório privado}"
+"$PRIVATE_EVAL_ROOT/verify-engine-bakeoff-freeze.py"
+```
+
+A saída esperada é `engine-bakeoff-v1 freeze verified`. O verificador confere protocolo, schemas,
+snapshots, datasets, baselines, modelo, checksums e permissões sem abrir holdouts consumidos. O
+runner privado consulta a denylist antes de resolver os paths desses holdouts. Falha de hash,
+permissão ou conjunto de inputs bloqueia a Fase 4.1; não regenere ou sobrescreva artefatos para fazer
+a verificação passar. Uma mudança de configuração exige outra tag e outro protocolo.
+
 ## Não fazer
 
 - Não tratar excerpt, score ou cache futuro como fonte da verdade.
 - Não carregar todos os resultados sem necessidade.
 - Não incluir secrets ou `.env` no corpus.
 - Não adicionar embeddings, classificador ou infraestrutura sem comparar métricas com o baseline.
+- Não implementar ou medir o bake-off se o verificador do freeze falhar.
+- Não acessar holdouts consumidos, contornar a denylist ou alterar parâmetros de `engine-bakeoff-v1`.
 - Não invocar `docs-search` sem antes confirmar `command -v docs-search`.
 - Não engolir indisponibilidade ou erro do binário; reportar a falha e usar `rg` explicitamente
   apenas no corpus permitido:

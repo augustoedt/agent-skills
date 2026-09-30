@@ -1,0 +1,1874 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/augustoedt/agent-skills/tools/docs-search/evaluation/engine-bakeoff-protocol.schema.json",
+  "title": "docs-search engine bake-off protocol v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "protocol_tag",
+    "status",
+    "frozen_at",
+    "scope",
+    "toolchain",
+    "contracts",
+    "policy",
+    "common_retrieval",
+    "engines",
+    "inputs",
+    "model",
+    "measurement",
+    "budgets",
+    "selection_rule",
+    "consumed_holdout_block"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "protocol_tag": {
+      "const": "engine-bakeoff-v1"
+    },
+    "status": {
+      "const": "frozen-before-implementation"
+    },
+    "frozen_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "scope": {
+      "const": "development-only"
+    },
+    "toolchain": {
+      "$ref": "#/$defs/toolchain"
+    },
+    "contracts": {
+      "$ref": "#/$defs/contracts"
+    },
+    "policy": {
+      "$ref": "#/$defs/policy"
+    },
+    "common_retrieval": {
+      "$ref": "#/$defs/commonRetrieval"
+    },
+    "engines": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "$ref": "#/$defs/engine"
+      },
+      "uniqueItems": true,
+      "allOf": [
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "const": "lexical-bm25-v1"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "const": "sqlite-cache-bm25-v1"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "const": "fts5-v1"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "const": "local-embeddings-v1"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "const": "hybrid-rrf-v1"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      ]
+    },
+    "inputs": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "$ref": "#/$defs/input"
+      },
+      "allOf": [
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "const": "stable-v1"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "const": "public-agent-skills"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "const": "corpus-001"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "const": "corpus-002"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "const": "corpus-003"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      ]
+    },
+    "model": {
+      "$ref": "#/$defs/model"
+    },
+    "measurement": {
+      "$ref": "#/$defs/measurement"
+    },
+    "budgets": {
+      "$ref": "#/$defs/budgets"
+    },
+    "selection_rule": {
+      "$ref": "#/$defs/selectionRule"
+    },
+    "consumed_holdout_block": {
+      "$ref": "#/$defs/holdoutBlock"
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "blake3": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "gitRevision": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{40}$"
+    },
+    "nonEmpty": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "toolchain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "base_source_revision",
+        "base_tool_version",
+        "rust_version",
+        "cargo_version",
+        "base_cargo_lock_sha256",
+        "build_profile",
+        "locked",
+        "implementation_revision_policy",
+        "dependencies"
+      ],
+      "properties": {
+        "base_source_revision": {
+          "const": "3d380311114281abfe64df00f12557ad42564d20"
+        },
+        "base_tool_version": {
+          "const": "0.5.0"
+        },
+        "rust_version": {
+          "const": "rustc 1.98.1 (48a229cea 2026-09-01)"
+        },
+        "cargo_version": {
+          "const": "cargo 1.98.1 (797e8a9bc 2026-08-05)"
+        },
+        "base_cargo_lock_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "build_profile": {
+          "const": "release"
+        },
+        "locked": {
+          "const": true
+        },
+        "implementation_revision_policy": {
+          "const": "one-reviewed-bakeoff-harness-revision-recorded-by-every-report;cargo-build-locked;no-engine-specific-source-changes-between-runs"
+        },
+        "dependencies": {
+          "$ref": "#/$defs/dependencies"
+        }
+      }
+    },
+    "contracts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "search_response",
+        "query_dataset",
+        "evaluation_report",
+        "bakeoff_protocol",
+        "bakeoff_report",
+        "local_manifest",
+        "fixture"
+      ],
+      "properties": {
+        "search_response": {
+          "const": 2
+        },
+        "query_dataset": {
+          "const": 2
+        },
+        "evaluation_report": {
+          "const": 2
+        },
+        "bakeoff_protocol": {
+          "const": 1
+        },
+        "bakeoff_report": {
+          "const": 1
+        },
+        "local_manifest": {
+          "const": 1
+        },
+        "fixture": {
+          "const": "stable-v1"
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runs_per_engine_input",
+        "immutable_reports",
+        "retuning_after_freeze",
+        "default_engine",
+        "default_may_change",
+        "global_install_may_change",
+        "holdouts_allowed",
+        "max_finalists",
+        "hash_canonicalization",
+        "report_write_policy"
+      ],
+      "properties": {
+        "runs_per_engine_input": {
+          "const": 2
+        },
+        "immutable_reports": {
+          "const": true
+        },
+        "retuning_after_freeze": {
+          "const": false
+        },
+        "default_engine": {
+          "const": "lexical-bm25-v1"
+        },
+        "default_may_change": {
+          "const": false
+        },
+        "global_install_may_change": {
+          "const": false
+        },
+        "holdouts_allowed": {
+          "const": false
+        },
+        "max_finalists": {
+          "const": 2
+        },
+        "hash_canonicalization": {
+          "const": "sha256-raw-file-bytes;engine-config-sha256-rfc8785-json-canonicalization"
+        },
+        "report_write_policy": {
+          "const": "create-new-0600-refuse-if-path-exists"
+        }
+      }
+    },
+    "commonRetrieval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "corpus_selection",
+        "chunking",
+        "normalization",
+        "query_tokens",
+        "limit",
+        "recall_cutoff",
+        "max_excerpt_chars",
+        "max_results_per_path",
+        "evidence_fields",
+        "tie_break"
+      ],
+      "properties": {
+        "corpus_selection": {
+          "const": "regular UTF-8 Markdown only: root README.md/CLAUDE.md/AGENTS.md/pi-warden.md and docs/**/*.md; hidden entries excluded; git ignore/exclude honored; symlinks not followed"
+        },
+        "chunking": {
+          "const": "one chunk per ATX heading section H1-H6 plus preamble; heading ancestry joined with >; headings inside fenced code ignored; line numbers one-based"
+        },
+        "normalization": {
+          "const": "Unicode NFD; remove combining marks; lowercase; replace non-alphanumeric with space; collapse whitespace"
+        },
+        "query_tokens": {
+          "const": "deduplicate in source order; remove fixed Portuguese-English stopword list unless that would remove every token"
+        },
+        "limit": {
+          "const": 5
+        },
+        "recall_cutoff": {
+          "const": 5
+        },
+        "max_excerpt_chars": {
+          "const": 1200
+        },
+        "max_results_per_path": {
+          "type": "null"
+        },
+        "evidence_fields": {
+          "type": "array",
+          "const": [
+            "path",
+            "heading",
+            "line_start",
+            "line_end",
+            "file_hash",
+            "chunk_hash",
+            "excerpt"
+          ]
+        },
+        "tie_break": {
+          "const": "score-desc-path-asc-line-start-asc"
+        }
+      }
+    },
+    "engine": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/lexicalEngine"
+        },
+        {
+          "$ref": "#/$defs/sqliteEngine"
+        },
+        {
+          "$ref": "#/$defs/fts5Engine"
+        },
+        {
+          "$ref": "#/$defs/embeddingEngine"
+        },
+        {
+          "$ref": "#/$defs/hybridEngine"
+        }
+      ]
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "visibility",
+        "role",
+        "root",
+        "source_revision",
+        "snapshot_manifest",
+        "snapshot_manifest_sha256",
+        "queries",
+        "queries_sha256",
+        "dataset_blake3",
+        "queries_schema_version",
+        "query_count",
+        "files",
+        "chunks",
+        "corpus_fingerprint",
+        "baseline_report",
+        "baseline_report_sha256",
+        "selected_markdown_dirty"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^(stable-v1|public-agent-skills|corpus-[0-9]{3,})$"
+        },
+        "visibility": {
+          "enum": [
+            "public",
+            "private"
+          ]
+        },
+        "role": {
+          "const": "development"
+        },
+        "root": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "source_revision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/gitRevision"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "snapshot_manifest": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/nonEmpty"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "snapshot_manifest_sha256": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "queries": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "queries_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "dataset_blake3": {
+          "$ref": "#/$defs/blake3"
+        },
+        "queries_schema_version": {
+          "const": 2
+        },
+        "query_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "files": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "chunks": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "corpus_fingerprint": {
+          "$ref": "#/$defs/blake3"
+        },
+        "baseline_report": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "baseline_report_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "selected_markdown_dirty": {
+          "const": false
+        }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "file",
+        "bytes",
+        "sha256"
+      ],
+      "properties": {
+        "file": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "revision",
+        "license",
+        "dimension",
+        "max_tokens",
+        "query_prefix",
+        "passage_prefix",
+        "pooling",
+        "normalization",
+        "similarity",
+        "dtype",
+        "runtime",
+        "tokenizers",
+        "artifacts",
+        "artifacts_sha256_file"
+      ],
+      "properties": {
+        "id": {
+          "const": "intfloat/multilingual-e5-small"
+        },
+        "revision": {
+          "const": "614241f622f53c4eeff9890bdc4f31cfecc418b3"
+        },
+        "license": {
+          "const": "MIT"
+        },
+        "dimension": {
+          "const": 384
+        },
+        "max_tokens": {
+          "const": 512
+        },
+        "query_prefix": {
+          "const": "query: "
+        },
+        "passage_prefix": {
+          "const": "passage: "
+        },
+        "pooling": {
+          "const": "attention-mask-mean"
+        },
+        "normalization": {
+          "const": "l2-f32-epsilon-1e-12"
+        },
+        "similarity": {
+          "const": "f32-dot-product-on-l2-normalized-vectors"
+        },
+        "dtype": {
+          "const": "f32"
+        },
+        "runtime": {
+          "const": "candle-cpu-0.9.1"
+        },
+        "tokenizers": {
+          "const": "0.21.1"
+        },
+        "artifacts": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/modelConfigArtifact"
+            },
+            {
+              "$ref": "#/$defs/modelTokenizerArtifact"
+            },
+            {
+              "$ref": "#/$defs/modelWeightsArtifact"
+            }
+          ],
+          "items": false
+        },
+        "artifacts_sha256_file": {
+          "$ref": "#/$defs/nonEmpty"
+        }
+      }
+    },
+    "measurement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "host",
+        "run_order",
+        "fresh_process_per_phase",
+        "warmup_queries",
+        "prepare_policy",
+        "query_policy",
+        "incremental_workload",
+        "memory_metric",
+        "disk_metric",
+        "latency_clock",
+        "determinism_projection",
+        "percentile_method",
+        "process_environment",
+        "rss_collector",
+        "disk_collector",
+        "os_cache_policy",
+        "fault_injection"
+      ],
+      "properties": {
+        "host": {
+          "$ref": "#/$defs/host"
+        },
+        "run_order": {
+          "type": "array",
+          "const": [
+            [
+              "lexical-bm25-v1",
+              "sqlite-cache-bm25-v1",
+              "fts5-v1",
+              "local-embeddings-v1",
+              "hybrid-rrf-v1"
+            ],
+            [
+              "hybrid-rrf-v1",
+              "local-embeddings-v1",
+              "fts5-v1",
+              "sqlite-cache-bm25-v1",
+              "lexical-bm25-v1"
+            ]
+          ]
+        },
+        "fresh_process_per_phase": {
+          "const": true
+        },
+        "warmup_queries": {
+          "const": 0
+        },
+        "prepare_policy": {
+          "const": "delete-engine-index-before-full-build;create-new-index-atomically;refuse-overwrite-of-report"
+        },
+        "query_policy": {
+          "const": "one-fresh-release-process-per-engine-input-run;queries-in-dataset-order;no-result-cache;offline"
+        },
+        "incremental_workload": {
+          "$ref": "#/$defs/incrementalWorkload"
+        },
+        "memory_metric": {
+          "const": "maximum-resident-set-size-bytes"
+        },
+        "disk_metric": {
+          "const": "allocated-index-bytes-plus-shared-model-bytes-reported-separately"
+        },
+        "latency_clock": {
+          "const": "monotonic"
+        },
+        "determinism_projection": {
+          "const": "ordered-query-id-rank-path-heading-line-start-line-end-file-hash-chunk-hash-excerpt-sha256"
+        },
+        "percentile_method": {
+          "const": "nearest-rank-index-ceil(p*n)-1-on-ascending-samples"
+        },
+        "process_environment": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "RAYON_NUM_THREADS",
+            "TOKENIZERS_PARALLELISM",
+            "OMP_NUM_THREADS",
+            "VECLIB_MAXIMUM_THREADS"
+          ],
+          "properties": {
+            "RAYON_NUM_THREADS": {
+              "const": "1"
+            },
+            "TOKENIZERS_PARALLELISM": {
+              "const": "false"
+            },
+            "OMP_NUM_THREADS": {
+              "const": "1"
+            },
+            "VECLIB_MAXIMUM_THREADS": {
+              "const": "1"
+            }
+          }
+        },
+        "rss_collector": {
+          "const": "macos-/usr/bin/time--l-maximum-resident-set-size-bytes-per-fresh-process"
+        },
+        "disk_collector": {
+          "const": "logical=sum-st_size;allocated=sum-st_blocks-times-512;regular-index-files-only;shared-model-separate"
+        },
+        "os_cache_policy": {
+          "const": "do-not-flush-os-page-cache;counterbalanced-engine-order;record-load-average-at-run-start"
+        },
+        "fault_injection": {
+          "$ref": "#/$defs/faultInjection"
+        }
+      }
+    },
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "quality",
+        "safety",
+        "context",
+        "latency_ms",
+        "indexing_ms",
+        "resources_bytes"
+      ],
+      "properties": {
+        "quality": {
+          "$ref": "#/$defs/qualityBudgets"
+        },
+        "safety": {
+          "$ref": "#/$defs/safetyBudgets"
+        },
+        "context": {
+          "$ref": "#/$defs/contextBudgets"
+        },
+        "latency_ms": {
+          "$ref": "#/$defs/latencyBudgets"
+        },
+        "indexing_ms": {
+          "$ref": "#/$defs/indexingBudgets"
+        },
+        "resources_bytes": {
+          "$ref": "#/$defs/resourceBudgets"
+        }
+      }
+    },
+    "selectionRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method",
+        "eligible_if",
+        "meaningful_gain",
+        "domination",
+        "maximum_finalists",
+        "baseline_retention_allowed",
+        "tie_break"
+      ],
+      "properties": {
+        "method": {
+          "const": "pareto-with-eliminatory-budgets"
+        },
+        "eligible_if": {
+          "const": "all-eliminatory-budgets-pass-on-both-runs-and-all-five-development-inputs"
+        },
+        "meaningful_gain": {
+          "$ref": "#/$defs/meaningfulGain"
+        },
+        "domination": {
+          "const": "not-worse-beyond-meaningful-gain-thresholds-on-quality-context-latency-indexing-memory-disk-and-strictly-better-on-at-least-one-dimension"
+        },
+        "maximum_finalists": {
+          "const": 2
+        },
+        "baseline_retention_allowed": {
+          "const": true
+        },
+        "tie_break": {
+          "type": "array",
+          "const": [
+            "recall-at-5-macro",
+            "hit-at-1",
+            "mrr-at-5",
+            "semantic-recall-at-5",
+            "query-p95",
+            "startup",
+            "peak-rss",
+            "index-bytes",
+            "engine-id-ascending"
+          ]
+        }
+      }
+    },
+    "holdoutBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "denylist",
+        "denylist_sha256",
+        "runner_enforcement",
+        "contents_opened_during_freeze"
+      ],
+      "properties": {
+        "denylist": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "denylist_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "runner_enforcement": {
+          "const": "deny-before-manifest-role-or-query-path-resolution"
+        },
+        "contents_opened_during_freeze": {
+          "const": false
+        }
+      }
+    },
+    "host": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "machine",
+        "cpu",
+        "memory_bytes",
+        "logical_cpus",
+        "os",
+        "os_build",
+        "architecture",
+        "compiler"
+      ],
+      "properties": {
+        "machine": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "cpu": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "memory_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "logical_cpus": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "os": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "os_build": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "architecture": {
+          "type": "string",
+          "enum": [
+            "arm64",
+            "x86_64"
+          ]
+        },
+        "compiler": {
+          "$ref": "#/$defs/nonEmpty"
+        }
+      }
+    },
+    "incrementalWorkload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "operations",
+        "order",
+        "verification"
+      ],
+      "properties": {
+        "source": {
+          "const": "deterministic-copy-of-first-four-sorted-selected-markdown-files"
+        },
+        "operations": {
+          "type": "array",
+          "const": [
+            "add",
+            "modify",
+            "rename",
+            "remove"
+          ]
+        },
+        "order": {
+          "type": "array",
+          "const": [
+            "add",
+            "modify",
+            "rename",
+            "remove"
+          ]
+        },
+        "verification": {
+          "const": "after-each-operation-compare-search-and-evidence-projection-with-clean-full-rebuild"
+        }
+      }
+    },
+    "qualityBudgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scope",
+        "hit_at_1_max_absolute_drop",
+        "recall_at_5_macro_max_absolute_drop",
+        "recall_at_5_micro_max_absolute_drop",
+        "mrr_at_5_max_absolute_drop",
+        "candidate_meaningful_gain",
+        "exact_hit_at_1_max_absolute_drop",
+        "exact_recall_at_5_macro_max_absolute_drop",
+        "exact_mrr_at_5_max_absolute_drop",
+        "ambiguous_hit_at_1_max_absolute_drop",
+        "ambiguous_recall_at_5_macro_max_absolute_drop",
+        "ambiguous_mrr_at_5_max_absolute_drop"
+      ],
+      "properties": {
+        "scope": {
+          "const": "each-development-input-versus-frozen-lexical-baseline"
+        },
+        "hit_at_1_max_absolute_drop": {
+          "const": 0.06
+        },
+        "recall_at_5_macro_max_absolute_drop": {
+          "const": 0.04
+        },
+        "recall_at_5_micro_max_absolute_drop": {
+          "const": 0.04
+        },
+        "mrr_at_5_max_absolute_drop": {
+          "const": 0.05
+        },
+        "candidate_meaningful_gain": {
+          "$ref": "#/$defs/meaningfulGain"
+        },
+        "exact_hit_at_1_max_absolute_drop": {
+          "const": 0.0
+        },
+        "exact_recall_at_5_macro_max_absolute_drop": {
+          "const": 0.0
+        },
+        "exact_mrr_at_5_max_absolute_drop": {
+          "const": 0.0
+        },
+        "ambiguous_hit_at_1_max_absolute_drop": {
+          "const": 0.0
+        },
+        "ambiguous_recall_at_5_macro_max_absolute_drop": {
+          "const": 0.0
+        },
+        "ambiguous_mrr_at_5_max_absolute_drop": {
+          "const": 0.0
+        }
+      }
+    },
+    "meaningfulGain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "quality_absolute_gain",
+        "latency_relative_reduction",
+        "peak_rss_relative_reduction",
+        "index_storage_relative_reduction"
+      ],
+      "properties": {
+        "quality_absolute_gain": {
+          "const": 0.03
+        },
+        "latency_relative_reduction": {
+          "const": 0.2
+        },
+        "peak_rss_relative_reduction": {
+          "const": 0.2
+        },
+        "index_storage_relative_reduction": {
+          "const": 0.2
+        }
+      }
+    },
+    "safetyBudgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "no_answer_false_positive_max_delta_per_input",
+        "no_answer_false_positives_total_max",
+        "query_errors",
+        "skipped_queries",
+        "invalid_evidence",
+        "fallbacks_in_normal_run",
+        "determinism_mismatches",
+        "incremental_stale_results",
+        "consumed_holdout_accesses"
+      ],
+      "properties": {
+        "no_answer_false_positive_max_delta_per_input": {
+          "const": 0
+        },
+        "no_answer_false_positives_total_max": {
+          "const": 1
+        },
+        "query_errors": {
+          "const": 0
+        },
+        "skipped_queries": {
+          "const": 0
+        },
+        "invalid_evidence": {
+          "const": 0
+        },
+        "fallbacks_in_normal_run": {
+          "const": 0
+        },
+        "determinism_mismatches": {
+          "const": 0
+        },
+        "incremental_stale_results": {
+          "const": 0
+        },
+        "consumed_holdout_accesses": {
+          "const": 0
+        }
+      }
+    },
+    "contextBudgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scope",
+        "max_relative_total_increase",
+        "max_excerpt_chars"
+      ],
+      "properties": {
+        "scope": {
+          "const": "each-development-input-versus-frozen-lexical-baseline"
+        },
+        "max_relative_total_increase": {
+          "const": 0.15
+        },
+        "max_excerpt_chars": {
+          "const": 1200
+        }
+      }
+    },
+    "latencyBudgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "startup_max_by_engine",
+        "query_p95_max_by_engine",
+        "run_variation"
+      ],
+      "properties": {
+        "startup_max_by_engine": {
+          "$ref": "#/$defs/engineLatencyCaps"
+        },
+        "query_p95_max_by_engine": {
+          "$ref": "#/$defs/engineLatencyCaps"
+        },
+        "run_variation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "relative_max",
+            "absolute_p95_ms_max",
+            "fails_when"
+          ],
+          "properties": {
+            "relative_max": {
+              "const": 0.25
+            },
+            "absolute_p95_ms_max": {
+              "const": 10.0
+            },
+            "fails_when": {
+              "const": "both-relative-and-absolute-p95-differences-exceed-limits"
+            }
+          }
+        }
+      }
+    },
+    "engineLatencyCaps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "lexical-bm25-v1",
+        "sqlite-cache-bm25-v1",
+        "fts5-v1",
+        "local-embeddings-v1",
+        "hybrid-rrf-v1"
+      ],
+      "properties": {
+        "lexical-bm25-v1": {
+          "const": 500
+        },
+        "sqlite-cache-bm25-v1": {
+          "const": 500
+        },
+        "fts5-v1": {
+          "const": 500
+        },
+        "local-embeddings-v1": {
+          "const": 5000
+        },
+        "hybrid-rrf-v1": {
+          "const": 5000
+        }
+      }
+    },
+    "indexingBudgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "full_build_max_by_engine",
+        "incremental_step_max_relative_to_full_build",
+        "rebuild_required",
+        "incremental_equivalence_required",
+        "incremental_scope"
+      ],
+      "properties": {
+        "full_build_max_by_engine": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "lexical-bm25-v1",
+            "sqlite-cache-bm25-v1",
+            "fts5-v1",
+            "local-embeddings-v1",
+            "hybrid-rrf-v1"
+          ],
+          "properties": {
+            "lexical-bm25-v1": {
+              "type": "null"
+            },
+            "sqlite-cache-bm25-v1": {
+              "const": 60000
+            },
+            "fts5-v1": {
+              "const": 60000
+            },
+            "local-embeddings-v1": {
+              "const": 300000
+            },
+            "hybrid-rrf-v1": {
+              "const": 360000
+            }
+          }
+        },
+        "incremental_step_max_relative_to_full_build": {
+          "const": 1.0
+        },
+        "rebuild_required": {
+          "const": true
+        },
+        "incremental_equivalence_required": {
+          "const": true
+        },
+        "incremental_scope": {
+          "const": "indexed-engines-only;lexical-direct-reports-null-build-and-empty-steps"
+        }
+      }
+    },
+    "resourceBudgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "peak_rss_max_by_engine",
+        "index_storage_max_by_engine",
+        "shared_model_exact"
+      ],
+      "properties": {
+        "peak_rss_max_by_engine": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "lexical-bm25-v1",
+            "sqlite-cache-bm25-v1",
+            "fts5-v1",
+            "local-embeddings-v1",
+            "hybrid-rrf-v1"
+          ],
+          "properties": {
+            "lexical-bm25-v1": {
+              "const": 536870912
+            },
+            "sqlite-cache-bm25-v1": {
+              "const": 536870912
+            },
+            "fts5-v1": {
+              "const": 536870912
+            },
+            "local-embeddings-v1": {
+              "const": 2147483648
+            },
+            "hybrid-rrf-v1": {
+              "const": 2147483648
+            }
+          }
+        },
+        "index_storage_max_by_engine": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "lexical-bm25-v1",
+            "sqlite-cache-bm25-v1",
+            "fts5-v1",
+            "local-embeddings-v1",
+            "hybrid-rrf-v1"
+          ],
+          "properties": {
+            "lexical-bm25-v1": {
+              "const": 0
+            },
+            "sqlite-cache-bm25-v1": {
+              "const": 268435456
+            },
+            "fts5-v1": {
+              "const": 268435456
+            },
+            "local-embeddings-v1": {
+              "const": 268435456
+            },
+            "hybrid-rrf-v1": {
+              "const": 268435456
+            }
+          }
+        },
+        "shared_model_exact": {
+          "const": 487725228
+        }
+      }
+    },
+    "dependencies": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rusqlite",
+        "libsqlite3_sys",
+        "sqlite",
+        "candle_core",
+        "candle_nn",
+        "candle_transformers",
+        "tokenizers",
+        "accelerator_features"
+      ],
+      "properties": {
+        "rusqlite": {
+          "const": "=0.40.2"
+        },
+        "libsqlite3_sys": {
+          "const": "0.38.2"
+        },
+        "sqlite": {
+          "const": "3.53.2"
+        },
+        "candle_core": {
+          "const": "=0.9.1"
+        },
+        "candle_nn": {
+          "const": "=0.9.1"
+        },
+        "candle_transformers": {
+          "const": "=0.9.1"
+        },
+        "tokenizers": {
+          "const": "=0.21.1"
+        },
+        "accelerator_features": {
+          "type": "array",
+          "maxItems": 0
+        }
+      }
+    },
+    "lexicalEngine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "implementation_status",
+        "configuration"
+      ],
+      "properties": {
+        "id": {
+          "const": "lexical-bm25-v1"
+        },
+        "implementation_status": {
+          "const": "existing-baseline"
+        },
+        "configuration": {
+          "$ref": "#/$defs/lexicalConfig"
+        }
+      }
+    },
+    "sqliteEngine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "implementation_status",
+        "configuration"
+      ],
+      "properties": {
+        "id": {
+          "const": "sqlite-cache-bm25-v1"
+        },
+        "implementation_status": {
+          "const": "not-implemented"
+        },
+        "configuration": {
+          "$ref": "#/$defs/sqliteConfig"
+        }
+      }
+    },
+    "fts5Engine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "implementation_status",
+        "configuration"
+      ],
+      "properties": {
+        "id": {
+          "const": "fts5-v1"
+        },
+        "implementation_status": {
+          "const": "not-implemented"
+        },
+        "configuration": {
+          "$ref": "#/$defs/fts5Config"
+        }
+      }
+    },
+    "embeddingEngine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "implementation_status",
+        "configuration"
+      ],
+      "properties": {
+        "id": {
+          "const": "local-embeddings-v1"
+        },
+        "implementation_status": {
+          "const": "not-implemented"
+        },
+        "configuration": {
+          "$ref": "#/$defs/embeddingConfig"
+        }
+      }
+    },
+    "hybridEngine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "implementation_status",
+        "configuration"
+      ],
+      "properties": {
+        "id": {
+          "const": "hybrid-rrf-v1"
+        },
+        "implementation_status": {
+          "const": "not-implemented"
+        },
+        "configuration": {
+          "$ref": "#/$defs/hybridConfig"
+        }
+      }
+    },
+    "bm25Core": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "k1",
+        "b",
+        "body_weight",
+        "heading_weight",
+        "path_weight",
+        "idf",
+        "minimum_should_match",
+        "phrase_boosts",
+        "score_round_decimals"
+      ],
+      "properties": {
+        "k1": {
+          "const": 1.2
+        },
+        "b": {
+          "const": 0.75
+        },
+        "body_weight": {
+          "const": 1.0
+        },
+        "heading_weight": {
+          "const": 2.0
+        },
+        "path_weight": {
+          "const": 3.0
+        },
+        "idf": {
+          "const": "ln(1+(N-df+0.5)/(df+0.5))"
+        },
+        "minimum_should_match": {
+          "const": "one-term=1;otherwise=ceil(0.6*distinct-meaningful-query-terms)"
+        },
+        "phrase_boosts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "body",
+            "heading",
+            "path"
+          ],
+          "properties": {
+            "body": {
+              "const": 2.5
+            },
+            "heading": {
+              "const": 3.0
+            },
+            "path": {
+              "const": 2.0
+            }
+          }
+        },
+        "score_round_decimals": {
+          "const": 6
+        }
+      }
+    },
+    "lexicalConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "storage",
+        "ranking",
+        "candidate_depth",
+        "abstention"
+      ],
+      "properties": {
+        "storage": {
+          "const": "direct-markdown-scan-per-query"
+        },
+        "ranking": {
+          "$ref": "#/$defs/bm25Core"
+        },
+        "candidate_depth": {
+          "const": "all-chunks"
+        },
+        "abstention": {
+          "const": "empty-only-when-no-chunk-meets-minimum-should-match"
+        }
+      }
+    },
+    "sqliteConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "storage",
+        "sqlite",
+        "schema",
+        "invalidation",
+        "write_policy",
+        "ranking",
+        "candidate_depth",
+        "abstention"
+      ],
+      "properties": {
+        "storage": {
+          "const": "sqlite-persistent-chunk-and-token-cache"
+        },
+        "sqlite": {
+          "$ref": "#/$defs/sqliteRuntime"
+        },
+        "schema": {
+          "const": "metadata(key-text-primary-key,value-text);files(path-text-primary-key,file-hash-text,bytes-integer);chunks(chunk-hash-text-primary-key,file-hash-text,path-text,heading-text,line-start-integer,line-end-integer,text-text,tokens-json-text,normalized-text)"
+        },
+        "invalidation": {
+          "const": "rebuild-atomically-when-corpus-fingerprint-or-parser-version-or-engine-config-hash-differs"
+        },
+        "write_policy": {
+          "const": "temporary-database-fsync-then-atomic-rename;never-mutate-valid-index-in-place"
+        },
+        "ranking": {
+          "$ref": "#/$defs/bm25Core"
+        },
+        "candidate_depth": {
+          "const": "all-cached-chunks"
+        },
+        "abstention": {
+          "const": "empty-only-when-no-chunk-meets-minimum-should-match"
+        }
+      }
+    },
+    "sqliteRuntime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rusqlite",
+        "features",
+        "expected_sqlite_version",
+        "runtime_checks"
+      ],
+      "properties": {
+        "rusqlite": {
+          "const": "=0.40.2"
+        },
+        "features": {
+          "type": "array",
+          "const": [
+            "bundled"
+          ]
+        },
+        "expected_sqlite_version": {
+          "const": "3.53.2"
+        },
+        "runtime_checks": {
+          "type": "array",
+          "const": [
+            "sqlite_version_equals_expected",
+            "compile_option_ENABLE_FTS5",
+            "fts5_create-insert-match-bm25-smoke"
+          ]
+        }
+      }
+    },
+    "fts5Config": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sqlite",
+        "table",
+        "tokenizer",
+        "columns",
+        "column_weights",
+        "detail",
+        "columnsize",
+        "prefix_indexes",
+        "query",
+        "candidate_depth",
+        "ranking",
+        "abstention"
+      ],
+      "properties": {
+        "sqlite": {
+          "$ref": "#/$defs/sqliteRuntime"
+        },
+        "table": {
+          "const": "chunks_fts"
+        },
+        "tokenizer": {
+          "const": "unicode61 remove_diacritics 2"
+        },
+        "columns": {
+          "type": "array",
+          "const": [
+            "body",
+            "heading",
+            "path"
+          ]
+        },
+        "column_weights": {
+          "type": "array",
+          "const": [
+            1.0,
+            2.0,
+            3.0
+          ]
+        },
+        "detail": {
+          "const": "full"
+        },
+        "columnsize": {
+          "const": 1
+        },
+        "prefix_indexes": {
+          "type": "array",
+          "maxItems": 0
+        },
+        "query": {
+          "const": "deduplicated-meaningful-terms-double-quoted-and-joined-with-OR;literal-double-quotes-escaped-by-doubling"
+        },
+        "candidate_depth": {
+          "const": 50
+        },
+        "ranking": {
+          "const": "negative-sqlite-bm25(chunks_fts,1.0,2.0,3.0)-descending-then-path-asc-line-start-asc"
+        },
+        "abstention": {
+          "const": "empty-only-when-fts5-match-has-no-row"
+        }
+      }
+    },
+    "embeddingConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model_ref",
+        "tokenization",
+        "vector_storage",
+        "candidate_generation",
+        "candidate_depth",
+        "ranking",
+        "abstention"
+      ],
+      "properties": {
+        "model_ref": {
+          "const": "protocol.model"
+        },
+        "tokenization": {
+          "$ref": "#/$defs/tokenization"
+        },
+        "vector_storage": {
+          "const": "little-endian-f32-384-dim-l2-normalized-keyed-by-chunk-hash"
+        },
+        "candidate_generation": {
+          "const": "exact-linear-scan-of-all-chunk-vectors-no-ann"
+        },
+        "candidate_depth": {
+          "const": 50
+        },
+        "ranking": {
+          "const": "f32-dot-product-descending-then-path-asc-line-start-asc"
+        },
+        "abstention": {
+          "const": "return-empty-when-top-dot-product-is-less-than-0.80"
+        }
+      }
+    },
+    "tokenization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "add_special_tokens",
+        "truncation",
+        "max_tokens",
+        "stride",
+        "padding",
+        "query_prefix",
+        "passage_prefix"
+      ],
+      "properties": {
+        "add_special_tokens": {
+          "const": true
+        },
+        "truncation": {
+          "const": "right"
+        },
+        "max_tokens": {
+          "const": 512
+        },
+        "stride": {
+          "const": 0
+        },
+        "padding": {
+          "const": "dynamic-longest-per-batch"
+        },
+        "query_prefix": {
+          "const": "query: "
+        },
+        "passage_prefix": {
+          "const": "passage: "
+        }
+      }
+    },
+    "hybridConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sources",
+        "source_candidate_depth",
+        "fusion",
+        "rrf_k",
+        "deduplication",
+        "ranking",
+        "abstention"
+      ],
+      "properties": {
+        "sources": {
+          "type": "array",
+          "const": [
+            "fts5-v1",
+            "local-embeddings-v1"
+          ]
+        },
+        "source_candidate_depth": {
+          "const": 50
+        },
+        "fusion": {
+          "const": "reciprocal-rank-fusion"
+        },
+        "rrf_k": {
+          "const": 60
+        },
+        "deduplication": {
+          "const": "chunk-hash"
+        },
+        "ranking": {
+          "const": "sum(1/(60+one-based-source-rank))-descending-then-path-asc-line-start-asc"
+        },
+        "abstention": {
+          "const": "return-empty-only-when-fts5-has-no-row-and-top-embedding-dot-product-is-less-than-0.80"
+        }
+      }
+    },
+    "modelConfigArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "file",
+        "bytes",
+        "sha256"
+      ],
+      "properties": {
+        "file": {
+          "type": "string",
+          "pattern": "(^|/)config\\.json$"
+        },
+        "bytes": {
+          "const": 655
+        },
+        "sha256": {
+          "const": "69137736cab8b8903a07fe8afaafdda25aac55415a12a55d1bffa9f581abf959"
+        }
+      }
+    },
+    "modelTokenizerArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "file",
+        "bytes",
+        "sha256"
+      ],
+      "properties": {
+        "file": {
+          "type": "string",
+          "pattern": "(^|/)tokenizer\\.json$"
+        },
+        "bytes": {
+          "const": 17082730
+        },
+        "sha256": {
+          "const": "0b44a9d7b51c3c62626640cda0e2c2f70fdacdc25bbbd68038369d14ebdf4c39"
+        }
+      }
+    },
+    "modelWeightsArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "file",
+        "bytes",
+        "sha256"
+      ],
+      "properties": {
+        "file": {
+          "type": "string",
+          "pattern": "(^|/)model\\.safetensors$"
+        },
+        "bytes": {
+          "const": 470641600
+        },
+        "sha256": {
+          "const": "1a55775f53449dac10a2bcbc312469fac40b96d53198c407081a831f81c98477"
+        }
+      }
+    },
+    "faultInjection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "lexical-bm25-v1",
+        "sqlite-cache-bm25-v1",
+        "fts5-v1",
+        "local-embeddings-v1",
+        "hybrid-rrf-v1"
+      ],
+      "properties": {
+        "lexical-bm25-v1": {
+          "const": "unavailable-root-must-fail-explicitly;no-fallback"
+        },
+        "sqlite-cache-bm25-v1": {
+          "const": "corrupt-index-header-must-be-detected-and-atomically-rebuilt;forced-rebuild-failure-must-use-explicit-direct-bm25"
+        },
+        "fts5-v1": {
+          "const": "corrupt-index-header-must-be-detected-and-atomically-rebuilt;forced-rebuild-failure-must-fail-closed"
+        },
+        "local-embeddings-v1": {
+          "const": "missing-model-artifact-must-fail-closed-without-network-or-lexical-fallback"
+        },
+        "hybrid-rrf-v1": {
+          "const": "missing-model-artifact-must-fail-closed-without-partial-fts5-results"
+        }
+      }
+    }
+  }
+}

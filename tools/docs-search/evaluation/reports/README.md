@@ -47,8 +47,8 @@ permanecem fora do Git. Cada holdout executou uma única vez e agora está consu
 
 **Decisão após o gate:** cap 1 não será promovido a default porque falhou os pisos de qualidade
 predefinidos nos holdouts. A flag permanece opt-in pelos ganhos públicos de recall e contexto. A
-próxima hipótese altera somente equivalência por prefixo morfológico limitado e será medida em
-development, sem combinar diversidade por path.
+hipótese posterior de prefixo morfológico limitado foi medida duas vezes somente em development e
+rejeitada sem ajuste de parâmetros; nenhum relatório experimental privado é publicado aqui.
 
 A fixture reutiliza o dataset canônico, portanto `corpus.name` permanece `agent-skills`; nome do
 arquivo, root e fingerprint distinguem a execução sintética.

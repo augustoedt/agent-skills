@@ -9,6 +9,7 @@
 - diversidade por path: cap 1 medido, mantido opt-in e rejeitado para promoção a default;
 - julgamentos de desenvolvimento e holdout: revisados diretamente contra as fontes e congelados;
 - gate de holdout: concluído uma única vez e fechado; holdouts consumidos não orientam retuning;
+- prefixo morfológico limitado 7/4: testado duas vezes em development e rejeitado sem ajustes;
 - SQLite/FTS5: adiado até ampliar o benchmark e uma lacuna medida justificar persistência;
 - embeddings/RRF: bloqueado até existir uma lacuna semântica comprovada;
 - MCP: fora do escopo enquanto a CLI atender os clientes.
@@ -404,8 +405,14 @@ Critérios de aceitação apenas nesse conjunto de development, definidos antes 
 8. datasets e julgamentos permanecem byte a byte inalterados.
 
 Falhar qualquer item rejeita a hipótese sem ajuste de parâmetros. Mesmo se aprovada em development,
-ela só poderá chegar a outro gate depois que novos holdouts forem reservados e congelados; os
-holdouts consumidos não serão consultados.
+ela só poderia chegar a outro gate depois que novos holdouts fossem reservados e congelados; os
+holdouts consumidos não seriam consultados.
+
+**Resultado:** rejeitada. Duas execuções em todo o conjunto congelado produziram rankings
+determinísticos e sinal de ganho na categoria-alvo, mas falharam guardas pré-registradas de
+segurança, qualidade e custo. Os parâmetros 7/4 não foram ajustados, datasets permaneceram
+imutáveis, nenhum holdout foi consultado e o código ficou somente em branch experimental local para
+auditoria. O default `lexical-bm25-v1` não mudou.
 
 ### 3.3 Diversidade por path — candidato medido
 

@@ -56,17 +56,18 @@ métricas, relatórios, testes, gates e critérios para SQLite/FTS5, embeddings/
 
 - manter cap 1 apenas como opção explícita, sem alterar o default;
 - preservar o freeze, o gate fechado e os relatórios privados imutáveis;
-- testar somente em development a hipótese pré-registrada de prefixo morfológico limitado;
+- preservar a rejeição do prefixo morfológico 7/4 sem retuning de parâmetros;
 - não usar os holdouts consumidos para retuning ou mudança de julgamentos.
 
 ## Próximo passo
 
-Implementar como opt-in uma única variável de equivalência lexical: prefixo comum mínimo de sete
-caracteres e cauda máxima de quatro por token. Fórmula e constantes BM25, `minimum_should_match`,
-pesos, datasets e ranking ilimitado permanecem fixos; frequências e IDF acompanham a equivalência. Medir apenas nos corpora de desenvolvimento pelos critérios congelados
-em [`docs-search.md`](../plans/docs-search.md); falhar qualquer critério rejeita a hipótese sem ajustar
-parâmetros. Um novo gate continua condicionado à reserva de holdouts novos. A decisão anterior está
-no [`ADR 0002`](../decisions/0002-manter-cap-1-opt-in-apos-holdout.md).
+Não há outro candidato lexical aprovado. A hipótese 7/4 foi executada duas vezes somente em
+development: os rankings foram determinísticos e houve sinal na categoria-alvo, mas guardas de
+segurança, qualidade e custo falharam. O código não entrou em `main` e o default continua
+`lexical-bm25-v1`. Formular outra hipótese exige justificativa independente nos corpora de
+desenvolvimento, uma única variável pré-registrada e holdouts novos antes de qualquer futuro gate.
+Detalhes do experimento ficam no [`plano`](../plans/docs-search.md); a decisão anterior está no
+[`ADR 0002`](../decisions/0002-manter-cap-1-opt-in-apos-holdout.md).
 
 ## Armadilhas conhecidas
 

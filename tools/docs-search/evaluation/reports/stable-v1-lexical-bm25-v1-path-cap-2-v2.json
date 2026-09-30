@@ -32,11 +32,11 @@
     "no_answer_false_positives": 0,
     "no_answer_false_positive_rate": 0.0,
     "latency_ms": {
-      "mean": 4.34955,
-      "p50": 4.135,
-      "p95": 5.479,
-      "max": 5.985,
-      "total": 86.991
+      "mean": 4.1066,
+      "p50": 4.029,
+      "p95": 4.69,
+      "max": 5.044,
+      "total": 82.132
     },
     "context_chars": {
       "mean": 302.15,
@@ -60,11 +60,11 @@
       "no_answer_false_positives": 0,
       "no_answer_false_positive_rate": null,
       "latency_ms": {
-        "mean": 3.798,
-        "p50": 3.785,
-        "p95": 3.892,
-        "max": 3.892,
-        "total": 11.394
+        "mean": 3.713333,
+        "p50": 3.695,
+        "p95": 3.802,
+        "max": 3.802,
+        "total": 11.14
       },
       "context_chars": {
         "mean": 434.0,
@@ -87,11 +87,11 @@
       "no_answer_false_positives": 0,
       "no_answer_false_positive_rate": null,
       "latency_ms": {
-        "mean": 4.89525,
-        "p50": 4.73,
-        "p95": 5.985,
-        "max": 5.985,
-        "total": 39.162
+        "mean": 4.403625,
+        "p50": 4.373,
+        "p95": 5.044,
+        "max": 5.044,
+        "total": 35.229
       },
       "context_chars": {
         "mean": 436.125,
@@ -114,11 +114,11 @@
       "no_answer_false_positives": 0,
       "no_answer_false_positive_rate": 0.0,
       "latency_ms": {
-        "mean": 3.844667,
-        "p50": 3.817,
-        "p95": 4.016,
-        "max": 4.016,
-        "total": 11.534
+        "mean": 3.846,
+        "p50": 3.845,
+        "p95": 3.986,
+        "max": 3.986,
+        "total": 11.538
       },
       "context_chars": {
         "mean": 0.0,
@@ -141,11 +141,11 @@
       "no_answer_false_positives": 0,
       "no_answer_false_positive_rate": null,
       "latency_ms": {
-        "mean": 4.150167,
-        "p50": 4.115,
-        "p95": 4.392,
-        "max": 4.392,
-        "total": 24.901
+        "mean": 4.0375,
+        "p50": 4.029,
+        "p95": 4.185,
+        "max": 4.185,
+        "total": 24.225
       },
       "context_chars": {
         "mean": 208.666667,
@@ -223,7 +223,7 @@
       "recall_at_5": 1.0,
       "reciprocal_rank_at_5": 1.0,
       "no_answer_false_positive": null,
-      "latency_ms": 5.985,
+      "latency_ms": 5.044,
       "context_chars": 1109,
       "error": null,
       "disabled_reason": null
@@ -282,7 +282,7 @@
       "recall_at_5": 1.0,
       "reciprocal_rank_at_5": 1.0,
       "no_answer_false_positive": null,
-      "latency_ms": 5.479,
+      "latency_ms": 4.69,
       "context_chars": 929,
       "error": null,
       "disabled_reason": null
@@ -331,7 +331,7 @@
       "recall_at_5": 1.0,
       "reciprocal_rank_at_5": 1.0,
       "no_answer_false_positive": null,
-      "latency_ms": 5.077,
+      "latency_ms": 4.568,
       "context_chars": 608,
       "error": null,
       "disabled_reason": null
@@ -358,7 +358,7 @@
       "recall_at_5": 0.0,
       "reciprocal_rank_at_5": 0.0,
       "no_answer_false_positive": null,
-      "latency_ms": 4.77,
+      "latency_ms": 4.373,
       "context_chars": 0,
       "error": null,
       "disabled_reason": null
@@ -385,7 +385,7 @@
       "recall_at_5": 0.0,
       "reciprocal_rank_at_5": 0.0,
       "no_answer_false_positive": null,
-      "latency_ms": 4.73,
+      "latency_ms": 4.378,
       "context_chars": 0,
       "error": null,
       "disabled_reason": null
@@ -423,7 +423,7 @@
       "recall_at_5": 1.0,
       "reciprocal_rank_at_5": 1.0,
       "no_answer_false_positive": null,
-      "latency_ms": 4.498,
+      "latency_ms": 4.103,
       "context_chars": 158,
       "error": null,
       "disabled_reason": null
@@ -461,7 +461,7 @@
       "recall_at_5": 1.0,
       "reciprocal_rank_at_5": 1.0,
       "no_answer_false_positive": null,
-      "latency_ms": 4.385,
+      "latency_ms": 4.061,
       "context_chars": 447,
       "error": null,
       "disabled_reason": null
@@ -503,7 +503,7 @@
       "recall_at_5": 0.5,
       "reciprocal_rank_at_5": 1.0,
       "no_answer_false_positive": null,
-      "latency_ms": 4.238,
+      "latency_ms": 4.012,
       "context_chars": 238,
       "error": null,
       "disabled_reason": null
@@ -530,7 +530,7 @@
       "recall_at_5": 0.0,
       "reciprocal_rank_at_5": 0.0,
       "no_answer_false_positive": null,
-      "latency_ms": 4.392,
+      "latency_ms": 4.185,
       "context_chars": 0,
       "error": null,
       "disabled_reason": null
@@ -568,7 +568,7 @@
       "recall_at_5": 1.0,
       "reciprocal_rank_at_5": 1.0,
       "no_answer_false_positive": null,
-      "latency_ms": 4.135,
+      "latency_ms": 4.039,
       "context_chars": 283,
       "error": null,
       "disabled_reason": null
@@ -616,7 +616,7 @@
       "recall_at_5": 1.0,
       "reciprocal_rank_at_5": 1.0,
       "no_answer_false_positive": null,
-      "latency_ms": 4.178,
+      "latency_ms": 4.029,
       "context_chars": 401,
       "error": null,
       "disabled_reason": null
@@ -643,7 +643,7 @@
       "recall_at_5": 0.0,
       "reciprocal_rank_at_5": 0.0,
       "no_answer_false_positive": null,
-      "latency_ms": 4.115,
+      "latency_ms": 3.96,
       "context_chars": 0,
       "error": null,
       "disabled_reason": null
@@ -692,7 +692,7 @@
       "recall_at_5": 1.0,
       "reciprocal_rank_at_5": 1.0,
       "no_answer_false_positive": null,
-      "latency_ms": 4.114,
+      "latency_ms": 4.095,
       "context_chars": 388,
       "error": null,
       "disabled_reason": null
@@ -730,7 +730,7 @@
       "recall_at_5": 1.0,
       "reciprocal_rank_at_5": 1.0,
       "no_answer_false_positive": null,
-      "latency_ms": 3.967,
+      "latency_ms": 3.917,
       "context_chars": 180,
       "error": null,
       "disabled_reason": null
@@ -758,7 +758,7 @@
       "recall_at_5": 0.0,
       "reciprocal_rank_at_5": 0.0,
       "no_answer_false_positive": null,
-      "latency_ms": 3.785,
+      "latency_ms": 3.695,
       "context_chars": 0,
       "error": null,
       "disabled_reason": null
@@ -822,7 +822,7 @@
       "recall_at_5": 1.0,
       "reciprocal_rank_at_5": 1.0,
       "no_answer_false_positive": null,
-      "latency_ms": 3.717,
+      "latency_ms": 3.643,
       "context_chars": 620,
       "error": null,
       "disabled_reason": null
@@ -884,7 +884,7 @@
       "recall_at_5": 1.0,
       "reciprocal_rank_at_5": 1.0,
       "no_answer_false_positive": null,
-      "latency_ms": 3.892,
+      "latency_ms": 3.802,
       "context_chars": 682,
       "error": null,
       "disabled_reason": null
@@ -905,7 +905,7 @@
       "recall_at_5": null,
       "reciprocal_rank_at_5": null,
       "no_answer_false_positive": false,
-      "latency_ms": 4.016,
+      "latency_ms": 3.986,
       "context_chars": 0,
       "error": null,
       "disabled_reason": null
@@ -926,7 +926,7 @@
       "recall_at_5": null,
       "reciprocal_rank_at_5": null,
       "no_answer_false_positive": false,
-      "latency_ms": 3.817,
+      "latency_ms": 3.845,
       "context_chars": 0,
       "error": null,
       "disabled_reason": null
@@ -947,7 +947,7 @@
       "recall_at_5": null,
       "reciprocal_rank_at_5": null,
       "no_answer_false_positive": false,
-      "latency_ms": 3.701,
+      "latency_ms": 3.707,
       "context_chars": 0,
       "error": null,
       "disabled_reason": null

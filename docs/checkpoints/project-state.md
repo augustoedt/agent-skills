@@ -41,8 +41,8 @@ cada holdout uma vez e fechou automaticamente. O conjunto falhou os pisos de qua
 portanto cap 1 não será promovido a default e continua somente opt-in.
 
 A apresentação editorial `docs/apresentacoes/docs-search-arquitetura-e-avaliacao.html` explica o
-fluxo de busca, contrato de evidência, avaliação, privacidade, manifesto local e roadmap sem expor
-nomes ou paths privados.
+escopo, fluxo de busca, contrato de evidência, avaliação, privacidade, decisões de no-go e estado
+operacional atual sem expor nomes ou paths privados.
 
 O binário instalado via Rust 1.98.1 gerenciado por `asdf` continua na versão 0.1.0; ele não foi
 atualizado automaticamente. O v0.5.0 pode ser executado no checkout com `cargo run -- evaluate` até

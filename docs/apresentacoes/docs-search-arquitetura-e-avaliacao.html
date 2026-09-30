@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>docs-search — arquitetura, avaliação e privacidade</title>
+<title>docs-search — escopo, arquitetura e estado atual</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&amp;family=Public+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
@@ -341,21 +341,22 @@
 
 <div class="cover">
   <p class="eyebrow">agent-skills · recuperação documental</p>
-  <h1>docs-search: do Markdown à evidência verificável</h1>
-  <p class="lede">Uma busca local e independente de modelo que seleciona contexto mínimo, mede a própria qualidade e mantém avaliações privadas fora do Git.</p>
+  <h1>docs-search: escopo, arquitetura e estado atual</h1>
+  <p class="lede">O que o sistema faz hoje, o que ficou deliberadamente fora, como sua qualidade é medida e por que o motor lexical permanece como default estável.</p>
   <p class="meta">Atualizado em 29 de setembro de 2026 · apresentação técnica</p>
 </div>
 
 <nav class="toc" aria-label="Sumário">
   <div class="row" id="tocRow">
     <a href="#visao-geral">Visão geral</a>
+    <a href="#escopo">Escopo</a>
     <a href="#busca">Fluxo de busca</a>
     <a href="#evidencia">Evidência</a>
     <a href="#avaliacao">Avaliação</a>
     <a href="#privacidade">Privacidade</a>
     <a href="#manifesto">Manifesto local</a>
-    <a href="#proximos">Próximos passos</a>
-    <a href="#status">Onde estamos</a>
+    <a href="#decisoes">Decisões</a>
+    <a href="#status">Estado atual</a>
   </div>
 </nav>
 
@@ -398,11 +399,74 @@
         <figcaption>A busca reduz contexto antes da leitura detalhada; a fonte documental continua autoritativa.</figcaption>
       </figure>
     </div>
+    <div class="next-grid">
+      <div class="next-card current">
+        <p class="kicker">Default atual</p>
+        <h3>Lexical e estável</h3>
+        <p><code>lexical-bm25-v1</code>, ranking ilimitado e contratos JSON v2 continuam sendo o caminho padrão.</p>
+      </div>
+      <div class="next-card">
+        <p class="kicker">Opção explícita</p>
+        <h3>Diversidade cap 1</h3>
+        <p>Reduz repetição por arquivo, mas não generalizou o suficiente para virar default.</p>
+      </div>
+      <div class="next-card future">
+        <p class="kicker">Sem candidato</p>
+        <h3>Nenhum tuning ativo</h3>
+        <p>A hipótese morfológica 7/4 foi rejeitada. Não há outra mudança aprovada para implementação.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="escopo">
+    <div class="block-head">
+      <span class="index">01</span>
+      <h2>Escopo do projeto</h2>
+      <span class="status done">fronteira definida</span>
+    </div>
+    <div class="prose">
+      <p>O <span class="chip-code">docs-search</span> é uma ferramenta local de recuperação documental. Ele seleciona trechos de Markdown para orientar agentes; não tenta substituir busca de código, banco vetorial ou julgamento humano.</p>
+    </div>
+    <div class="comparison-grid">
+      <div class="figure-wrap">
+        <p class="comparison-label after">Dentro do escopo</p>
+        <figure>
+          <svg class="dgm" viewBox="0 0 480 300" role="img" aria-label="Capacidades que fazem parte do escopo atual do docs-search.">
+            <rect class="node accent" x="35" y="24" width="410" height="238" rx="3"></rect>
+            <text class="label label-title" x="240" y="56" text-anchor="middle">Recuperação documental local</text>
+            <text class="label" x="70" y="96">✓ corpus Markdown seguro</text>
+            <text class="label" x="70" y="126">✓ chunks por heading e linhas</text>
+            <text class="label" x="70" y="156">✓ ranking lexical BM25</text>
+            <text class="label" x="70" y="186">✓ evidência humana e JSON v2</text>
+            <text class="label" x="70" y="216">✓ benchmark e gates privados</text>
+            <text class="label" x="70" y="246">✓ diversidade por path opt-in</text>
+          </svg>
+          <figcaption>O produto entrega contexto rastreável e reproduzível para leitura posterior.</figcaption>
+        </figure>
+      </div>
+      <div class="figure-wrap">
+        <p class="comparison-label before">Fora do escopo atual</p>
+        <figure>
+          <svg class="dgm" viewBox="0 0 480 300" role="img" aria-label="Capacidades deliberadamente fora do escopo atual do docs-search.">
+            <rect class="node amber" x="35" y="24" width="410" height="238" rx="3"></rect>
+            <text class="label label-title" x="240" y="56" text-anchor="middle">Complexidade ainda não justificada</text>
+            <text class="label" x="70" y="96">— busca de código ou AST</text>
+            <text class="label" x="70" y="126">— SQLite, FTS5 ou índice persistente</text>
+            <text class="label" x="70" y="156">— embeddings, RRF ou roteador</text>
+            <text class="label" x="70" y="186">— servidor MCP</text>
+            <text class="label" x="70" y="216">— prova automática de ausência</text>
+            <text class="label" x="70" y="246">— publicação de avaliações privadas</text>
+          </svg>
+          <figcaption>Esses itens só entram após evidência de development e novo gate de generalização.</figcaption>
+        </figure>
+      </div>
+    </div>
+    <div class="callout"><strong>Limite operacional:</strong> a documentação continua sendo a fonte da verdade. O resultado da busca serve para localizar evidência; depois o agente lê o arquivo original e verifica o código quando necessário.</div>
   </section>
 
   <section class="block" id="busca">
     <div class="block-head">
-      <span class="index">01</span>
+      <span class="index">02</span>
       <h2>Fluxo de busca</h2>
       <span class="status done">implementado</span>
     </div>
@@ -452,7 +516,7 @@
 
   <section class="block" id="evidencia">
     <div class="block-head">
-      <span class="index">02</span>
+      <span class="index">03</span>
       <h2>Contrato de evidência</h2>
       <span class="status done">schema v2</span>
     </div>
@@ -477,7 +541,7 @@
 
   <section class="block" id="avaliacao">
     <div class="block-head">
-      <span class="index">03</span>
+      <span class="index">04</span>
       <h2>Avaliação antes de complexidade</h2>
       <span class="status done">runner ativo</span>
     </div>
@@ -529,7 +593,7 @@
 
   <section class="block" id="privacidade">
     <div class="block-head">
-      <span class="index">04</span>
+      <span class="index">05</span>
       <h2>Separação público × privado</h2>
       <span class="status done">isolado</span>
     </div>
@@ -570,7 +634,7 @@
 
   <section class="block" id="manifesto">
     <div class="block-head">
-      <span class="index">05</span>
+      <span class="index">06</span>
       <h2>Manifesto local por máquina</h2>
       <span class="status done">manifest v1 atual</span>
     </div>
@@ -609,47 +673,79 @@
     </div>
   </section>
 
-  <section class="block" id="proximos">
+  <section class="block" id="decisoes">
     <div class="block-head">
-      <h2>Próximos passos</h2>
+      <h2>Decisões do ciclo</h2>
+      <span class="status done">estado consolidado</span>
+    </div>
+    <div class="prose">
+      <p>O sistema não está aguardando uma mudança pronta para merge. Dois candidatos foram avaliados e não passaram pelas regras definidas antes das medições.</p>
     </div>
     <div class="next-grid">
       <div class="next-card current">
-        <p class="kicker">Agora</p>
-        <h3>Hipótese rejeitada</h3>
-        <p>O prefixo morfológico 7/4 mostrou sinal semântico, mas falhou guardas congeladas e não entrou no default.</p>
+        <p class="kicker">Mantido</p>
+        <h3>Default lexical</h3>
+        <p><code>lexical-bm25-v1</code> continua simples, auditável e sem regressões introduzidas pelos experimentos.</p>
       </div>
       <div class="next-card">
-        <p class="kicker">Próximo ciclo</p>
-        <h3>Sem candidato ativo</h3>
-        <p>Outra hipótese exige evidência independente em development, pré-registro de uma variável e holdouts novos.</p>
+        <p class="kicker">Não promovido</p>
+        <h3>Cap 1 por path</h3>
+        <p>Teve ganhos públicos de contexto e recall, mas falhou o gate privado. Continua disponível apenas por flag.</p>
       </div>
       <div class="next-card future">
-        <p class="kicker">Condicional</p>
-        <h3>FTS5 ou busca híbrida</h3>
-        <p>Adicionar persistência ou embeddings somente se benchmarks demonstrarem ganho necessário.</p>
+        <p class="kicker">Rejeitado</p>
+        <h3>Prefixo 7/4</h3>
+        <p>Mostrou sinal semântico em development, porém falhou guardas de segurança, qualidade e custo. Não entrou em <code>main</code>.</p>
       </div>
     </div>
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Alternativa</th><th>Evidência observada</th><th>Decisão</th></tr></thead>
+        <tbody>
+          <tr><td>BM25 exato</td><td>Baseline reproduzível, contratos estáveis e abstention mensurável.</td><td class="new">Default mantido</td></tr>
+          <tr><td>Cap 1</td><td>Melhora pública, sem generalização suficiente no gate.</td><td>Opt-in; não default</td></tr>
+          <tr><td>Prefixo 7/4</td><td>Ganho-alvo acompanhado de falhas nas guardas pré-registradas.</td><td class="old">Rejeitado sem retuning</td></tr>
+          <tr><td>FTS5 / híbrida</td><td>Ainda sem evidência isolada que justifique a complexidade.</td><td>Adiado</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout"><strong>Sem candidato ativo:</strong> o próximo ciclo só começa com uma hipótese independente nos corpora de development, uma variável pré-registrada e novos holdouts reservados.</div>
   </section>
 
   <section class="block" id="status">
     <div class="block-head">
-      <h2>Onde estamos</h2>
+      <h2>Onde o sistema se encontra agora</h2>
+      <span class="status done">estável · sem tuning ativo</span>
     </div>
     <div class="prose">
-      <p>O baseline lexical, o avaliador, a separação privada, o hardening de fenced code e o gate de diversidade estão concluídos. Cap 1 permanece opt-in e não foi promovido a default. A hipótese morfológica seguinte também foi rejeitada; o motor padrão continua lexical-bm25-v1.</p>
+      <p>O produto funcional está no código-fonte v0.5.0. O motor padrão é lexical, os contratos são v2 e toda a infraestrutura de avaliação já existe. O ciclo atual terminou em no-go para os dois candidatos; isso preserva o default em vez de promover uma melhoria local que não generalizou.</p>
+    </div>
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Componente</th><th>Estado atual</th><th>Implicação prática</th></tr></thead>
+        <tbody>
+          <tr><td>Código-fonte</td><td><code>docs-search 0.5.0</code></td><td>Implementação atual e testada no checkout.</td></tr>
+          <tr><td>Binário global</td><td><code>docs-search 0.1.0</code></td><td class="old">Ainda desatualizado; nenhuma instalação automática foi feita.</td></tr>
+          <tr><td>Motor default</td><td><code>lexical-bm25-v1</code></td><td>Ranking exato e ilimitado por padrão.</td></tr>
+          <tr><td>Contratos</td><td>busca v2 · queries v2 · relatório v2</td><td>Somente contratos atuais são aceitos.</td></tr>
+          <tr><td>Diversidade</td><td><code>--max-results-per-path 1</code></td><td>Disponível apenas quando solicitada explicitamente.</td></tr>
+          <tr><td>Índice / semântica</td><td>não implementados</td><td>SQLite, FTS5, embeddings, RRF e MCP continuam fora.</td></tr>
+          <tr><td>Próximo candidato</td><td>nenhum</td><td>O tuning está pausado até surgir evidência independente.</td></tr>
+        </tbody>
+      </table>
     </div>
     <div class="stepper-wrap">
       <div class="stepper">
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">1</span>Busca lexical</div></div>
-        <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">2</span>Avaliador</div></div>
-        <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">3</span>Privacidade local</div></div>
-        <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">4</span>Fenced code</div></div>
-        <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">5</span>Diversidade por path</div></div>
-        <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">6</span>Gate de holdout</div></div>
+        <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">2</span>Contrato v2</div></div>
+        <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">3</span>Avaliador</div></div>
+        <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">4</span>Privacidade</div></div>
+        <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">5</span>Cap por path</div></div>
+        <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">6</span>Gate cap 1</div></div>
+        <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">7</span>Teste 7/4</div></div>
       </div>
     </div>
-    <div class="callout"><strong>Regra de decisão:</strong> mais complexidade só entra quando melhora recuperação sem piorar abstention, contexto ou generalização.</div>
+    <div class="callout"><strong>Leitura correta do estado:</strong> a base está pronta para uso no checkout, mas o executável global ainda é antigo. Não há feature pendente aprovada; o próximo avanço depende de nova evidência, não de continuar ajustando os candidatos rejeitados.</div>
   </section>
 </main>
 

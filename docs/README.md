@@ -36,5 +36,5 @@ atualizar quando a rotina mudar.
 
 Material HTML editorial criado sob demanda para explicar arquitetura, fluxos e estado do projeto.
 
-- `docs-search-arquitetura-e-avaliacao.html` — fluxo completo da busca documental, contrato de
-  evidência, avaliação, separação público/privado, manifesto local e roadmap.
+- `docs-search-arquitetura-e-avaliacao.html` — escopo, fluxo da busca, contrato de evidência,
+  avaliação, decisões dos experimentos e estado operacional atual.

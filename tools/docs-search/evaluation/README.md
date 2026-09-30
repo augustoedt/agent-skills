@@ -129,8 +129,12 @@ lexical ranking, baseline, provenance, and the paired run before combining exter
 end-to-end, RSS, and disk measurements into the operational v1 report. A separate private harness
 registry pins the runner and public revision. The runner attests the clean release binary, frozen
 Rust toolchain and host, process environment, and denylist before path resolution.
-Writes use `create_new`, mode `0600`, and refuse overwrite. Only the `lexical-bm25-v1` adapter exists
-in this phase; SQLite, FTS5, E5, and RRF remain explicitly unavailable.
+Writes use `create_new`, mode `0600`, and refuse overwrite. The `lexical-bm25-v1` and
+`sqlite-cache-bm25-v1` adapters are implemented. SQLite uses the frozen bundled runtime, an atomic
+persistent chunk/token cache, exact direct-BM25 ranking, four-operation incremental verification,
+corruption rebuild, and explicit direct fallback under injected rebuild failure. FTS5, E5, and RRF
+remain explicitly unavailable. Frozen measurements stay closed until all adapters share one clean
+revision.
 
 Only the schemas are public. Protocol instances, snapshot manifests, private datasets, baseline
 reports, model paths, and checksum registries stay in machine-local encrypted storage. Frozen

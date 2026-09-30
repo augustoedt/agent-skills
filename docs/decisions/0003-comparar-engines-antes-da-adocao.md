@@ -48,8 +48,9 @@ A Fase 4.1 materializa essa decisão com uma fronteira interna de engine e dois 
 do runner privado: `bakeoff observe` e `bakeoff finalize`. O primeiro produz observações imutáveis;
 o segundo revalida corpus, dataset, ranking, baseline, evidência, provenance e o par de runs antes
 de produzir o relatório operacional v1. O runner atesta binário release, revisão Git, `Cargo.lock`,
-host, ambiente de processo e denylist. Nesta fase, somente o baseline direto possui adapter; os
-quatro braços experimentais são rejeitados explicitamente até suas fases próprias.
+host, ambiente de processo e denylist. A Fase 4.2 adicionou o adapter SQLite/BM25 com ranking
+idêntico, índice atômico reconstruível, atualização incremental verificada, corrupção e fallback
+explícito. FTS5, embeddings e RRF continuam rejeitados até suas fases próprias.
 
 ## Consequências
 

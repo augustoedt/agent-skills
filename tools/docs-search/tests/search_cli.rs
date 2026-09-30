@@ -352,7 +352,10 @@ fn cli_rejects_unimplemented_bakeoff_engines_before_reading_inputs() {
         .unwrap();
 
     assert!(!output.status.success());
-    assert!(String::from_utf8_lossy(&output.stderr).contains("not implemented in Phase 4.1"));
+    assert!(
+        String::from_utf8_lossy(&output.stderr)
+            .contains("not implemented before its planned phase")
+    );
 }
 
 #[test]

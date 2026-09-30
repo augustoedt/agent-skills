@@ -1,15 +1,15 @@
 {
   "schema_version": 2,
-  "tool_version": "0.6.0-alpha.2",
+  "tool_version": "0.6.0-alpha.3",
   "engine": "lexical-bm25-v1",
   "queries_schema_version": 2,
   "dataset_hash": "7c068e714df8b59ada8af85a235522b41f77eb23860a463ef30ac3fd6d62485f",
   "corpus": {
     "name": "agent-skills",
-    "root": ".",
+    "root": "../..",
     "files": 9,
     "chunks": 96,
-    "fingerprint": "10f234f0f2f9949a7e5ed762d8e94a2addfbe99fa0a082487443d4093a35c66d"
+    "fingerprint": "b4fbee0bf833acc856e9efeeec4efade92c2e4d4642038434adf36af383a01ee"
   },
   "config": {
     "limit": 5,
@@ -32,17 +32,17 @@
     "no_answer_false_positives": 0,
     "no_answer_false_positive_rate": 0.0,
     "latency_ms": {
-      "mean": 34.24975,
-      "p50": 34.343,
-      "p95": 35.147,
-      "max": 37.174,
-      "total": 684.995
+      "mean": 34.3435,
+      "p50": 34.527,
+      "p95": 35.255,
+      "max": 35.881,
+      "total": 686.87
     },
     "context_chars": {
-      "mean": 924.45,
-      "p95": 2629,
+      "mean": 925.2,
+      "p95": 2644,
       "max": 2830,
-      "total": 18489
+      "total": 18504
     }
   },
   "per_category": {
@@ -60,11 +60,11 @@
       "no_answer_false_positives": 0,
       "no_answer_false_positive_rate": null,
       "latency_ms": {
-        "mean": 32.838333,
-        "p50": 32.92,
-        "p95": 33.021,
-        "max": 33.021,
-        "total": 98.515
+        "mean": 32.993667,
+        "p50": 33.115,
+        "p95": 33.307,
+        "max": 33.307,
+        "total": 98.981
       },
       "context_chars": {
         "mean": 1241.666667,
@@ -87,17 +87,17 @@
       "no_answer_false_positives": 0,
       "no_answer_false_positive_rate": null,
       "latency_ms": {
-        "mean": 34.305625,
-        "p50": 34.273,
-        "p95": 34.901,
-        "max": 34.901,
-        "total": 274.445
+        "mean": 34.612375,
+        "p50": 34.689,
+        "p95": 35.18,
+        "max": 35.18,
+        "total": 276.899
       },
       "context_chars": {
-        "mean": 1664.125,
+        "mean": 1666.0,
         "p95": 2830,
         "max": 2830,
-        "total": 13313
+        "total": 13328
       }
     },
     "no_answer": {
@@ -114,11 +114,11 @@
       "no_answer_false_positives": 0,
       "no_answer_false_positive_rate": 0.0,
       "latency_ms": {
-        "mean": 33.655333,
-        "p50": 33.649,
-        "p95": 34.443,
-        "max": 34.443,
-        "total": 100.966
+        "mean": 33.881333,
+        "p50": 33.917,
+        "p95": 34.675,
+        "max": 34.675,
+        "total": 101.644
       },
       "context_chars": {
         "mean": 0.0,
@@ -141,11 +141,11 @@
       "no_answer_false_positives": 0,
       "no_answer_false_positive_rate": null,
       "latency_ms": {
-        "mean": 35.178167,
-        "p50": 34.753,
-        "p95": 37.174,
-        "max": 37.174,
-        "total": 211.069
+        "mean": 34.891,
+        "p50": 34.574,
+        "p95": 35.881,
+        "max": 35.881,
+        "total": 209.346
       },
       "context_chars": {
         "mean": 241.833333,
@@ -181,7 +181,7 @@
           "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome > Quando",
           "line_start": 6,
           "line_end": 13,
-          "score": 10.38441,
+          "score": 10.418526,
           "excerpt_chars": 352
         },
         {
@@ -191,7 +191,7 @@
           "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome",
           "line_start": 1,
           "line_end": 4,
-          "score": 7.45183,
+          "score": 7.458369,
           "excerpt_chars": 157
         },
         {
@@ -201,7 +201,7 @@
           "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome > Não fazer",
           "line_start": 78,
           "line_end": 87,
-          "score": 6.829659,
+          "score": 6.849509,
           "excerpt_chars": 585
         },
         {
@@ -211,7 +211,7 @@
           "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome > Contexto",
           "line_start": 15,
           "line_end": 27,
-          "score": 6.717259,
+          "score": 6.739078,
           "excerpt_chars": 616
         },
         {
@@ -221,7 +221,7 @@
           "heading": "Agent Skills > Editar e sincronizar uma skill própria",
           "line_start": 48,
           "line_end": 54,
-          "score": 6.481875,
+          "score": 6.503529,
           "excerpt_chars": 402
         }
       ],
@@ -233,7 +233,7 @@
       "recall_at_5": 1.0,
       "reciprocal_rank_at_5": 1.0,
       "no_answer_false_positive": null,
-      "latency_ms": 33.956,
+      "latency_ms": 35.015,
       "context_chars": 2112,
       "error": null,
       "disabled_reason": null
@@ -260,7 +260,7 @@
           "heading": "Agent Skills > Editar e sincronizar uma skill própria",
           "line_start": 48,
           "line_end": 54,
-          "score": 8.075396,
+          "score": 8.127806,
           "excerpt_chars": 402
         },
         {
@@ -270,7 +270,7 @@
           "heading": "Plano — docs-search > Princípios e restrições",
           "line_start": 32,
           "line_end": 42,
-          "score": 6.708417,
+          "score": 6.77631,
           "excerpt_chars": 832
         },
         {
@@ -278,10 +278,10 @@
           "raw_rank": 3,
           "path": "docs/checkpoints/project-state.md",
           "heading": "Estado do projeto > Armadilhas conhecidas",
-          "line_start": 95,
-          "line_end": 106,
-          "score": 6.237403,
-          "excerpt_chars": 878
+          "line_start": 102,
+          "line_end": 113,
+          "score": 6.222193,
+          "excerpt_chars": 893
         },
         {
           "rank": 4,
@@ -290,7 +290,7 @@
           "heading": "Documentação do agent-skills",
           "line_start": 1,
           "line_end": 4,
-          "score": 5.092,
+          "score": 5.106754,
           "excerpt_chars": 173
         },
         {
@@ -300,7 +300,7 @@
           "heading": "Agent Skills > Estrutura",
           "line_start": 5,
           "line_end": 11,
-          "score": 4.751667,
+          "score": 4.772536,
           "excerpt_chars": 344
         }
       ],
@@ -312,8 +312,8 @@
       "recall_at_5": 1.0,
       "reciprocal_rank_at_5": 1.0,
       "no_answer_false_positive": null,
-      "latency_ms": 34.0,
-      "context_chars": 2629,
+      "latency_ms": 34.919,
+      "context_chars": 2644,
       "error": null,
       "disabled_reason": null
     },
@@ -339,7 +339,7 @@
           "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome",
           "line_start": 1,
           "line_end": 4,
-          "score": 20.277443,
+          "score": 20.301459,
           "excerpt_chars": 157
         },
         {
@@ -349,7 +349,7 @@
           "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome > Quando",
           "line_start": 6,
           "line_end": 13,
-          "score": 15.353196,
+          "score": 15.410281,
           "excerpt_chars": 352
         },
         {
@@ -359,7 +359,7 @@
           "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome > Não fazer",
           "line_start": 78,
           "line_end": 87,
-          "score": 14.003559,
+          "score": 14.079509,
           "excerpt_chars": 585
         },
         {
@@ -369,7 +369,7 @@
           "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome > Contexto",
           "line_start": 15,
           "line_end": 27,
-          "score": 13.735469,
+          "score": 13.814447,
           "excerpt_chars": 616
         },
         {
@@ -379,7 +379,7 @@
           "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome > Passos",
           "line_start": 29,
           "line_end": 73,
-          "score": 11.326447,
+          "score": 11.421853,
           "excerpt_chars": 1120
         }
       ],
@@ -391,7 +391,7 @@
       "recall_at_5": 1.0,
       "reciprocal_rank_at_5": 1.0,
       "no_answer_false_positive": null,
-      "latency_ms": 34.343,
+      "latency_ms": 35.18,
       "context_chars": 2830,
       "error": null,
       "disabled_reason": null
@@ -417,7 +417,7 @@
           "heading": "Agent Skills > Skills de terceiros",
           "line_start": 87,
           "line_end": 124,
-          "score": 7.187981,
+          "score": 7.281063,
           "excerpt_chars": 1166
         }
       ],
@@ -429,7 +429,7 @@
       "recall_at_5": 1.0,
       "reciprocal_rank_at_5": 1.0,
       "no_answer_false_positive": null,
-      "latency_ms": 33.879,
+      "latency_ms": 34.021,
       "context_chars": 1166,
       "error": null,
       "disabled_reason": null
@@ -456,7 +456,7 @@
       "recall_at_5": 0.0,
       "reciprocal_rank_at_5": 0.0,
       "no_answer_false_positive": null,
-      "latency_ms": 34.559,
+      "latency_ms": 34.689,
       "context_chars": 0,
       "error": null,
       "disabled_reason": null
@@ -482,7 +482,7 @@
           "heading": "Agent Skills > Compatibilidade (macOS + Linux)",
           "line_start": 56,
           "line_end": 63,
-          "score": 24.431777,
+          "score": 24.495047,
           "excerpt_chars": 447
         },
         {
@@ -492,7 +492,7 @@
           "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome > Contexto",
           "line_start": 15,
           "line_end": 27,
-          "score": 7.197928,
+          "score": 7.274812,
           "excerpt_chars": 616
         }
       ],
@@ -504,7 +504,7 @@
       "recall_at_5": 1.0,
       "reciprocal_rank_at_5": 1.0,
       "no_answer_false_positive": null,
-      "latency_ms": 34.534,
+      "latency_ms": 34.391,
       "context_chars": 1063,
       "error": null,
       "disabled_reason": null
@@ -530,7 +530,7 @@
           "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome > Passos",
           "line_start": 35,
           "line_end": 76,
-          "score": 9.089721,
+          "score": 9.205586,
           "excerpt_chars": 1192
         }
       ],
@@ -542,7 +542,7 @@
       "recall_at_5": 1.0,
       "reciprocal_rank_at_5": 1.0,
       "no_answer_false_positive": null,
-      "latency_ms": 34.273,
+      "latency_ms": 33.99,
       "context_chars": 1192,
       "error": null,
       "disabled_reason": null
@@ -572,7 +572,7 @@
           "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome > Contexto",
           "line_start": 15,
           "line_end": 27,
-          "score": 10.97449,
+          "score": 11.06392,
           "excerpt_chars": 616
         },
         {
@@ -582,7 +582,7 @@
           "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome > Passos",
           "line_start": 29,
           "line_end": 73,
-          "score": 10.335174,
+          "score": 10.431808,
           "excerpt_chars": 1120
         },
         {
@@ -592,7 +592,7 @@
           "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome > Não fazer",
           "line_start": 78,
           "line_end": 87,
-          "score": 8.392139,
+          "score": 8.449153,
           "excerpt_chars": 585
         }
       ],
@@ -604,7 +604,7 @@
       "recall_at_5": 0.5,
       "reciprocal_rank_at_5": 1.0,
       "no_answer_false_positive": null,
-      "latency_ms": 34.901,
+      "latency_ms": 34.694,
       "context_chars": 2321,
       "error": null,
       "disabled_reason": null
@@ -631,7 +631,7 @@
       "recall_at_5": 0.0,
       "reciprocal_rank_at_5": 0.0,
       "no_answer_false_positive": null,
-      "latency_ms": 37.174,
+      "latency_ms": 35.881,
       "context_chars": 0,
       "error": null,
       "disabled_reason": null
@@ -658,7 +658,7 @@
       "recall_at_5": 0.0,
       "reciprocal_rank_at_5": 0.0,
       "no_answer_false_positive": null,
-      "latency_ms": 35.029,
+      "latency_ms": 34.605,
       "context_chars": 0,
       "error": null,
       "disabled_reason": null
@@ -684,7 +684,7 @@
           "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome > Quando",
           "line_start": 6,
           "line_end": 13,
-          "score": 12.941527,
+          "score": 13.019998,
           "excerpt_chars": 352
         }
       ],
@@ -696,7 +696,7 @@
       "recall_at_5": 1.0,
       "reciprocal_rank_at_5": 1.0,
       "no_answer_false_positive": null,
-      "latency_ms": 34.753,
+      "latency_ms": 34.574,
       "context_chars": 352,
       "error": null,
       "disabled_reason": null
@@ -723,7 +723,7 @@
       "recall_at_5": 0.0,
       "reciprocal_rank_at_5": 0.0,
       "no_answer_false_positive": null,
-      "latency_ms": 34.532,
+      "latency_ms": 34.504,
       "context_chars": 0,
       "error": null,
       "disabled_reason": null
@@ -751,7 +751,7 @@
       "recall_at_5": 0.0,
       "reciprocal_rank_at_5": 0.0,
       "no_answer_false_positive": null,
-      "latency_ms": 35.147,
+      "latency_ms": 35.255,
       "context_chars": 0,
       "error": null,
       "disabled_reason": null
@@ -777,7 +777,7 @@
           "heading": "Plano — docs-search > Etapa 1 — contrato de avaliação e executor > 1.3 Implementar o executor em Rust",
           "line_start": 110,
           "line_end": 138,
-          "score": 5.632536,
+          "score": 5.706032,
           "excerpt_chars": 1099
         }
       ],
@@ -789,7 +789,7 @@
       "recall_at_5": 0.0,
       "reciprocal_rank_at_5": 0.0,
       "no_answer_false_positive": null,
-      "latency_ms": 34.434,
+      "latency_ms": 34.527,
       "context_chars": 1099,
       "error": null,
       "disabled_reason": null
@@ -816,7 +816,7 @@
           "heading": "Agent Skills > Skills de terceiros",
           "line_start": 87,
           "line_end": 124,
-          "score": 4.611141,
+          "score": 4.665683,
           "excerpt_chars": 1166
         }
       ],
@@ -828,7 +828,7 @@
       "recall_at_5": 1.0,
       "reciprocal_rank_at_5": 1.0,
       "no_answer_false_positive": null,
-      "latency_ms": 33.021,
+      "latency_ms": 33.307,
       "context_chars": 1166,
       "error": null,
       "disabled_reason": null
@@ -860,7 +860,7 @@
           "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome",
           "line_start": 1,
           "line_end": 4,
-          "score": 5.177118,
+          "score": 5.181661,
           "excerpt_chars": 157
         },
         {
@@ -870,7 +870,7 @@
           "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome > Quando",
           "line_start": 6,
           "line_end": 13,
-          "score": 4.959903,
+          "score": 4.96934,
           "excerpt_chars": 352
         },
         {
@@ -880,7 +880,7 @@
           "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome > Não fazer",
           "line_start": 78,
           "line_end": 87,
-          "score": 4.572945,
+          "score": 4.589077,
           "excerpt_chars": 585
         },
         {
@@ -890,7 +890,7 @@
           "heading": "Runbook — Sincronizar skills e eliminar conflitos de nome > Contexto",
           "line_start": 15,
           "line_end": 27,
-          "score": 4.515127,
+          "score": 4.532304,
           "excerpt_chars": 616
         },
         {
@@ -900,7 +900,7 @@
           "heading": "Agent Skills > Editar e sincronizar uma skill própria",
           "line_start": 48,
           "line_end": 54,
-          "score": 4.330615,
+          "score": 4.347527,
           "excerpt_chars": 402
         }
       ],
@@ -912,7 +912,7 @@
       "recall_at_5": 1.0,
       "reciprocal_rank_at_5": 1.0,
       "no_answer_false_positive": null,
-      "latency_ms": 32.574,
+      "latency_ms": 32.559,
       "context_chars": 2112,
       "error": null,
       "disabled_reason": null
@@ -942,7 +942,7 @@
           "heading": "Agent Skills > Compatibilidade (macOS + Linux)",
           "line_start": 56,
           "line_end": 63,
-          "score": 10.282281,
+          "score": 10.164671,
           "excerpt_chars": 447
         }
       ],
@@ -954,7 +954,7 @@
       "recall_at_5": 0.5,
       "reciprocal_rank_at_5": 1.0,
       "no_answer_false_positive": null,
-      "latency_ms": 32.92,
+      "latency_ms": 33.115,
       "context_chars": 447,
       "error": null,
       "disabled_reason": null
@@ -975,7 +975,7 @@
       "recall_at_5": null,
       "reciprocal_rank_at_5": null,
       "no_answer_false_positive": false,
-      "latency_ms": 34.443,
+      "latency_ms": 34.675,
       "context_chars": 0,
       "error": null,
       "disabled_reason": null
@@ -996,7 +996,7 @@
       "recall_at_5": null,
       "reciprocal_rank_at_5": null,
       "no_answer_false_positive": false,
-      "latency_ms": 33.649,
+      "latency_ms": 33.917,
       "context_chars": 0,
       "error": null,
       "disabled_reason": null
@@ -1017,7 +1017,7 @@
       "recall_at_5": null,
       "reciprocal_rank_at_5": null,
       "no_answer_false_positive": false,
-      "latency_ms": 32.874,
+      "latency_ms": 33.052,
       "context_chars": 0,
       "error": null,
       "disabled_reason": null

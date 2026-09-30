@@ -4,6 +4,7 @@ pub mod evaluate;
 pub mod evaluation;
 pub mod search;
 mod sha256;
+mod sqlite_cache;
 pub mod types;
 
 pub use bakeoff::{FinalizeRequest, ObserveRequest, finalize, observe};

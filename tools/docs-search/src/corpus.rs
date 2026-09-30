@@ -24,6 +24,28 @@ pub struct Corpus {
     pub chunks: Vec<Chunk>,
 }
 
+pub(crate) fn file_hashes(root: &Path) -> Result<(PathBuf, BTreeMap<String, String>)> {
+    if !root.exists() {
+        bail!("project root does not exist: {}", root.display());
+    }
+    if !root.is_dir() {
+        bail!("project root is not a directory: {}", root.display());
+    }
+    let root = root
+        .canonicalize()
+        .with_context(|| format!("failed to resolve project root {}", root.display()))?;
+    let mut files = selected_files(&root)?;
+    files.sort();
+    let mut hashes = BTreeMap::new();
+    for path in files {
+        let bytes = fs::read(&path)
+            .with_context(|| format!("failed to read selected document {}", path.display()))?;
+        let relative = portable_path(path.strip_prefix(&root)?);
+        hashes.insert(relative, blake3::hash(&bytes).to_hex().to_string());
+    }
+    Ok((root, hashes))
+}
+
 pub fn load(root: &Path) -> Result<Corpus> {
     if !root.exists() {
         bail!("project root does not exist: {}", root.display());

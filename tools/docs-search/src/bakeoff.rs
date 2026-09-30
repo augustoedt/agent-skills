@@ -1,7 +1,8 @@
+use std::cell::Cell;
 use std::collections::BTreeMap;
 use std::fs::{self, OpenOptions};
 use std::io::Write;
-use std::os::unix::fs::OpenOptionsExt;
+use std::os::unix::fs::{MetadataExt, OpenOptionsExt};
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
@@ -18,6 +19,10 @@ use crate::evaluate::{
 use crate::evaluation::{EvaluationCategory, EvaluationQuery, parse_evaluation_set};
 use crate::search::{SearchTimings, search, search_with_timings};
 use crate::sha256;
+use crate::sqlite_cache::{
+    IndexingMetrics, SQLITE_ENGINE, SqliteCache, SqliteRuntime, fault_injection_passed,
+    run_incremental_workload,
+};
 use crate::types::{ENGINE, SearchRequest, SearchResult};
 
 pub const BAKEOFF_OBSERVATION_SCHEMA_VERSION: u32 = 1;
@@ -50,12 +55,33 @@ pub struct FinalizeRequest {
 trait BakeoffEngine {
     fn id(&self) -> &'static str;
 
+    fn prepare(
+        &mut self,
+        _root: &Path,
+        _corpus: &corpus::Corpus,
+        _queries: &[EvaluationQuery],
+    ) -> Result<(IndexingMetrics, Option<SqliteRuntime>)> {
+        Ok((IndexingMetrics::direct(), None))
+    }
+
+    fn open_existing(&mut self, _root: &Path, _corpus: &corpus::Corpus) -> Result<()> {
+        Ok(())
+    }
+
     fn search(
         &self,
         request: SearchRequest,
     ) -> Result<(crate::types::SearchResponse, SearchTimings)>;
 
     fn fault_injection_passed(&self, root: &Path) -> bool;
+
+    fn index_path(&self) -> Option<&Path> {
+        None
+    }
+
+    fn fallback_count(&self) -> usize {
+        0
+    }
 }
 
 struct LexicalBm25;
@@ -86,6 +112,71 @@ impl BakeoffEngine for LexicalBm25 {
     }
 }
 
+struct SqliteCachedBm25 {
+    engine_config_sha256: String,
+    cache: Option<SqliteCache>,
+    fallback_count: Cell<usize>,
+}
+
+impl BakeoffEngine for SqliteCachedBm25 {
+    fn id(&self) -> &'static str {
+        SQLITE_ENGINE
+    }
+
+    fn prepare(
+        &mut self,
+        root: &Path,
+        corpus: &corpus::Corpus,
+        queries: &[EvaluationQuery],
+    ) -> Result<(IndexingMetrics, Option<SqliteRuntime>)> {
+        let (cache, mut indexing, runtime) =
+            SqliteCache::prepare_fresh(root, corpus, &self.engine_config_sha256)?;
+        let query_texts: Vec<_> = queries.iter().map(|query| query.query.clone()).collect();
+        indexing.incremental_steps =
+            run_incremental_workload(root, &query_texts, &self.engine_config_sha256)?;
+        cache.verify_current(corpus)?;
+        self.cache = Some(cache);
+        Ok((indexing, Some(runtime)))
+    }
+
+    fn open_existing(&mut self, root: &Path, corpus: &corpus::Corpus) -> Result<()> {
+        self.cache = Some(SqliteCache::open_existing(
+            root,
+            corpus,
+            &self.engine_config_sha256,
+        )?);
+        Ok(())
+    }
+
+    fn search(
+        &self,
+        request: SearchRequest,
+    ) -> Result<(crate::types::SearchResponse, SearchTimings)> {
+        let (response, timings, fallback_used) = self
+            .cache
+            .as_ref()
+            .ok_or_else(|| anyhow!("SQLite cache engine was not prepared"))?
+            .search_with_recovery(request, false)?;
+        if fallback_used {
+            self.fallback_count
+                .set(self.fallback_count.get().saturating_add(1));
+        }
+        Ok((response, timings))
+    }
+
+    fn fault_injection_passed(&self, root: &Path) -> bool {
+        fault_injection_passed(root, &self.engine_config_sha256)
+    }
+
+    fn index_path(&self) -> Option<&Path> {
+        self.cache.as_ref().map(SqliteCache::index_path)
+    }
+
+    fn fallback_count(&self) -> usize {
+        self.fallback_count.get()
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Observation {
@@ -103,6 +194,10 @@ struct Observation {
     per_category: BTreeMap<String, Value>,
     queries: Vec<ObservedQuery>,
     timing_ms: Value,
+    indexing: IndexingMetrics,
+    sqlite_runtime: Option<ObservedSqliteRuntime>,
+    index_path: Option<String>,
+    normal_fallback_count: usize,
     baseline_comparison: Value,
     category_deltas: BTreeMap<String, Value>,
     ranking_projection_sha256: String,
@@ -197,6 +292,13 @@ struct IsolationAttestation {
     verified_before_path_resolution: bool,
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ObservedSqliteRuntime {
+    version: String,
+    compile_options_sha256: String,
+}
+
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct ExternalMeasurements {
@@ -259,7 +361,7 @@ pub fn observe(request: ObserveRequest) -> Result<()> {
     if request.run != 1 && request.run != 2 {
         bail!("bake-off run must be 1 or 2");
     }
-    let engine = engine(&request.engine)?;
+    ensure_engine_available(&request.engine)?;
     let protocol_bytes = fs::read(&request.protocol_path).with_context(|| {
         format!(
             "failed to read bake-off protocol {}",
@@ -273,8 +375,9 @@ pub fn observe(request: ObserveRequest) -> Result<()> {
     let provenance: ObservationProvenance =
         read_json(&request.provenance_path, "observation provenance")?;
     validate_provenance(&provenance, &protocol)?;
-    let engine_configuration = engine_configuration(&protocol, engine.id())?.clone();
+    let engine_configuration = engine_configuration(&protocol, &request.engine)?.clone();
     let engine_config_sha256 = canonical_json_sha256(&engine_configuration)?;
+    let mut engine = engine(&request.engine, &engine_config_sha256)?;
     let input = protocol_input(&protocol, &request.input_id)?;
     let root = PathBuf::from(required_string(input, "root")?);
     let queries_path = PathBuf::from(required_string(input, "queries")?);
@@ -315,6 +418,10 @@ pub fn observe(request: ObserveRequest) -> Result<()> {
     let loaded = corpus::load(&root)?;
     let fingerprint = corpus_fingerprint(&loaded.file_hashes);
     verify_input_corpus(input, &loaded, &fingerprint, set.queries.len())?;
+    let (mut indexing, sqlite_runtime) = engine.prepare(&root, &loaded, &set.queries)?;
+    let index_path = engine
+        .index_path()
+        .map(|path| path.to_string_lossy().into_owned());
     write_ready_file(&request.ready_file)?;
 
     let mut evaluations = Vec::with_capacity(set.queries.len());
@@ -412,6 +519,14 @@ pub fn observe(request: ObserveRequest) -> Result<()> {
     let evidence_projection_sha256 = evidence_projection(&observed_queries)?;
     let timing_ms = timing_value(&observed_queries);
     let fault_injection_passed = engine.fault_injection_passed(&root);
+    if engine.id() == SQLITE_ENGINE {
+        indexing.corruption_detected |= fault_injection_passed;
+        indexing.rebuild_succeeded &= fault_injection_passed;
+    }
+    let sqlite_runtime = sqlite_runtime.map(|runtime| ObservedSqliteRuntime {
+        version: runtime.version,
+        compile_options_sha256: runtime.compile_options_sha256,
+    });
 
     let observation = Observation {
         schema_version: BAKEOFF_OBSERVATION_SCHEMA_VERSION,
@@ -434,6 +549,10 @@ pub fn observe(request: ObserveRequest) -> Result<()> {
         per_category,
         queries: observed_queries,
         timing_ms,
+        indexing,
+        sqlite_runtime,
+        index_path,
+        normal_fallback_count: engine.fallback_count(),
         baseline_comparison: baseline,
         category_deltas,
         ranking_projection_sha256,
@@ -517,13 +636,7 @@ pub fn finalize(request: FinalizeRequest) -> Result<()> {
         "per_category": observation.per_category,
         "queries": report_queries(&observation.queries),
         "timing_ms": merge_timing(&observation.timing_ms, &measurements.timing_ms)?,
-        "indexing": {
-            "full_build_ms": null,
-            "incremental_steps": [],
-            "rebuild_succeeded": true,
-            "corruption_detected": false,
-            "runtime_checks": {},
-        },
+        "indexing": observation.indexing,
         "resources_bytes": measurements.resources_bytes,
         "determinism": {
             "ranking_projection_sha256": observation.ranking_projection_sha256,
@@ -539,10 +652,10 @@ pub fn finalize(request: FinalizeRequest) -> Result<()> {
             "excerpts": true,
         },
         "fallback": {
-            "used_during_normal_run": false,
-            "normal_run_count": 0,
+            "used_during_normal_run": observation.normal_fallback_count > 0,
+            "normal_run_count": observation.normal_fallback_count,
             "fault_injection_passed": observation.fault_injection_passed,
-            "behavior": "not-applicable",
+            "behavior": fallback_behavior(&observation.engine)?,
         },
         "errors": observation.errors,
         "budget_checks": checks,
@@ -553,13 +666,34 @@ pub fn finalize(request: FinalizeRequest) -> Result<()> {
     write_json_value_new(&request.output, &report)
 }
 
-fn engine(id: &str) -> Result<Box<dyn BakeoffEngine>> {
+fn ensure_engine_available(id: &str) -> Result<()> {
     match id {
-        ENGINE => Ok(Box::new(LexicalBm25)),
-        "sqlite-cache-bm25-v1" | "fts5-v1" | "local-embeddings-v1" | "hybrid-rrf-v1" => {
-            bail!("engine {id} is frozen but not implemented in Phase 4.1")
+        ENGINE | SQLITE_ENGINE => Ok(()),
+        "fts5-v1" | "local-embeddings-v1" | "hybrid-rrf-v1" => {
+            bail!("engine {id} is frozen but not implemented before its planned phase")
         }
         _ => bail!("unknown bake-off engine {id}"),
+    }
+}
+
+fn engine(id: &str, engine_config_sha256: &str) -> Result<Box<dyn BakeoffEngine>> {
+    ensure_engine_available(id)?;
+    match id {
+        ENGINE => Ok(Box::new(LexicalBm25)),
+        SQLITE_ENGINE => Ok(Box::new(SqliteCachedBm25 {
+            engine_config_sha256: engine_config_sha256.to_owned(),
+            cache: None,
+            fallback_count: Cell::new(0),
+        })),
+        _ => unreachable!("availability check rejected unsupported engine"),
+    }
+}
+
+fn fallback_behavior(engine: &str) -> Result<&'static str> {
+    match engine {
+        ENGINE => Ok("not-applicable"),
+        SQLITE_ENGINE => Ok("explicit-direct-bm25"),
+        _ => bail!("fallback behavior is unavailable for engine {engine}"),
     }
 }
 
@@ -675,6 +809,8 @@ fn validate_results(chunks: &[Chunk], results: &[SearchResult]) -> Result<()> {
                     && chunk.chunk_hash == result.chunk_hash
                     && chunk.file_hash == result.file_hash
                     && chunk.heading == result.heading
+                    && result.line_start >= chunk.line_start
+                    && result.line_end <= chunk.line_end
             })
             .ok_or_else(|| anyhow!("result evidence does not identify a frozen chunk"))?;
         if result.line_start < chunk.line_start || result.line_end > chunk.line_end {
@@ -943,7 +1079,7 @@ fn validate_observation(
     if observation.schema_version != BAKEOFF_OBSERVATION_SCHEMA_VERSION
         || observation.protocol_tag != BAKEOFF_PROTOCOL_TAG
         || observation.protocol_sha256 != protocol_sha256
-        || observation.engine != ENGINE
+        || ensure_engine_available(&observation.engine).is_err()
         || !matches!(observation.run, 1 | 2)
         || observation.input.role != "development"
         || observation.retrieval.limit != LIMIT
@@ -986,10 +1122,16 @@ fn validate_observation(
     }
     let set = parse_evaluation_set(std::str::from_utf8(&dataset)?)?;
     let root = Path::new(&observation.input.root);
+    if observation.engine == SQLITE_ENGINE {
+        let expected_index = crate::sqlite_cache::cache_path(root)?;
+        if observation.index_path.as_deref() != Some(expected_index.to_string_lossy().as_ref()) {
+            bail!("SQLite observation index path differs from the deterministic cache path");
+        }
+    }
     let loaded = corpus::load(root)?;
-    if engine(&observation.engine)?.fault_injection_passed(root)
-        != observation.fault_injection_passed
-    {
+    let mut validation_engine = engine(&observation.engine, &observation.engine_config_sha256)?;
+    validation_engine.open_existing(root, &loaded)?;
+    if validation_engine.fault_injection_passed(root) != observation.fault_injection_passed {
         bail!("observation fault injection result is not reproducible");
     }
     verify_input_corpus(
@@ -998,8 +1140,14 @@ fn validate_observation(
         &corpus_fingerprint(&loaded.file_hashes),
         set.queries.len(),
     )?;
-    let evaluations =
-        recompute_observation(&set.queries, &observation.queries, &loaded.chunks, root)?;
+    validate_engine_observation(observation)?;
+    let evaluations = recompute_observation(
+        &set.queries,
+        &observation.queries,
+        &loaded.chunks,
+        root,
+        validation_engine.as_ref(),
+    )?;
     let quality = summary_value(&summarize(evaluations.iter()));
     let mut per_category = BTreeMap::new();
     for (name, category) in categories() {
@@ -1059,11 +1207,75 @@ fn validate_observation(
     Ok(())
 }
 
+fn validate_engine_observation(observation: &Observation) -> Result<()> {
+    if observation.normal_fallback_count != 0 {
+        bail!("normal bake-off queries cannot use fallback");
+    }
+    match observation.engine.as_str() {
+        ENGINE => {
+            if observation.indexing != IndexingMetrics::direct()
+                || observation.sqlite_runtime.is_some()
+                || observation.index_path.is_some()
+            {
+                bail!("direct BM25 observation contains indexed-engine state");
+            }
+        }
+        SQLITE_ENGINE => {
+            let full_build = observation
+                .indexing
+                .full_build_ms
+                .ok_or_else(|| anyhow!("SQLite observation lacks full build timing"))?;
+            let operations: Vec<_> = observation
+                .indexing
+                .incremental_steps
+                .iter()
+                .map(|step| step.operation.as_str())
+                .collect();
+            let expected = ["add", "modify", "rename", "remove"];
+            if !full_build.is_finite()
+                || full_build < 0.0
+                || operations != expected
+                || observation.indexing.incremental_steps.iter().any(|step| {
+                    !step.elapsed_ms.is_finite()
+                        || step.elapsed_ms < 0.0
+                        || !step.equivalent_to_full_rebuild
+                        || step.stale_results != 0
+                })
+                || !observation.indexing.rebuild_succeeded
+                || !observation.indexing.corruption_detected
+                || observation.indexing.runtime_checks.len() != 3
+                || observation
+                    .indexing
+                    .runtime_checks
+                    .values()
+                    .any(|passed| !passed)
+                || observation.index_path.as_deref().is_none_or(str::is_empty)
+            {
+                bail!("SQLite observation indexing state is invalid");
+            }
+            let runtime = observation
+                .sqlite_runtime
+                .as_ref()
+                .ok_or_else(|| anyhow!("SQLite observation lacks runtime provenance"))?;
+            let actual = crate::sqlite_cache::validate_runtime()?;
+            if runtime.version != actual.version
+                || runtime.compile_options_sha256 != actual.compile_options_sha256
+                || observation.indexing.runtime_checks != actual.checks
+            {
+                bail!("SQLite runtime provenance is invalid");
+            }
+        }
+        _ => bail!("engine observation validation is unavailable"),
+    }
+    Ok(())
+}
+
 fn recompute_observation(
     queries: &[EvaluationQuery],
     observed: &[ObservedQuery],
     chunks: &[Chunk],
     root: &Path,
+    engine: &dyn BakeoffEngine,
 ) -> Result<Vec<crate::evaluate::QueryEvaluation>> {
     if queries.len() != observed.len() {
         bail!("observation query count changed");
@@ -1095,7 +1307,7 @@ fn recompute_observation(
             validate_results(chunks, &results)?;
             let evaluation = match observed.status {
                 QueryStatus::Ok => {
-                    let (response, _) = search_with_timings(SearchRequest {
+                    let (response, _) = engine.search(SearchRequest {
                         root: root.to_path_buf(),
                         query: query.query.clone(),
                         limit: LIMIT,
@@ -1190,22 +1402,61 @@ fn validate_measurements(
             .load_average
             .iter()
             .any(|value| !value.is_finite() || *value < 0.0)
-        || measurements.environment.sqlite_version.is_some()
-        || measurements
-            .environment
-            .sqlite_compile_options_sha256
-            .is_some()
         || !measurements.timing_ms.startup.is_finite()
         || !measurements.timing_ms.end_to_end.is_finite()
         || measurements.timing_ms.startup < 0.0
         || measurements.timing_ms.end_to_end < measurements.timing_ms.startup
-        || measurements.resources_bytes.index_logical != 0
-        || measurements.resources_bytes.index_allocated != 0
         || measurements.resources_bytes.shared_model != 0
         || !looks_like_utc_timestamp(&measurements.started_at)
         || !looks_like_utc_timestamp(&measurements.finished_at)
     {
-        bail!("external measurements do not match the lexical Phase 4.1 contract");
+        bail!("external measurements do not match the common bake-off contract");
+    }
+    match observation.engine.as_str() {
+        ENGINE => {
+            if measurements.environment.sqlite_version.is_some()
+                || measurements
+                    .environment
+                    .sqlite_compile_options_sha256
+                    .is_some()
+                || measurements.resources_bytes.index_logical != 0
+                || measurements.resources_bytes.index_allocated != 0
+            {
+                bail!("direct BM25 measurements contain SQLite or index state");
+            }
+        }
+        SQLITE_ENGINE => {
+            let runtime = observation
+                .sqlite_runtime
+                .as_ref()
+                .ok_or_else(|| anyhow!("SQLite runtime provenance is missing"))?;
+            let index_path = Path::new(
+                observation
+                    .index_path
+                    .as_deref()
+                    .ok_or_else(|| anyhow!("SQLite index path is missing"))?,
+            );
+            let metadata = fs::symlink_metadata(index_path)?;
+            let logical = metadata.len();
+            let allocated = metadata.blocks().saturating_mul(512);
+            if metadata.file_type().is_symlink()
+                || !metadata.is_file()
+                || measurements.environment.sqlite_version.as_deref()
+                    != Some(runtime.version.as_str())
+                || measurements
+                    .environment
+                    .sqlite_compile_options_sha256
+                    .as_deref()
+                    != Some(runtime.compile_options_sha256.as_str())
+                || measurements.resources_bytes.index_logical != logical
+                || measurements.resources_bytes.index_allocated != allocated
+                || logical == 0
+                || allocated == 0
+            {
+                bail!("SQLite measurements do not match the observed runtime or index");
+            }
+        }
+        _ => bail!("measurement validation is unavailable for the engine"),
     }
     Ok(())
 }
@@ -1351,12 +1602,47 @@ fn budget_checks(
         "max_relative_total_increase",
     )?;
     let latency_budget = &protocol["budgets"]["latency_ms"];
-    let startup_cap = required_f64(&latency_budget["startup_max_by_engine"], ENGINE)?;
-    let query_cap = required_f64(&latency_budget["query_p95_max_by_engine"], ENGINE)?;
+    let startup_cap = required_f64(
+        &latency_budget["startup_max_by_engine"],
+        &observation.engine,
+    )?;
+    let query_cap = required_f64(
+        &latency_budget["query_p95_max_by_engine"],
+        &observation.engine,
+    )?;
     let query_p95 = required_f64(&observation.timing_ms["query_total"], "p95")?;
     let resource_budget = &protocol["budgets"]["resources_bytes"];
-    let memory_cap = required_u64(&resource_budget["peak_rss_max_by_engine"], ENGINE)?;
-    let disk_cap = required_u64(&resource_budget["index_storage_max_by_engine"], ENGINE)?;
+    let memory_cap = required_u64(
+        &resource_budget["peak_rss_max_by_engine"],
+        &observation.engine,
+    )?;
+    let disk_cap = required_u64(
+        &resource_budget["index_storage_max_by_engine"],
+        &observation.engine,
+    )?;
+    let (index_build, incremental_equivalence) = match observation.engine.as_str() {
+        ENGINE => (observation.indexing.full_build_ms.is_none(), true),
+        SQLITE_ENGINE => {
+            let indexing_budget = &protocol["budgets"]["indexing_ms"];
+            let full_build = observation.indexing.full_build_ms.unwrap_or(f64::INFINITY);
+            let full_cap =
+                required_f64(&indexing_budget["full_build_max_by_engine"], SQLITE_ENGINE)?;
+            let relative_cap = required_f64(
+                indexing_budget,
+                "incremental_step_max_relative_to_full_build",
+            )?;
+            (
+                full_build <= full_cap,
+                observation.indexing.incremental_steps.len() == 4
+                    && observation.indexing.incremental_steps.iter().all(|step| {
+                        step.equivalent_to_full_rebuild
+                            && step.stale_results == 0
+                            && step.elapsed_ms <= full_build * relative_cap
+                    }),
+            )
+        }
+        _ => (false, false),
+    };
 
     Ok(BTreeMap::from([
         ("quality".to_owned(), quality_passed),
@@ -1369,8 +1655,11 @@ fn budget_checks(
             measurements.timing_ms.startup <= startup_cap,
         ),
         ("query_latency".to_owned(), query_p95 <= query_cap),
-        ("index_build".to_owned(), true),
-        ("incremental_equivalence".to_owned(), true),
+        ("index_build".to_owned(), index_build),
+        (
+            "incremental_equivalence".to_owned(),
+            incremental_equivalence,
+        ),
         (
             "memory".to_owned(),
             measurements.resources_bytes.peak_rss <= memory_cap,
@@ -1381,7 +1670,7 @@ fn budget_checks(
                 && measurements.resources_bytes.index_logical <= disk_cap,
         ),
         ("determinism".to_owned(), deterministic),
-        ("rebuild".to_owned(), true),
+        ("rebuild".to_owned(), observation.indexing.rebuild_succeeded),
         ("fallback".to_owned(), observation.fault_injection_passed),
         (
             "holdout_isolation".to_owned(),
@@ -1597,7 +1886,7 @@ fn looks_like_utc_timestamp(value: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use std::os::unix::fs::PermissionsExt;
+    use std::os::unix::fs::{MetadataExt, PermissionsExt};
 
     use tempfile::tempdir;
 
@@ -1613,6 +1902,10 @@ mod tests {
         assert_eq!(
             canonical_json_sha256(&lexical_configuration()).unwrap(),
             "4b352dbc5fb1ed6818f6cca023664858ae563bd9bffdcc7c4b7db2e7fdec4b8d"
+        );
+        assert_eq!(
+            canonical_json_sha256(&sqlite_configuration()).unwrap(),
+            "858fa10a7ea31eb46d9933817b221c2a722f936c4d8565f1bb830f66dbc64ab2"
         );
     }
 
@@ -1651,14 +1944,42 @@ mod tests {
 
     #[test]
     fn unavailable_engine_is_explicit() {
-        let Err(error) = engine("fts5-v1") else {
-            panic!("FTS5 must remain unavailable in Phase 4.1");
+        let Err(error) = ensure_engine_available("fts5-v1") else {
+            panic!("FTS5 must remain unavailable before Phase 4.3");
         };
         assert!(error.to_string().contains("not implemented"));
-        let Err(error) = engine("unknown") else {
+        let Err(error) = ensure_engine_available("unknown") else {
             panic!("unknown engine must fail");
         };
         assert!(error.to_string().contains("unknown"));
+    }
+
+    #[test]
+    fn evidence_validation_disambiguates_duplicate_chunks_by_line_range() {
+        let chunk = |line_start| Chunk {
+            path: "README.md".to_owned(),
+            heading: Some("Setup".to_owned()),
+            line_start,
+            line_end: line_start,
+            text: "repeatable evidence".to_owned(),
+            file_hash: "file-hash".to_owned(),
+            chunk_hash: "chunk-hash".to_owned(),
+        };
+        let chunks = vec![chunk(5), chunk(20)];
+        let result = SearchResult {
+            rank: 1,
+            raw_rank: 1,
+            path: "README.md".to_owned(),
+            heading: Some("Setup".to_owned()),
+            line_start: 20,
+            line_end: 20,
+            excerpt: "repeatable evidence".to_owned(),
+            file_hash: "file-hash".to_owned(),
+            chunk_hash: "chunk-hash".to_owned(),
+            score: 1.0,
+            matched_terms: vec!["repeatable".to_owned()],
+        };
+        validate_results(&chunks, &[result]).unwrap();
     }
 
     #[test]
@@ -1719,7 +2040,10 @@ mod tests {
                     "memory_bytes": 1
                 }
             },
-            "engines": [{"id": ENGINE, "configuration": lexical_config}],
+            "engines": [
+                {"id": ENGINE, "configuration": lexical_config},
+                {"id": SQLITE_ENGINE, "configuration": sqlite_configuration()}
+            ],
             "inputs": [{
                 "id": "stable-v1",
                 "role": "development",
@@ -1751,16 +2075,32 @@ mod tests {
                 },
                 "context": {"max_relative_total_increase": 0.15},
                 "latency_ms": {
-                    "startup_max_by_engine": {(ENGINE): 500.0},
-                    "query_p95_max_by_engine": {(ENGINE): 500.0},
+                    "startup_max_by_engine": {
+                        (ENGINE): 500.0,
+                        (SQLITE_ENGINE): 500.0
+                    },
+                    "query_p95_max_by_engine": {
+                        (ENGINE): 500.0,
+                        (SQLITE_ENGINE): 500.0
+                    },
                     "run_variation": {
                         "relative_max": 0.25,
                         "absolute_p95_ms_max": 10.0
                     }
                 },
                 "resources_bytes": {
-                    "peak_rss_max_by_engine": {(ENGINE): 536870912},
-                    "index_storage_max_by_engine": {(ENGINE): 0}
+                    "peak_rss_max_by_engine": {
+                        (ENGINE): 536870912,
+                        (SQLITE_ENGINE): 536870912
+                    },
+                    "index_storage_max_by_engine": {
+                        (ENGINE): 0,
+                        (SQLITE_ENGINE): 268435456
+                    }
+                },
+                "indexing_ms": {
+                    "full_build_max_by_engine": {(SQLITE_ENGINE): 60000.0},
+                    "incremental_step_max_relative_to_full_build": 1.0
                 }
             }
         });
@@ -1868,7 +2208,11 @@ mod tests {
         let report: Value = serde_json::from_slice(&fs::read(&report_path).unwrap()).unwrap();
         assert_eq!(report["schema_version"], BAKEOFF_REPORT_SCHEMA_VERSION);
         assert_eq!(report["engine"], ENGINE);
-        assert_eq!(report["status"], "pass");
+        for (name, passed) in report["budget_checks"].as_object().unwrap() {
+            if name != "run_variation" {
+                assert_eq!(passed, true, "budget check failed: {name}");
+            }
+        }
         assert_eq!(report["determinism"]["matches_other_run"], true);
         assert_eq!(report["fallback"]["behavior"], "not-applicable");
         assert!(report["indexing"]["full_build_ms"].is_null());
@@ -1920,6 +2264,75 @@ mod tests {
         })
         .unwrap_err();
         assert!(error.to_string().contains("fault injection"));
+
+        crate::sqlite_cache::set_test_cache_home(Some(directory.path().join("cache")));
+        let sqlite_observations = [
+            directory.path().join("sqlite-observation-1.json"),
+            directory.path().join("sqlite-observation-2.json"),
+        ];
+        for run in [1, 2] {
+            observe(ObserveRequest {
+                protocol_path: directory.path().join("protocol.json"),
+                input_id: "stable-v1".to_owned(),
+                engine: SQLITE_ENGINE.to_owned(),
+                run,
+                provenance_path: provenance_path.clone(),
+                ready_file: directory.path().join(format!("sqlite-ready-{run}")),
+                output: sqlite_observations[usize::from(run - 1)].clone(),
+            })
+            .unwrap();
+        }
+        let sqlite_observation: Value =
+            serde_json::from_slice(&fs::read(&sqlite_observations[0]).unwrap()).unwrap();
+        let index_path = PathBuf::from(sqlite_observation["index_path"].as_str().unwrap());
+        let index_metadata = fs::metadata(&index_path).unwrap();
+        let mut sqlite_measurements = measurements.clone();
+        sqlite_measurements["engine"] = Value::String(SQLITE_ENGINE.to_owned());
+        sqlite_measurements["observation_sha256"] = Value::String(sha256::digest_hex(
+            &fs::read(&sqlite_observations[0]).unwrap(),
+        ));
+        sqlite_measurements["environment"]["sqlite_version"] =
+            sqlite_observation["sqlite_runtime"]["version"].clone();
+        sqlite_measurements["environment"]["sqlite_compile_options_sha256"] =
+            sqlite_observation["sqlite_runtime"]["compile_options_sha256"].clone();
+        sqlite_measurements["resources_bytes"]["index_logical"] = json!(index_metadata.len());
+        sqlite_measurements["resources_bytes"]["index_allocated"] =
+            json!(index_metadata.blocks() * 512);
+        let sqlite_measurements_path = directory.path().join("sqlite-measurements.json");
+        fs::write(
+            &sqlite_measurements_path,
+            format!(
+                "{}\n",
+                serde_json::to_string_pretty(&sqlite_measurements).unwrap()
+            ),
+        )
+        .unwrap();
+        let sqlite_report_path = directory.path().join("sqlite-report.json");
+        finalize(FinalizeRequest {
+            protocol_path: directory.path().join("protocol.json"),
+            observation_path: sqlite_observations[0].clone(),
+            other_observation_path: sqlite_observations[1].clone(),
+            measurements_path: sqlite_measurements_path,
+            report_tag: "engine-bakeoff-v1-stable-v1-sqlite-cache-bm25-v1-run-1".to_owned(),
+            output: sqlite_report_path.clone(),
+        })
+        .unwrap();
+        let sqlite_report: Value =
+            serde_json::from_slice(&fs::read(sqlite_report_path).unwrap()).unwrap();
+        assert_eq!(sqlite_report["engine"], SQLITE_ENGINE);
+        assert_eq!(
+            sqlite_report["fallback"]["behavior"],
+            "explicit-direct-bm25"
+        );
+        assert_eq!(
+            sqlite_report["indexing"]["incremental_steps"]
+                .as_array()
+                .unwrap()
+                .len(),
+            4
+        );
+        assert_eq!(sqlite_report["indexing"]["corruption_detected"], true);
+        crate::sqlite_cache::set_test_cache_home(None);
     }
 
     fn lexical_configuration() -> Value {
@@ -1937,6 +2350,38 @@ mod tests {
                 "score_round_decimals": 6
             },
             "candidate_depth": "all-chunks",
+            "abstention": "empty-only-when-no-chunk-meets-minimum-should-match"
+        })
+    }
+
+    fn sqlite_configuration() -> Value {
+        json!({
+            "storage": "sqlite-persistent-chunk-and-token-cache",
+            "sqlite": {
+                "rusqlite": "=0.40.2",
+                "features": ["bundled"],
+                "expected_sqlite_version": "3.53.2",
+                "runtime_checks": [
+                    "sqlite_version_equals_expected",
+                    "compile_option_ENABLE_FTS5",
+                    "fts5_create-insert-match-bm25-smoke"
+                ]
+            },
+            "schema": "metadata(key-text-primary-key,value-text);files(path-text-primary-key,file-hash-text,bytes-integer);chunks(chunk-hash-text-primary-key,file-hash-text,path-text,heading-text,line-start-integer,line-end-integer,text-text,tokens-json-text,normalized-text)",
+            "invalidation": "rebuild-atomically-when-corpus-fingerprint-or-parser-version-or-engine-config-hash-differs",
+            "write_policy": "temporary-database-fsync-then-atomic-rename;never-mutate-valid-index-in-place",
+            "ranking": {
+                "k1": 1.2,
+                "b": 0.75,
+                "body_weight": 1.0,
+                "heading_weight": 2.0,
+                "path_weight": 3.0,
+                "idf": "ln(1+(N-df+0.5)/(df+0.5))",
+                "minimum_should_match": "one-term=1;otherwise=ceil(0.6*distinct-meaningful-query-terms)",
+                "phrase_boosts": {"body": 2.5, "heading": 3.0, "path": 2.0},
+                "score_round_decimals": 6
+            },
+            "candidate_depth": "all-cached-chunks",
             "abstention": "empty-only-when-no-chunk-meets-minimum-should-match"
         })
     }

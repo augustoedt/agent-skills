@@ -22,18 +22,36 @@ pub struct SearchTimings {
     pub candidates_examined: usize,
 }
 
-#[derive(Debug)]
-struct PreparedChunk<'a> {
-    chunk: &'a Chunk,
-    normalized: String,
-    tokens: Vec<String>,
-    heading: String,
-    path: String,
+#[derive(Debug, Clone)]
+pub(crate) struct SearchDocument {
+    pub chunk: Chunk,
+    pub normalized: String,
+    pub tokens: Vec<String>,
+    pub heading: String,
+    pub path: String,
+}
+
+impl SearchDocument {
+    pub(crate) fn from_chunk(chunk: Chunk) -> Self {
+        let normalized = normalize(&chunk.text);
+        let tokens = tokens(&chunk.text);
+        Self::from_cached(chunk, normalized, tokens)
+    }
+
+    pub(crate) fn from_cached(chunk: Chunk, normalized: String, tokens: Vec<String>) -> Self {
+        Self {
+            heading: normalize(chunk.heading.as_deref().unwrap_or_default()),
+            path: normalize(&chunk.path),
+            normalized,
+            tokens,
+            chunk,
+        }
+    }
 }
 
 #[derive(Debug)]
 struct RankedChunk<'a> {
-    prepared: &'a PreparedChunk<'a>,
+    prepared: &'a SearchDocument,
     score: f64,
     matched_terms: Vec<String>,
 }
@@ -43,59 +61,60 @@ pub fn search(request: SearchRequest) -> Result<SearchResponse> {
 }
 
 pub fn search_with_timings(request: SearchRequest) -> Result<(SearchResponse, SearchTimings)> {
-    if request.query.trim().is_empty() {
-        bail!("query must not be empty");
-    }
-    if request.limit == 0 || request.limit > 100 {
-        bail!("limit must be between 1 and 100");
-    }
-    if request.max_excerpt_chars < 80 {
-        bail!("max excerpt size must be at least 80 characters");
-    }
-    if request
-        .max_results_per_path
-        .is_some_and(|maximum| maximum == 0 || maximum > 100)
-    {
-        bail!("max results per path must be between 1 and 100");
-    }
-
+    validate_request(&request)?;
     let total_started = Instant::now();
     let lookup_started = Instant::now();
     let corpus = load(&request.root)?;
+    let root = corpus.root.to_string_lossy().into_owned();
+    let files = corpus.files;
+    let documents = corpus
+        .chunks
+        .into_iter()
+        .map(SearchDocument::from_chunk)
+        .collect();
+    let lookup_ms = elapsed_ms(lookup_started);
+    search_documents(
+        request,
+        ENGINE,
+        root,
+        files,
+        documents,
+        lookup_ms,
+        total_started,
+    )
+}
+
+pub(crate) fn search_documents(
+    request: SearchRequest,
+    engine: &'static str,
+    root: String,
+    files: usize,
+    documents: Vec<SearchDocument>,
+    lookup_ms: f64,
+    total_started: Instant,
+) -> Result<(SearchResponse, SearchTimings)> {
+    validate_request(&request)?;
     let query_normalized = normalize(&request.query);
     let query_tokens = meaningful_query_tokens(&request.query);
     if query_tokens.is_empty() {
         bail!("query must contain at least one letter or number");
     }
 
-    let prepared: Vec<_> = corpus
-        .chunks
-        .iter()
-        .map(|chunk| PreparedChunk {
-            chunk,
-            normalized: normalize(&chunk.text),
-            tokens: tokens(&chunk.text),
-            heading: normalize(chunk.heading.as_deref().unwrap_or_default()),
-            path: normalize(&chunk.path),
-        })
-        .collect();
-
-    let average_length = if prepared.is_empty() {
+    let average_length = if documents.is_empty() {
         1.0
     } else {
-        prepared
+        documents
             .iter()
             .map(|chunk| chunk.tokens.len())
             .sum::<usize>() as f64
-            / prepared.len() as f64
+            / documents.len() as f64
     };
-    let document_frequencies = document_frequencies(&prepared, &query_tokens);
-    let total_chunks = prepared.len() as f64;
-    let candidates_examined = prepared.len();
-    let lookup_ms = elapsed_ms(lookup_started);
+    let document_frequencies = document_frequencies(&documents, &query_tokens);
+    let total_chunks = documents.len() as f64;
+    let candidates_examined = documents.len();
 
     let ranking_started = Instant::now();
-    let mut ranked: Vec<_> = prepared
+    let mut ranked: Vec<_> = documents
         .iter()
         .filter_map(|chunk| {
             rank_chunk(
@@ -136,7 +155,7 @@ pub fn search_with_timings(request: SearchRequest) -> Result<(SearchResponse, Se
         .enumerate()
         .map(|(index, (raw_rank, ranked))| {
             let (excerpt, line_start, line_end) = excerpt(
-                ranked.prepared.chunk,
+                &ranked.prepared.chunk,
                 &query_tokens,
                 request.max_excerpt_chars,
             );
@@ -159,12 +178,12 @@ pub fn search_with_timings(request: SearchRequest) -> Result<(SearchResponse, Se
 
     let response = SearchResponse {
         schema_version: SCHEMA_VERSION,
-        engine: ENGINE,
+        engine,
         query: request.query,
-        root: corpus.root.to_string_lossy().into_owned(),
+        root,
         corpus: CorpusSummary {
-            files: corpus.files,
-            chunks: corpus.chunks.len(),
+            files,
+            chunks: documents.len(),
         },
         selection: SearchSelection {
             max_results_per_path: request.max_results_per_path,
@@ -181,6 +200,25 @@ pub fn search_with_timings(request: SearchRequest) -> Result<(SearchResponse, Se
             candidates_examined,
         },
     ))
+}
+
+fn validate_request(request: &SearchRequest) -> Result<()> {
+    if request.query.trim().is_empty() {
+        bail!("query must not be empty");
+    }
+    if request.limit == 0 || request.limit > 100 {
+        bail!("limit must be between 1 and 100");
+    }
+    if request.max_excerpt_chars < 80 {
+        bail!("max excerpt size must be at least 80 characters");
+    }
+    if request
+        .max_results_per_path
+        .is_some_and(|maximum| maximum == 0 || maximum > 100)
+    {
+        bail!("max results per path must be between 1 and 100");
+    }
+    Ok(())
 }
 
 fn elapsed_ms(started: Instant) -> f64 {
@@ -218,7 +256,7 @@ where
 }
 
 fn document_frequencies(
-    chunks: &[PreparedChunk<'_>],
+    chunks: &[SearchDocument],
     query_tokens: &[String],
 ) -> HashMap<String, usize> {
     query_tokens
@@ -238,7 +276,7 @@ fn document_frequencies(
 }
 
 fn rank_chunk<'a>(
-    chunk: &'a PreparedChunk<'a>,
+    chunk: &'a SearchDocument,
     query_tokens: &[String],
     normalized_query: &str,
     frequencies: &HashMap<String, usize>,

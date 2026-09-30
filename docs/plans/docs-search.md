@@ -11,7 +11,7 @@
 - gate de holdout: concluído uma única vez e fechado; holdouts consumidos não orientam retuning;
 - prefixo morfológico limitado 7/4: testado duas vezes em development e rejeitado sem ajustes;
 - bake-off de engines: aprovado; Fase 4.0 congelada e harness comum da Fase 4.1 implementado;
-- adapter disponível no bake-off: somente `lexical-bm25-v1`; engines experimentais ainda recusadas;
+- adapters disponíveis no bake-off: `lexical-bm25-v1` e `sqlite-cache-bm25-v1`; FTS5, E5 e RRF ainda recusados;
 - protocolo e relatório operacional: contratos públicos v1 formalizados, com instância, snapshots,
   checksums e verificador mantidos no ambiente privado;
 - variantes congeladas: BM25 direto, cache SQLite com BM25, FTS5, embeddings locais e híbrido por RRF;
@@ -419,7 +419,7 @@ auditoria. O default `lexical-bm25-v1` não mudou.
 
 ### 3.3 Diversidade por path — candidato medido
 
-O `docs-search 0.6.0-alpha.2` oferece `--max-results-per-path N` como seleção opt-in após o ranking BM25. O
+O `docs-search 0.6.0-alpha.3` oferece `--max-results-per-path N` como seleção opt-in após o ranking BM25. O
 seletor pode avançar além dos cinco primeiros chunks brutos, limita contribuições repetidas de um
 path e devolve ranks finais contíguos. Relatório e resposta de busca v2 preservam `raw_rank`; a
 resposta também expõe `selection.max_results_per_path`. O comportamento sem flag não muda.
@@ -535,12 +535,15 @@ Entregue nesta fase:
   `Cargo.lock`, toolchain, host congelado, ambiente, startup, end-to-end, RSS, isolamento de holdout
   e validação do relatório público;
 - escrita imutável `create_new`, `0600`, recusa de overwrite e quarentena sem sobrescrever;
-- falha explícita para SQLite, FTS5, embeddings e RRF até suas respectivas fases.
+- falha explícita para cada engine ainda não implementada até sua respectiva fase.
 
 ### Fase 4.2 — cache SQLite com BM25 preservado
 
-Implementar o braço `sqlite-cache-bm25-v1` sem mudar tokenização, frequências, IDF, fórmula, pesos,
-desempate ou seleção. O objetivo é isolar o efeito de persistência.
+**Status:** concluída em código e testes; medições congeladas continuam fechadas até os cinco
+adapters existirem na mesma revisão limpa.
+
+O braço `sqlite-cache-bm25-v1` foi implementado sem mudar tokenização, frequências, IDF, fórmula,
+pesos, desempate ou seleção. O objetivo permanece isolar o efeito de persistência.
 
 O banco ficará fora do repositório:
 
@@ -548,9 +551,17 @@ O banco ficará fora do repositório:
 ${XDG_CACHE_HOME:-~/.cache}/docs-search/<hash-da-raiz>/index.sqlite3
 ```
 
-Ele deve ser descartável e reconstruível. A fase cobre criação, rebuild, atualização transacional,
-arquivo novo/alterado/removido/renomeado, schema incompatível, corrupção, concorrência básica e
-fallback explícito. Resultados não voláteis devem equivaler ao baseline direto.
+Ele é descartável e reconstruível. Foram implementados criação e rebuild atômicos, atualização
+transacional por cópia temporária, arquivo novo/alterado/removido/renomeado, schema incompatível,
+invalidação por fingerprint/parser/configuração, corrupção, leitores concorrentes durante troca
+atômica e fallback explícito para BM25 direto sob falha forçada de rebuild. Resultados não voláteis
+e hashes de evidência equivalem ao baseline direto. Chunks com texto repetido usam uma chave interna
+determinística composta para satisfazer a chave primária, mas o hash BLAKE3 original é reconstruído
+do texto e permanece no contrato de evidência.
+
+O runtime confere SQLite 3.53.2, `ENABLE_FTS5` e um smoke test FTS5/BM25. O workload incremental
+executa, nesta ordem, add, modify, rename e remove sobre uma cópia isolada dos quatro primeiros
+Markdown selecionados; cada passo é comparado com um rebuild limpo e exige zero resultado stale.
 
 ### Fase 4.3 — recuperação FTS5
 

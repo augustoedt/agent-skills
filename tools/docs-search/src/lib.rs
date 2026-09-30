@@ -4,6 +4,7 @@ mod embeddings;
 pub mod evaluate;
 pub mod evaluation;
 mod fts5;
+mod hybrid;
 pub mod search;
 mod sha256;
 mod sqlite_cache;

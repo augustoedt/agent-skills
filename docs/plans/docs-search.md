@@ -419,7 +419,7 @@ auditoria. O default `lexical-bm25-v1` não mudou.
 
 ### 3.3 Diversidade por path — candidato medido
 
-O `docs-search 0.6.0-alpha.5` oferece `--max-results-per-path N` como seleção opt-in após o ranking BM25. O
+O `docs-search 0.6.0-alpha.6` oferece `--max-results-per-path N` como seleção opt-in após o ranking BM25. O
 seletor pode avançar além dos cinco primeiros chunks brutos, limita contribuições repetidas de um
 path e devolve ranks finais contíguos. Relatório e resposta de busca v2 preservam `raw_rank`; a
 resposta também expõe `selection.max_results_per_path`. O comportamento sem flag não muda.
@@ -609,12 +609,19 @@ não autoriza tuning nem adoção. Nenhuma medição congelada de development fo
 Não haverá seleção de modelo ou ajuste de threshold depois de observar os resultados congelados.
 Uma nova configuração exigirá outro protocolo e outra tag.
 
-### Fase 4.5 — híbrido por RRF
+### Fase 4.5 — híbrido por RRF — concluída
 
-Implementar `hybrid-rrf-v1` como composição de FTS5 e embeddings, sem um terceiro mecanismo oculto
-de score. O relatório registra constante `k`, profundidade das listas, contribuição de cada ranking
-e candidatos antes da fusão. A lógica de RRF terá testes com rankings sintéticos antes da inferência
-real.
+`hybrid-rrf-v1` compõe FTS5 e embeddings sem um terceiro mecanismo oculto de score. Cada fonte
+fornece até 50 candidatos; a fusão soma `1/(60 + rank)` por `chunk_hash`, conserva o primeiro rank de
+cada fonte e desempata por path e linha. O harness registra os dois `source_ranks`, soma candidatos,
+timings, bytes dos dois índices e bytes compartilhados do modelo. A preparação valida E5 antes de
+tocar FTS5, erros de qualquer fonte encerram a consulta sem resposta parcial e o fault injection só
+passa quando ambas as fontes passam. Testes sintéticos cobrem contribuição, deduplicação, evidência
+canônica, ordenação, abstention, propagação de erro e união das métricas incrementais. Um smoke
+pareado com o modelo real validou schema, determinismo, ranks das duas fontes, quatro updates sem
+stale e fault injection; seu `fail` sintético por `no_answer` e contexto não autoriza tuning. O
+default permanece lexical e as medições congeladas continuam fechadas até a revisão pública limpa
+ser fixada no registry seguinte.
 
 ### Fase 4.6 — comparação em development
 
@@ -717,7 +724,7 @@ Etapas 1–3: baseline, avaliação e experimentos lexicais concluídos
     ↓
 Etapa 4.0: protocolo e inputs congelados ✓
     ↓
-Etapas 4.1–4.5: harness + quatro engines experimentais
+Etapas 4.1–4.5: harness + quatro engines experimentais ✓
     ↓
 Etapa 4.6: comparação em development
     ├── nenhuma finalista → manter BM25 direto

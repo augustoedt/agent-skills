@@ -6,7 +6,7 @@ confira a fonte original antes de alterar código.
 
 ## Estado atual
 
-A versão de código-fonte 0.6.0-alpha.5 mantém o baseline lexical padrão sem banco e sem embeddings e usa
+A versão de código-fonte 0.6.0-alpha.6 mantém o baseline lexical padrão sem banco e sem embeddings e usa
 somente os contratos atuais: resposta de busca v2, dataset de consultas v2 e relatório v2:
 
 - corpus: `docs/**/*.md` e, na raiz, `README.md`, `CLAUDE.md`, `AGENTS.md` e `pi-warden.md`;
@@ -98,14 +98,16 @@ Os subcomandos experimentais `bakeoff observe` e `bakeoff finalize` implementam 
 Fase 4.1. Eles são exclusivos do runner privado: exigem protocolo congelado, provenance do binário,
 host, ambiente e isolamento de holdout, usam somente inputs `development`, revalidam corpus,
 dataset, baseline e evidências, recusam overwrite e escrevem artefatos `0600`. Apenas
-`lexical-bm25-v1`, `sqlite-cache-bm25-v1`, `fts5-v1` e `local-embeddings-v1` possuem adapters. O
-braço SQLite preserva o ranking BM25 e usa cache privado reconstruível. O braço FTS5 usa o
-tokenizer e os pesos congelados, 50 candidatos e query literal segura. O braço vetorial usa o
-modelo E5 local congelado, Candle CPU, mean pooling pela attention mask, L2, scan exato, top 50 e
-threshold 0,80. Os índices são privados e atômicos, verificam atualização incremental e corrupção;
-FTS5 e embeddings falham fechados quando o rebuild é forçado a falhar. SQLite e FTS5 usam
-`rusqlite 0.40.2` com SQLite bundled 3.53.2. Somente RRF continua indisponível por erro explícito.
-Esses subcomandos não alteram `search`, o engine padrão nem a instalação global.
+os cinco adapters estão implementados: `lexical-bm25-v1`, `sqlite-cache-bm25-v1`, `fts5-v1`,
+`local-embeddings-v1` e `hybrid-rrf-v1`. O braço SQLite preserva o ranking BM25 e usa cache privado
+reconstruível. O braço FTS5 usa o tokenizer e os pesos congelados, 50 candidatos e query literal
+segura. O braço vetorial usa o modelo E5 local congelado, Candle CPU, mean pooling pela attention
+mask, L2, scan exato, top 50 e threshold 0,80. O híbrido combina as duas listas por RRF com `k = 60`,
+deduplica por `chunk_hash`, preserva os ranks das fontes e falha como um todo se E5 falhar. Os
+índices são privados e atômicos, verificam atualização incremental e corrupção; FTS5, embeddings e
+híbrido falham fechados quando o rebuild ou o modelo impedem uma resposta íntegra. SQLite e FTS5
+usam `rusqlite 0.40.2` com SQLite bundled 3.53.2. Esses subcomandos não alteram `search`, o engine
+padrão nem a instalação global.
 
 O conjunto inicial de avaliação está em `evaluation/queries.json`. Somente o schema v2 é aceito; ele
 está documentado em `evaluation/README.md` e formalizado por

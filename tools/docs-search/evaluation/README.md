@@ -131,16 +131,18 @@ registry pins the runner and public revision. The protocol's `implementation_sta
 state at preregistration and remains immutable; adapter availability is enforced by the current
 revision and harness registry. The runner attests the clean release binary, frozen Rust toolchain
 and host, process environment, and denylist before path resolution.
-Writes use `create_new`, mode `0600`, and refuse overwrite. The `lexical-bm25-v1`,
-`sqlite-cache-bm25-v1`, `fts5-v1`, and `local-embeddings-v1` adapters are implemented. SQLite/BM25
-uses an atomic persistent chunk/token cache and exact direct ranking. FTS5 uses the frozen tokenizer,
-column weights, top 50, safe literal query construction, complete index projection checks and a
-fail-closed rebuild policy. E5 uses the frozen local artifacts with Candle CPU, right truncation,
-dynamic batch padding, attention-mask mean pooling, L2 normalization, exact scan, top 50, and the
-0.80 abstention threshold. Indexed adapters execute four-operation incremental verification and
-corruption recovery; missing E5 artifacts fail closed without network or lexical fallback. RRF
-remains explicitly unavailable. Frozen measurements stay closed until all adapters share one clean
-revision.
+Writes use `create_new`, mode `0600`, and refuse overwrite. All five adapters are implemented:
+`lexical-bm25-v1`, `sqlite-cache-bm25-v1`, `fts5-v1`, `local-embeddings-v1`, and `hybrid-rrf-v1`.
+SQLite/BM25 uses an atomic persistent chunk/token cache and exact direct ranking. FTS5 uses the
+frozen tokenizer, column weights, top 50, safe literal query construction, complete index projection
+checks and a fail-closed rebuild policy. E5 uses the frozen local artifacts with Candle CPU, right
+truncation, dynamic batch padding, attention-mask mean pooling, L2 normalization, exact scan, top
+50, and the 0.80 abstention threshold. The hybrid composes those source lists with RRF `k = 60`,
+deduplicates by chunk hash, records both source ranks, accounts for both indexes, and returns no
+partial FTS5 response when E5 fails. Indexed adapters execute four-operation incremental
+verification and corruption recovery; missing E5 artifacts fail closed without network or lexical
+fallback. Frozen measurements stay closed until the five adapters are committed at one clean,
+registry-pinned revision.
 
 Only the schemas are public. Protocol instances, snapshot manifests, private datasets, baseline
 reports, model paths, and checksum registries stay in machine-local encrypted storage. Frozen

@@ -53,7 +53,11 @@ idêntico, índice atômico reconstruível, atualização incremental verificada
 explícito. A Fase 4.3 adicionou FTS5 com configuração ligada ao runtime, query literal segura,
 projeção integral verificável e falha fechada. A Fase 4.4 adicionou E5 local com artefatos
 verificados, Candle CPU, pooling/normalização congelados, scan exato, threshold 0,80, índice atômico
-e falha fechada sem rede ou fallback lexical. Apenas RRF continua rejeitado até sua fase própria.
+e falha fechada sem rede ou fallback lexical. A Fase 4.5 compôs FTS5 e E5 por RRF `k = 60`,
+com deduplicação por `chunk_hash`, ranks das duas fontes, contabilidade conjunta dos índices e falha
+fechada sem resultado FTS5 parcial quando E5 falha. Os cinco adapters estão implementados, mas isso
+não altera o default nem implica adoção; a comparação congelada em development continua sendo o
+próximo gate.
 
 ## Consequências
 

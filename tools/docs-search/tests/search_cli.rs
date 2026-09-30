@@ -319,7 +319,7 @@ fn cli_reports_disabled_queries_as_skipped() {
 }
 
 #[test]
-fn cli_rejects_unimplemented_bakeoff_engines_before_reading_inputs() {
+fn cli_rejects_unknown_bakeoff_engines_before_reading_inputs() {
     let directory = tempdir().unwrap();
     let output = Command::new(env!("CARGO_BIN_EXE_docs-search"))
         .args([
@@ -334,7 +334,7 @@ fn cli_rejects_unimplemented_bakeoff_engines_before_reading_inputs() {
             "--input",
             "stable-v1",
             "--engine",
-            "hybrid-rrf-v1",
+            "unknown-engine",
             "--run",
             "1",
             "--provenance",
@@ -352,10 +352,7 @@ fn cli_rejects_unimplemented_bakeoff_engines_before_reading_inputs() {
         .unwrap();
 
     assert!(!output.status.success());
-    assert!(
-        String::from_utf8_lossy(&output.stderr)
-            .contains("not implemented before its planned phase")
-    );
+    assert!(String::from_utf8_lossy(&output.stderr).contains("unknown bake-off engine"));
 }
 
 #[test]

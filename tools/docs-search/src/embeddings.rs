@@ -39,6 +39,8 @@ use crate::types::{
 };
 
 pub(crate) const EMBEDDINGS_ENGINE: &str = "local-embeddings-v1";
+pub(crate) const EMBEDDINGS_CONFIG_SHA256: &str =
+    "de41db0af0e15a1dac47b2504617c0f6dbba8f10a2b0ea822a1e9ab2bb208e3d";
 
 const INDEX_FILE: &str = "embeddings-v1.bin";
 const INDEX_SCHEMA_VERSION: &str = "embeddings-1";

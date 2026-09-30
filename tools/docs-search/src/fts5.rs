@@ -27,6 +27,8 @@ use crate::types::{
 };
 
 pub const FTS5_ENGINE: &str = "fts5-v1";
+pub(crate) const FTS5_CONFIG_SHA256: &str =
+    "3aedaee7026d230eea9345a962f6913c9d7890dd0fe175704c29aafb10384034";
 const INDEX_SCHEMA_VERSION: &str = "fts5-1";
 const PARSER_VERSION: &str = "markdown-heading-fence-aware-v1";
 const INDEX_FILE: &str = "fts5.sqlite3";

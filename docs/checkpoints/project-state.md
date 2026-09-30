@@ -6,7 +6,7 @@ O repositório é a fonte oficial das skills próprias e agora também abriga
 `tools/docs-search`, um binário Rust para recuperação documental independente de modelo.
 
 O motor lexical preserva o ranking BM25 original como default, com chunking por headings,
-normalização Unicode e hashes BLAKE3. O código-fonte `docs-search` v0.6.0-alpha.5 aceita somente os
+normalização Unicode e hashes BLAKE3. O código-fonte `docs-search` v0.6.0-alpha.6 aceita somente os
 contratos atuais: resposta de busca v2, dataset de consultas v2 e relatório v2. A resposta registra
 `selection.max_results_per_path`, rank final e rank BM25 bruto; versões de schema diferentes são
 rejeitadas em vez de manter compatibilidade legada.
@@ -16,7 +16,7 @@ corpus real. Um smoke test completo da fixture executou 20/20 consultas sem erro
 Recall@5 macro 0,617647, Recall@5 micro 0,619048, MRR@5 0,705882, zero falsos positivos em três
 casos no-answer e 7.453 caracteres de contexto. Com cap 1, Recall@5 macro/micro subiu para
 0,676471/0,714286 e o contexto caiu para 3.995 caracteres, sem alterar Hit@1, MRR ou no-answer.
-`fmt`, `clippy` e 84 testes passam; busca v2 usa `evaluation/search-response.schema.json` e
+`fmt`, `clippy` e 102 testes passam; busca v2 usa `evaluation/search-response.schema.json` e
 relatórios v2 usam `evaluation/report.schema.json`. As medições públicas atuais ficam em
 `tools/docs-search/evaluation/reports/` e substituem artefatos históricos incompatíveis.
 
@@ -45,15 +45,15 @@ escopo, fluxo de busca, contrato de evidência, avaliação, privacidade, decis�
 bake-off e estado operacional atual sem expor nomes ou paths privados.
 
 O binário instalado via Rust 1.98.1 gerenciado por `asdf` continua na versão 0.1.0; ele não foi
-atualizado automaticamente. O v0.6.0-alpha.5 pode ser executado no checkout com `cargo run --
+atualizado automaticamente. O v0.6.0-alpha.6 pode ser executado no checkout com `cargo run --
 evaluate` até uma instalação ser solicitada.
 
 A skill `search-project-docs` também está sincronizada em `~/.agents/skills/` e ligada aos agentes
 locais detectados. O plano detalhado em `docs/plans/docs-search.md` divide o próximo ciclo em um
 bake-off de cinco braços: BM25 direto, cache SQLite com BM25 preservado, FTS5, embeddings locais e
 híbrido por RRF. A decisão está no ADR 0003; o harness e os adapters `lexical-bm25-v1`,
-`sqlite-cache-bm25-v1`, `fts5-v1` e `local-embeddings-v1` estão implementados. Apenas RRF ainda não
-está disponível.
+`sqlite-cache-bm25-v1`, `fts5-v1`, `local-embeddings-v1` e `hybrid-rrf-v1` estão implementados. A
+implementação dos adapters está completa; nenhum deles foi promovido ao produto.
 
 A Fase 4.0 está concluída e congelada. Os contratos públicos
 `engine-bakeoff-protocol.schema.json` e `engine-bakeoff-report.schema.json` separam a
@@ -68,10 +68,10 @@ timings internos, qualidade, contexto, evidência, determinismo, fault injection
 privado, fixado por registry próprio, mede startup, end-to-end, RSS e disco, atesta release limpo,
 `Cargo.lock`, toolchain, host, ambiente e denylist e valida o relatório operacional v1. Observações e relatórios recusam overwrite e usam
 `0600`. Duas observações sintéticas pareadas passaram; nenhuma medição congelada foi executada fora
-da ordem contrabalanceada. Apenas RRF falha explicitamente como não implementado. O default e o
-binário global permanecem inalterados.
+da ordem contrabalanceada. Os cinco adapters estão disponíveis no harness; o default e o binário
+global permanecem inalterados.
 
-As Fases 4.2–4.4 estão concluídas em código e testes. O cache SQLite/BM25 e o índice FTS5 usam
+As Fases 4.2–4.5 estão concluídas em código e testes. O cache SQLite/BM25 e o índice FTS5 usam
 `rusqlite 0.40.2` e SQLite bundled 3.53.2. FTS5 adiciona query literal segura, pesos 1/2/3 e top 50.
 O adapter E5 usa Candle CPU 0.9.1 e Tokenizers 0.21.1, artefatos locais verificados, 384 dimensões,
 512 tokens, prefixos E5, mean pooling pela attention mask, L2, scan exato, top 50 e threshold 0,80.
@@ -80,8 +80,14 @@ rebuild limpo. Corrupção é recuperada e embeddings falham fechados quando o m
 o rebuild é forçado a falhar, sem rede nem fallback lexical. Um fluxo sintético pareado com o modelo
 real validou schema, determinismo, evidência, `source_ranks.embedding`, quatro updates sem stale e
 fault injection; seu status foi `fail` por `no_answer` e contexto, resultado que não autoriza tuning
-nem adoção. O gate privado de medições permanece fechado até todos os adapters compartilharem uma
-única revisão limpa.
+nem adoção. O híbrido usa top 50 de FTS5 e E5, RRF `k = 60`, deduplicação por `chunk_hash`, evidência
+determinística e `source_ranks` das duas fontes. O harness soma candidatos, timings e bytes dos dois
+índices; qualquer erro E5 falha fechado sem devolver resultados FTS5 parciais. Testes sintéticos
+cobrem fusão, ranks, duplicatas, ordenação, abstention, propagação de erro e métricas incrementais.
+Um smoke pareado com o modelo real confirmou schema, determinismo, `source_ranks` duplos, quatro
+updates sem stale e fault injection; o status `fail` por `no_answer` e contexto valida as guardas e
+não autoriza tuning. O gate privado de medições permanece fechado até a revisão limpa da Fase 4.5
+ser fixada em novo registry.
 
 ## Em andamento
 
@@ -89,16 +95,15 @@ nem adoção. O gate privado de medições permanece fechado até todos os adapt
 - preservar o freeze, o gate fechado e os relatórios privados imutáveis;
 - preservar a rejeição do prefixo morfológico 7/4 sem retuning de parâmetros;
 - preservar o freeze concluído da Fase 4.0 sem reinterpretar parâmetros ou budgets;
-- preservar o harness da Fase 4.1 e os adapters SQLite/FTS5/E5 das Fases 4.2–4.4 sem alterar o default;
+- preservar o harness da Fase 4.1 e os adapters SQLite/FTS5/E5/RRF das Fases 4.2–4.5 sem alterar o default;
 - não usar os holdouts consumidos para seleção, tuning ou mudança de julgamentos.
 
 ## Próximo passo
 
-1. Implementar a Fase 4.5, `hybrid-rrf-v1`, compondo FTS5 e E5 sem score oculto.
-2. Adicionar testes sintéticos de RRF, deduplicação, contribuição das fontes e falha fechada.
-3. Executar duas rodadas imutáveis sobre todo o conjunto congelado de development, na ordem registrada.
-4. Selecionar no máximo duas finalistas em development e só então reservar holdouts novos.
-5. Integrar somente uma vencedora que passe no gate; manter BM25 direto se nenhuma passar.
+1. Fechar a revisão pública limpa da Fase 4.5 e fixar o harness registry seguinte, ainda com medições fechadas.
+2. Executar duas rodadas imutáveis sobre todo o conjunto congelado de development, na ordem registrada.
+3. Selecionar no máximo duas finalistas em development e só então reservar holdouts novos.
+4. Integrar somente uma vencedora que passe no gate; manter BM25 direto se nenhuma passar.
 
 O default continua `lexical-bm25-v1`. O plano faseado está no [`plano`](../plans/docs-search.md), a
 comparação foi aprovada no [`ADR 0003`](../decisions/0003-comparar-engines-antes-da-adocao.md) e a
@@ -107,7 +112,7 @@ decisão anterior sobre cap 1 permanece no [`ADR 0002`](../decisions/0002-manter
 ## Armadilhas conhecidas
 
 - `skills/` é fonte da verdade; não editar cópias em `~/.agents/skills/`.
-- Os índices SQLite/BM25, FTS5 e E5 existem somente no bake-off; a busca padrão ainda não possui índice persistente nem embeddings.
+- Os índices SQLite/BM25, FTS5, E5 e a composição RRF existem somente no bake-off; a busca padrão ainda não possui índice persistente nem embeddings.
 - Não alterar tokenizer, threshold 0,80, profundidade 50, RRF `k = 60`, modelo, inputs ou budgets
   dentro de `engine-bakeoff-v1`; qualquer mudança exige protocolo e tag novos.
 - O corpus padrão exclui `skills/**`; por isso avaliações devem apontar para documentação em

@@ -107,8 +107,9 @@ PRIVATE_EVAL_ROOT="${DOCS_SEARCH_PRIVATE_EVAL_ROOT:?defina o diretório privado}
 A saída esperada é `engine-bakeoff-v1 freeze verified`. O verificador confere protocolo, schemas,
 snapshots, datasets, baselines, modelo, checksums e permissões sem abrir holdouts consumidos. O
 runner privado consulta a denylist antes de resolver os paths desses holdouts. Falha de hash,
-permissão ou conjunto de inputs bloqueia a Fase 4.1; não regenere ou sobrescreva artefatos para fazer
-a verificação passar. Uma mudança de configuração exige outra tag e outro protocolo.
+permissão ou conjunto de inputs bloqueia qualquer implementação ou medição do bake-off; não
+regenere ou sobrescreva artefatos para fazer a verificação passar. Uma mudança de configuração
+exige outra tag e outro protocolo.
 
 ## Não fazer
 

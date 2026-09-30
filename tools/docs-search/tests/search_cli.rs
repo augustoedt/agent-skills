@@ -1,6 +1,7 @@
 use std::fs;
 use std::process::Command;
 
+use docs_search::search::search_with_timings;
 use docs_search::{SearchRequest, search};
 use tempfile::tempdir;
 
@@ -41,6 +42,31 @@ fn ranks_the_relevant_heading_and_returns_evidence() {
     assert_eq!(response.results[0].matched_terms, ["recuperacao", "banco"]);
     assert_eq!(response.results[0].file_hash.len(), 64);
     assert_eq!(response.results[0].chunk_hash.len(), 64);
+}
+
+#[test]
+fn timed_search_preserves_the_search_contract() {
+    let directory = tempdir().unwrap();
+    fs::create_dir(directory.path().join("docs")).unwrap();
+    fs::write(
+        directory.path().join("docs/runbook.md"),
+        "# Deploy\nUse Railway.\n\n## Recovery\nRestore the backup.\n",
+    )
+    .unwrap();
+
+    let request = request(directory.path(), "restore backup");
+    let expected = search(request.clone()).unwrap();
+    let (actual, timings) = search_with_timings(request).unwrap();
+
+    assert_eq!(
+        serde_json::to_value(actual).unwrap(),
+        serde_json::to_value(expected).unwrap()
+    );
+    assert_eq!(timings.candidates_examined, 2);
+    assert!(timings.lookup_ms >= 0.0);
+    assert!(timings.ranking_ms >= 0.0);
+    assert!(timings.excerpt_ms >= 0.0);
+    assert!(timings.total_ms >= 0.0);
 }
 
 #[test]
@@ -290,6 +316,43 @@ fn cli_reports_disabled_queries_as_skipped() {
     assert_eq!(json["summary"]["skipped"], 1);
     assert_eq!(json["queries"][1]["status"], "skipped");
     assert_eq!(json["queries"][1]["disabled_reason"], "fixture migration");
+}
+
+#[test]
+fn cli_rejects_unimplemented_bakeoff_engines_before_reading_inputs() {
+    let directory = tempdir().unwrap();
+    let output = Command::new(env!("CARGO_BIN_EXE_docs-search"))
+        .args([
+            "bakeoff",
+            "observe",
+            "--protocol",
+            directory
+                .path()
+                .join("missing-protocol.json")
+                .to_str()
+                .unwrap(),
+            "--input",
+            "stable-v1",
+            "--engine",
+            "fts5-v1",
+            "--run",
+            "1",
+            "--provenance",
+            directory
+                .path()
+                .join("missing-provenance.json")
+                .to_str()
+                .unwrap(),
+            "--ready-file",
+            directory.path().join("ready").to_str().unwrap(),
+            "--output",
+            directory.path().join("observation.json").to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("not implemented in Phase 4.1"));
 }
 
 #[test]

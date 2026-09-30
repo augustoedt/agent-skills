@@ -122,6 +122,16 @@ BM25, SQLite-cached BM25, FTS5, exact local E5 vectors, and FTS5/E5 fused with R
 pair runs twice in fresh processes. The default engine and global installation cannot change during
 the experiment.
 
+Phase 4.1 adds a two-stage common harness. `bakeoff observe` loads one frozen input, executes its
+queries, records lookup/ranking/excerpt/total timing, validates evidence against source chunks, and
+writes an immutable private observation. `bakeoff finalize` revalidates hashes, corpus, dataset,
+lexical ranking, baseline, provenance, and the paired run before combining external startup,
+end-to-end, RSS, and disk measurements into the operational v1 report. A separate private harness
+registry pins the runner and public revision. The runner attests the clean release binary, frozen
+Rust toolchain and host, process environment, and denylist before path resolution.
+Writes use `create_new`, mode `0600`, and refuse overwrite. Only the `lexical-bm25-v1` adapter exists
+in this phase; SQLite, FTS5, E5, and RRF remain explicitly unavailable.
+
 Only the schemas are public. Protocol instances, snapshot manifests, private datasets, baseline
 reports, model paths, and checksum registries stay in machine-local encrypted storage. Frozen
 Markdown comes from Git objects rather than live working trees. A local verifier must pass before

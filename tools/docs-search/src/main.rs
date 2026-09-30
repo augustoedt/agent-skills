@@ -4,7 +4,8 @@ use std::path::PathBuf;
 use anyhow::{Context, Result, bail};
 use clap::{Parser, Subcommand};
 use docs_search::{
-    EvaluateRequest, EvaluationReport, SearchRequest, SearchResponse, evaluate, search,
+    EvaluateRequest, EvaluationReport, FinalizeRequest, ObserveRequest, SearchRequest,
+    SearchResponse, evaluate, finalize, observe, search,
 };
 
 #[derive(Debug, Parser)]
@@ -77,6 +78,49 @@ enum Command {
         #[arg(long)]
         output: Option<PathBuf>,
     },
+
+    /// Experimental engine bake-off harness; does not change the default search engine.
+    Bakeoff {
+        #[command(subcommand)]
+        command: BakeoffCommand,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+enum BakeoffCommand {
+    /// Execute one frozen engine/input run and write an immutable private observation.
+    Observe {
+        #[arg(long)]
+        protocol: PathBuf,
+        #[arg(long)]
+        input: String,
+        #[arg(long)]
+        engine: String,
+        #[arg(long)]
+        run: u8,
+        #[arg(long)]
+        provenance: PathBuf,
+        #[arg(long)]
+        ready_file: PathBuf,
+        #[arg(long)]
+        output: PathBuf,
+    },
+
+    /// Combine one observation with its paired run and external process measurements.
+    Finalize {
+        #[arg(long)]
+        protocol: PathBuf,
+        #[arg(long)]
+        observation: PathBuf,
+        #[arg(long)]
+        other_observation: PathBuf,
+        #[arg(long)]
+        measurements: PathBuf,
+        #[arg(long)]
+        report_tag: String,
+        #[arg(long)]
+        output: PathBuf,
+    },
 }
 
 fn main() -> Result<()> {
@@ -137,6 +181,40 @@ fn main() -> Result<()> {
                 );
             }
         }
+        Command::Bakeoff { command } => match command {
+            BakeoffCommand::Observe {
+                protocol,
+                input,
+                engine,
+                run,
+                provenance,
+                ready_file,
+                output,
+            } => observe(ObserveRequest {
+                protocol_path: protocol,
+                input_id: input,
+                engine,
+                run,
+                provenance_path: provenance,
+                ready_file,
+                output,
+            })?,
+            BakeoffCommand::Finalize {
+                protocol,
+                observation,
+                other_observation,
+                measurements,
+                report_tag,
+                output,
+            } => finalize(FinalizeRequest {
+                protocol_path: protocol,
+                observation_path: observation,
+                other_observation_path: other_observation,
+                measurements_path: measurements,
+                report_tag,
+                output,
+            })?,
+        },
     }
     Ok(())
 }

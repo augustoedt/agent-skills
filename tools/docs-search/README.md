@@ -6,8 +6,8 @@ confira a fonte original antes de alterar código.
 
 ## Estado atual
 
-A versão 0.5.0 mantém o baseline lexical sem banco e sem embeddings e usa somente os contratos
-atuais: resposta de busca v2, dataset de consultas v2 e relatório v2:
+A versão de código-fonte 0.6.0-alpha.2 mantém o baseline lexical sem banco e sem embeddings e usa
+somente os contratos atuais: resposta de busca v2, dataset de consultas v2 e relatório v2:
 
 - corpus: `docs/**/*.md` e, na raiz, `README.md`, `CLAUDE.md`, `AGENTS.md` e `pi-warden.md`;
 - chunking por headings Markdown, preservando breadcrumbs e ignorando headings aparentes dentro de
@@ -94,6 +94,14 @@ cargo clippy --all-targets --all-features -- -D warnings
 cargo test
 ```
 
+Os subcomandos experimentais `bakeoff observe` e `bakeoff finalize` implementam o harness comum da
+Fase 4.1. Eles são exclusivos do runner privado: exigem protocolo congelado, provenance do binário,
+host, ambiente e isolamento de holdout, usam somente inputs `development`, revalidam corpus,
+dataset, baseline e evidências, recusam overwrite e escrevem artefatos `0600`. Apenas
+`lexical-bm25-v1` possui adapter nesta fase; os quatro engines experimentais falham explicitamente
+como não implementados. Esses subcomandos não alteram `search`, o engine padrão nem a instalação
+global.
+
 O conjunto inicial de avaliação está em `evaluation/queries.json`. Somente o schema v2 é aceito; ele
 está documentado em `evaluation/README.md` e formalizado por
 `evaluation/queries.schema.json`. As 20 consultas incluem casos exatos, semânticos, ambíguos e sem
@@ -105,5 +113,6 @@ morfológico limitado 7/4, foi testada duas vezes em development e rejeitada pel
 pré-registradas; seu código não entrou em `main`. O próximo ciclo é um bake-off faseado entre o
 BM25 direto, cache SQLite com BM25 preservado, FTS5, embeddings locais e híbrido por RRF. A Fase 4.0
 já congelou protocolo, configurações, inputs, modelo, budgets e contratos públicos de protocolo e
-relatório operacional v1. Nenhuma engine nova foi implementada; somente finalistas de development
-poderão chegar a um novo gate com holdouts ainda não consumidos.
+relatório operacional v1. A Fase 4.1 implementou e validou sinteticamente o harness e o adapter do
+baseline direto; nenhuma engine nova foi implementada. Somente finalistas de development poderão
+chegar a um novo gate com holdouts ainda não consumidos.

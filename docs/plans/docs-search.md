@@ -10,7 +10,8 @@
 - julgamentos de desenvolvimento e holdout: revisados diretamente contra as fontes e congelados;
 - gate de holdout: concluído uma única vez e fechado; holdouts consumidos não orientam retuning;
 - prefixo morfológico limitado 7/4: testado duas vezes em development e rejeitado sem ajustes;
-- bake-off de engines: aprovado, com a Fase 4.0 congelada antes de qualquer implementação;
+- bake-off de engines: aprovado; Fase 4.0 congelada e harness comum da Fase 4.1 implementado;
+- adapter disponível no bake-off: somente `lexical-bm25-v1`; engines experimentais ainda recusadas;
 - protocolo e relatório operacional: contratos públicos v1 formalizados, com instância, snapshots,
   checksums e verificador mantidos no ambiente privado;
 - variantes congeladas: BM25 direto, cache SQLite com BM25, FTS5, embeddings locais e híbrido por RRF;
@@ -52,7 +53,7 @@ O sistema deve responder a três perguntas antes de ganhar complexidade:
 - [x] 20 consultas de avaliação migradas para schema v2 com headings, notas e tags.
 - [x] Parser/validador estrito para schema v2.
 - [x] Fixture documental estável e versionada `stable-v1`, separada do corpus real.
-- [x] `fmt`, `clippy` e 44 testes.
+- [x] `fmt`, `clippy` e 52 testes.
 - [x] Instalador compatível com Rust gerenciado por `asdf`.
 - [x] Skill e runbook com preflight obrigatório do binário.
 - [x] Baseline atual sem tuning, com relatório JSON v2 e análise por categoria.
@@ -418,7 +419,7 @@ auditoria. O default `lexical-bm25-v1` não mudou.
 
 ### 3.3 Diversidade por path — candidato medido
 
-O `docs-search 0.5.0` oferece `--max-results-per-path N` como seleção opt-in após o ranking BM25. O
+O `docs-search 0.6.0-alpha.2` oferece `--max-results-per-path N` como seleção opt-in após o ranking BM25. O
 seletor pode avançar além dos cinco primeiros chunks brutos, limita contribuições repetidas de um
 path e devolve ranks finais contíguos. Relatório e resposta de busca v2 preservam `raw_rank`; a
 resposta também expõe `selection.max_results_per_path`. O comportamento sem flag não muda.
@@ -459,8 +460,9 @@ protótipos apenas como evidência e não adotar a complexidade adicional.
 ### Objetivo e estado
 
 Comparar alternativas de armazenamento e recuperação sobre a mesma base documental antes de
-escolher qualquer arquitetura nova. Esta etapa está **planejada e ainda não foi implementada**. O
-`lexical-bm25-v1` continua sendo o default durante todo o bake-off.
+escolher qualquer arquitetura nova. A Fase 4.0 e o harness comum da Fase 4.1 estão concluídos; as
+engines experimentais ainda não foram implementadas. O `lexical-bm25-v1` continua sendo o default
+durante todo o bake-off.
 
 As cinco variantes são:
 
@@ -507,8 +509,12 @@ protocolo/tag. A Fase 4.1 não pode reinterpretar o freeze depois de observar re
 
 ### Fase 4.1 — harness comum e instrumentação
 
-Criar uma fronteira interna de engine usada por todas as variantes, sem alterar o comportamento da
-CLI padrão. O harness deve executar exatamente as mesmas queries e registrar:
+**Status:** concluída para o harness comum e o adapter `lexical-bm25-v1`; validada com duas
+observações sintéticas pareadas e relatório operacional conforme o schema. As medições congeladas
+de development continuam sujeitas à ordem contrabalanceada do protocolo.
+
+Foi criada uma fronteira interna de engine sem alterar o comportamento da CLI padrão. O harness
+executa exatamente as mesmas queries e registra:
 
 - Hit@1, Recall@5 macro/micro e MRR@5, globais e por categoria;
 - falsos positivos absolutos e taxa de `no_answer`;
@@ -520,6 +526,16 @@ CLI padrão. O harness deve executar exatamente as mesmas queries e registrar:
 
 Cada variante executará duas vezes sobre os mesmos inputs congelados. Rankings devem ser idênticos;
 campos voláteis, como tempos, serão comparados por estatística e não por igualdade byte a byte.
+
+Entregue nesta fase:
+
+- `bakeoff observe` com timings internos, candidatos examinados, evidência e projeções determinísticas;
+- `bakeoff finalize` com revalidação do engine lexical, baseline exato, métricas, budgets e par de runs;
+- runner privado fixado por registry próprio, com release limpo, provenance do binário e
+  `Cargo.lock`, toolchain, host congelado, ambiente, startup, end-to-end, RSS, isolamento de holdout
+  e validação do relatório público;
+- escrita imutável `create_new`, `0600`, recusa de overwrite e quarentena sem sobrescrever;
+- falha explícita para SQLite, FTS5, embeddings e RRF até suas respectivas fases.
 
 ### Fase 4.2 — cache SQLite com BM25 preservado
 

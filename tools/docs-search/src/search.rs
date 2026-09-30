@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+use std::time::Instant;
 
 use anyhow::{Result, bail};
 use unicode_normalization::{UnicodeNormalization, char::is_combining_mark};
@@ -11,6 +12,15 @@ use crate::types::{
 
 const K1: f64 = 1.2;
 const B: f64 = 0.75;
+
+#[derive(Debug, Clone, Copy)]
+pub struct SearchTimings {
+    pub lookup_ms: f64,
+    pub ranking_ms: f64,
+    pub excerpt_ms: f64,
+    pub total_ms: f64,
+    pub candidates_examined: usize,
+}
 
 #[derive(Debug)]
 struct PreparedChunk<'a> {
@@ -29,6 +39,10 @@ struct RankedChunk<'a> {
 }
 
 pub fn search(request: SearchRequest) -> Result<SearchResponse> {
+    search_with_timings(request).map(|(response, _)| response)
+}
+
+pub fn search_with_timings(request: SearchRequest) -> Result<(SearchResponse, SearchTimings)> {
     if request.query.trim().is_empty() {
         bail!("query must not be empty");
     }
@@ -45,6 +59,8 @@ pub fn search(request: SearchRequest) -> Result<SearchResponse> {
         bail!("max results per path must be between 1 and 100");
     }
 
+    let total_started = Instant::now();
+    let lookup_started = Instant::now();
     let corpus = load(&request.root)?;
     let query_normalized = normalize(&request.query);
     let query_tokens = meaningful_query_tokens(&request.query);
@@ -75,7 +91,10 @@ pub fn search(request: SearchRequest) -> Result<SearchResponse> {
     };
     let document_frequencies = document_frequencies(&prepared, &query_tokens);
     let total_chunks = prepared.len() as f64;
+    let candidates_examined = prepared.len();
+    let lookup_ms = elapsed_ms(lookup_started);
 
+    let ranking_started = Instant::now();
     let mut ranked: Vec<_> = prepared
         .iter()
         .filter_map(|chunk| {
@@ -103,37 +122,42 @@ pub fn search(request: SearchRequest) -> Result<SearchResponse> {
             })
     });
 
-    let results = select_with_path_diversity(
+    let selected = select_with_path_diversity(
         ranked,
         request.limit,
         request.max_results_per_path,
         |ranked| ranked.prepared.chunk.path.as_str(),
-    )
-    .into_iter()
-    .enumerate()
-    .map(|(index, (raw_rank, ranked))| {
-        let (excerpt, line_start, line_end) = excerpt(
-            ranked.prepared.chunk,
-            &query_tokens,
-            request.max_excerpt_chars,
-        );
-        SearchResult {
-            rank: index + 1,
-            raw_rank,
-            path: ranked.prepared.chunk.path.clone(),
-            heading: ranked.prepared.chunk.heading.clone(),
-            line_start,
-            line_end,
-            excerpt,
-            file_hash: ranked.prepared.chunk.file_hash.clone(),
-            chunk_hash: ranked.prepared.chunk.chunk_hash.clone(),
-            score: round_score(ranked.score),
-            matched_terms: ranked.matched_terms,
-        }
-    })
-    .collect();
+    );
+    let ranking_ms = elapsed_ms(ranking_started);
 
-    Ok(SearchResponse {
+    let excerpt_started = Instant::now();
+    let results = selected
+        .into_iter()
+        .enumerate()
+        .map(|(index, (raw_rank, ranked))| {
+            let (excerpt, line_start, line_end) = excerpt(
+                ranked.prepared.chunk,
+                &query_tokens,
+                request.max_excerpt_chars,
+            );
+            SearchResult {
+                rank: index + 1,
+                raw_rank,
+                path: ranked.prepared.chunk.path.clone(),
+                heading: ranked.prepared.chunk.heading.clone(),
+                line_start,
+                line_end,
+                excerpt,
+                file_hash: ranked.prepared.chunk.file_hash.clone(),
+                chunk_hash: ranked.prepared.chunk.chunk_hash.clone(),
+                score: round_score(ranked.score),
+                matched_terms: ranked.matched_terms,
+            }
+        })
+        .collect();
+    let excerpt_ms = elapsed_ms(excerpt_started);
+
+    let response = SearchResponse {
         schema_version: SCHEMA_VERSION,
         engine: ENGINE,
         query: request.query,
@@ -146,7 +170,21 @@ pub fn search(request: SearchRequest) -> Result<SearchResponse> {
             max_results_per_path: request.max_results_per_path,
         },
         results,
-    })
+    };
+    Ok((
+        response,
+        SearchTimings {
+            lookup_ms,
+            ranking_ms,
+            excerpt_ms,
+            total_ms: elapsed_ms(total_started),
+            candidates_examined,
+        },
+    ))
+}
+
+fn elapsed_ms(started: Instant) -> f64 {
+    (started.elapsed().as_secs_f64() * 1_000_000.0).round() / 1_000.0
 }
 
 fn select_with_path_diversity<T, F>(

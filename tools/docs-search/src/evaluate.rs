@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::time::Instant;
 
 use anyhow::{Context, Result, bail};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::corpus;
 use crate::evaluation::{EvaluationCategory, EvaluationQuery, parse_evaluation_set};
@@ -12,7 +12,7 @@ use crate::search::search;
 use crate::types::{ENGINE, SearchRequest, SearchResult};
 
 pub const EVALUATION_REPORT_SCHEMA_VERSION: u32 = 2;
-const RECALL_CUTOFF: usize = 5;
+pub(crate) const RECALL_CUTOFF: usize = 5;
 
 #[derive(Debug, Clone)]
 pub struct EvaluateRequest {
@@ -119,7 +119,7 @@ pub struct QueryEvaluation {
     pub disabled_reason: Option<String>,
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Serialize)]
+#[derive(Debug, Clone, Copy, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryStatus {
     Ok,
@@ -240,7 +240,7 @@ fn evaluate_query(request: &EvaluateRequest, query: EvaluationQuery) -> QueryEva
     }
 }
 
-fn successful_query_evaluation(
+pub(crate) fn successful_query_evaluation(
     query: EvaluationQuery,
     search_results: Vec<SearchResult>,
     latency_ms: f64,
@@ -321,7 +321,10 @@ fn successful_query_evaluation(
     evaluation
 }
 
-fn base_query_evaluation(query: EvaluationQuery, status: QueryStatus) -> QueryEvaluation {
+pub(crate) fn base_query_evaluation(
+    query: EvaluationQuery,
+    status: QueryStatus,
+) -> QueryEvaluation {
     QueryEvaluation {
         id: query.id,
         category: query.category,
@@ -353,7 +356,7 @@ fn unique_paths(results: &[SearchResult]) -> Vec<&SearchResult> {
         .collect()
 }
 
-fn corpus_fingerprint(files: &BTreeMap<String, String>) -> String {
+pub(crate) fn corpus_fingerprint(files: &BTreeMap<String, String>) -> String {
     let mut hasher = blake3::Hasher::new();
     for (path, hash) in files {
         hasher.update(path.as_bytes());
@@ -364,7 +367,9 @@ fn corpus_fingerprint(files: &BTreeMap<String, String>) -> String {
     hasher.finalize().to_hex().to_string()
 }
 
-fn summarize<'a>(queries: impl Iterator<Item = &'a QueryEvaluation>) -> EvaluationSummary {
+pub(crate) fn summarize<'a>(
+    queries: impl Iterator<Item = &'a QueryEvaluation>,
+) -> EvaluationSummary {
     let queries: Vec<_> = queries.collect();
     let active: Vec<_> = queries
         .iter()
@@ -457,7 +462,7 @@ fn summarize<'a>(queries: impl Iterator<Item = &'a QueryEvaluation>) -> Evaluati
     }
 }
 
-fn latency_stats(values: &[f64]) -> LatencyStats {
+pub(crate) fn latency_stats(values: &[f64]) -> LatencyStats {
     LatencyStats {
         mean: mean(values.iter().copied()),
         p50: percentile_f64(values, 0.50),
@@ -467,7 +472,7 @@ fn latency_stats(values: &[f64]) -> LatencyStats {
     }
 }
 
-fn context_stats(values: &[usize]) -> ContextStats {
+pub(crate) fn context_stats(values: &[usize]) -> ContextStats {
     ContextStats {
         mean: (!values.is_empty())
             .then(|| round_six(values.iter().sum::<usize>() as f64 / values.len() as f64)),
@@ -505,7 +510,7 @@ fn bool_to_number(value: bool) -> f64 {
     if value { 1.0 } else { 0.0 }
 }
 
-fn round_six(value: f64) -> f64 {
+pub(crate) fn round_six(value: f64) -> f64 {
     (value * 1_000_000.0).round() / 1_000_000.0
 }
 

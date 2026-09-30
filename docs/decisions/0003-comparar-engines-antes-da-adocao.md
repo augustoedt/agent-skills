@@ -44,6 +44,13 @@ Os holdouts já usados permanecem proibidos. No máximo duas variantes poderão 
 de execução única com holdouts inteiramente novos. Somente a vencedora aprovada será integrada ao
 produto; o resultado válido também pode ser manter o baseline atual.
 
+A Fase 4.1 materializa essa decisão com uma fronteira interna de engine e dois comandos exclusivos
+do runner privado: `bakeoff observe` e `bakeoff finalize`. O primeiro produz observações imutáveis;
+o segundo revalida corpus, dataset, ranking, baseline, evidência, provenance e o par de runs antes
+de produzir o relatório operacional v1. O runner atesta binário release, revisão Git, `Cargo.lock`,
+host, ambiente de processo e denylist. Nesta fase, somente o baseline direto possui adapter; os
+quatro braços experimentais são rejeitados explicitamente até suas fases próprias.
+
 ## Consequências
 
 - (+) armazenamento, ranking lexical, semântica e fusão serão avaliados separadamente;

@@ -5,7 +5,7 @@ do projeto continuam sendo a fonte da verdade; relatórios são artefatos deriva
 
 ## Contratos atuais
 
-- ferramenta: `docs-search 0.6.0-alpha.4`; o corpus público foi regenerado nesta versão; a fixture estável histórica permanece em 0.5.0;
+- ferramenta: `docs-search 0.6.0-alpha.5`; o corpus público foi regenerado nesta versão; a fixture estável histórica permanece em 0.5.0;
 - engine: `lexical-bm25-v1`;
 - resposta de busca: schema v2;
 - dataset de consultas: schema v2;
@@ -33,9 +33,9 @@ Corpus medido: 9 arquivos e 96 chunks.
 
 | Configuração | Hit@1 | Recall@5 macro | Recall@5 micro | MRR@5 | FP no-answer | Contexto |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| ilimitado | 0,647059 | 0,588235 | 0,619048 | 0,647059 | 0/3 | 18.513 |
-| cap 1 | 0,647059 | 0,588235 | 0,619048 | 0,647059 | 0/3 | 14.080 |
-| cap 2 | 0,647059 | 0,588235 | 0,619048 | 0,647059 | 0/3 | 14.329 |
+| ilimitado | 0,647059 | 0,588235 | 0,619048 | 0,647059 | 0/3 | 18.517 |
+| cap 1 | 0,647059 | 0,588235 | 0,619048 | 0,647059 | 0/3 | 14.084 |
+| cap 2 | 0,647059 | 0,588235 | 0,619048 | 0,647059 | 0/3 | 14.333 |
 
 No ranking ilimitado, casos exatos tiveram Hit@1 0,875000; semânticos, 0,166667; ambíguos,
 1,000000. A lacuna semântica permanece mensurável, mas não autoriza busca híbrida sem uma hipótese

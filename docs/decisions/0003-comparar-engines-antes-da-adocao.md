@@ -51,8 +51,9 @@ de produzir o relatório operacional v1. O runner atesta binário release, revis
 host, ambiente de processo e denylist. A Fase 4.2 adicionou o adapter SQLite/BM25 com ranking
 idêntico, índice atômico reconstruível, atualização incremental verificada, corrupção e fallback
 explícito. A Fase 4.3 adicionou FTS5 com configuração ligada ao runtime, query literal segura,
-projeção integral verificável e falha fechada. Embeddings e RRF continuam rejeitados até suas fases
-próprias.
+projeção integral verificável e falha fechada. A Fase 4.4 adicionou E5 local com artefatos
+verificados, Candle CPU, pooling/normalização congelados, scan exato, threshold 0,80, índice atômico
+e falha fechada sem rede ou fallback lexical. Apenas RRF continua rejeitado até sua fase própria.
 
 ## Consequências
 

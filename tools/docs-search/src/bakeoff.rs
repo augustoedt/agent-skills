@@ -11,6 +11,11 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
 use crate::corpus::{self, Chunk};
+use crate::embeddings::{
+    EMBEDDINGS_ENGINE, EmbeddingsIndex, ModelSpec,
+    fault_injection_passed as embeddings_fault_injection_passed, parse_model_spec,
+    run_incremental_workload as run_embeddings_incremental_workload,
+};
 use crate::evaluate::{
     ContextStats, EvaluationSummary, LatencyStats, QueryStatus, RECALL_CUTOFF,
     base_query_evaluation, corpus_fingerprint, latency_stats, round_six,
@@ -40,6 +45,8 @@ const LEXICAL_CONFIG_SHA256: &str =
 const SQLITE_CONFIG_SHA256: &str =
     "858fa10a7ea31eb46d9933817b221c2a722f936c4d8565f1bb830f66dbc64ab2";
 const FTS5_CONFIG_SHA256: &str = "3aedaee7026d230eea9345a962f6913c9d7890dd0fe175704c29aafb10384034";
+const EMBEDDINGS_CONFIG_SHA256: &str =
+    "de41db0af0e15a1dac47b2504617c0f6dbba8f10a2b0ea822a1e9ab2bb208e3d";
 
 #[derive(Debug, Clone)]
 pub struct ObserveRequest {
@@ -131,6 +138,71 @@ struct SqliteCachedBm25 {
 struct Fts5Search {
     engine_config_sha256: String,
     index: Option<Fts5Index>,
+}
+
+struct EmbeddingsSearch {
+    engine_config_sha256: String,
+    model_spec: ModelSpec,
+    model_directory: PathBuf,
+    index: Option<EmbeddingsIndex>,
+}
+
+impl BakeoffEngine for EmbeddingsSearch {
+    fn id(&self) -> &'static str {
+        EMBEDDINGS_ENGINE
+    }
+
+    fn prepare(
+        &mut self,
+        root: &Path,
+        corpus: &corpus::Corpus,
+        queries: &[EvaluationQuery],
+    ) -> Result<(IndexingMetrics, Option<SqliteRuntime>)> {
+        let (index, mut indexing) = EmbeddingsIndex::prepare_fresh(
+            root,
+            corpus,
+            &self.engine_config_sha256,
+            &self.model_spec,
+            &self.model_directory,
+        )?;
+        let query_texts: Vec<_> = queries.iter().map(|query| query.query.clone()).collect();
+        indexing.incremental_steps =
+            run_embeddings_incremental_workload(&index, root, &query_texts)?;
+        index.verify_current(corpus)?;
+        self.index = Some(index);
+        Ok((indexing, None))
+    }
+
+    fn open_existing(&mut self, root: &Path, corpus: &corpus::Corpus) -> Result<()> {
+        self.index = Some(EmbeddingsIndex::open_existing(
+            root,
+            corpus,
+            &self.engine_config_sha256,
+            &self.model_spec,
+            &self.model_directory,
+        )?);
+        Ok(())
+    }
+
+    fn search(
+        &self,
+        request: SearchRequest,
+    ) -> Result<(crate::types::SearchResponse, SearchTimings)> {
+        self.index
+            .as_ref()
+            .ok_or_else(|| anyhow!("embeddings engine was not prepared"))?
+            .search(request)
+    }
+
+    fn fault_injection_passed(&self, _root: &Path) -> bool {
+        self.index.as_ref().is_some_and(|index| {
+            embeddings_fault_injection_passed(index, &self.model_spec, &self.model_directory)
+        })
+    }
+
+    fn index_path(&self) -> Option<&Path> {
+        self.index.as_ref().map(EmbeddingsIndex::index_path)
+    }
 }
 
 impl BakeoffEngine for Fts5Search {
@@ -442,7 +514,11 @@ pub fn observe(request: ObserveRequest) -> Result<()> {
     let engine_configuration = engine_configuration(&protocol, &request.engine)?.clone();
     validate_frozen_engine_configuration(&request.engine, &engine_configuration)?;
     let engine_config_sha256 = canonical_json_sha256(&engine_configuration)?;
-    let mut engine = engine(&request.engine, &engine_config_sha256)?;
+    let mut engine = engine(
+        &request.engine,
+        &engine_config_sha256,
+        protocol.get("model"),
+    )?;
     let input = protocol_input(&protocol, &request.input_id)?;
     let root = PathBuf::from(required_string(input, "root")?);
     let queries_path = PathBuf::from(required_string(input, "queries")?);
@@ -585,7 +661,7 @@ pub fn observe(request: ObserveRequest) -> Result<()> {
     let evidence_projection_sha256 = evidence_projection(&observed_queries)?;
     let timing_ms = timing_value(&observed_queries);
     let fault_injection_passed = engine.fault_injection_passed(&root);
-    if matches!(engine.id(), SQLITE_ENGINE | FTS5_ENGINE) {
+    if matches!(engine.id(), SQLITE_ENGINE | FTS5_ENGINE | EMBEDDINGS_ENGINE) {
         indexing.corruption_detected |= fault_injection_passed;
         indexing.rebuild_succeeded &= fault_injection_passed;
     }
@@ -734,15 +810,36 @@ pub fn finalize(request: FinalizeRequest) -> Result<()> {
 
 fn ensure_engine_available(id: &str) -> Result<()> {
     match id {
-        ENGINE | SQLITE_ENGINE | FTS5_ENGINE => Ok(()),
-        "local-embeddings-v1" | "hybrid-rrf-v1" => {
+        ENGINE | SQLITE_ENGINE | FTS5_ENGINE | EMBEDDINGS_ENGINE => Ok(()),
+        "hybrid-rrf-v1" => {
             bail!("engine {id} is frozen but not implemented before its planned phase")
         }
         _ => bail!("unknown bake-off engine {id}"),
     }
 }
 
-fn engine(id: &str, engine_config_sha256: &str) -> Result<Box<dyn BakeoffEngine>> {
+fn model_directory(spec: &ModelSpec) -> Result<PathBuf> {
+    let config = spec
+        .artifacts
+        .iter()
+        .find(|artifact| {
+            Path::new(&artifact.file)
+                .file_name()
+                .and_then(|name| name.to_str())
+                == Some("config.json")
+        })
+        .ok_or_else(|| anyhow!("frozen model config artifact is missing"))?;
+    Path::new(&config.file)
+        .parent()
+        .map(Path::to_path_buf)
+        .ok_or_else(|| anyhow!("frozen model artifact path has no parent"))
+}
+
+fn engine(
+    id: &str,
+    engine_config_sha256: &str,
+    model: Option<&Value>,
+) -> Result<Box<dyn BakeoffEngine>> {
     ensure_engine_available(id)?;
     match id {
         ENGINE => Ok(Box::new(LexicalBm25)),
@@ -755,6 +852,18 @@ fn engine(id: &str, engine_config_sha256: &str) -> Result<Box<dyn BakeoffEngine>
             engine_config_sha256: engine_config_sha256.to_owned(),
             index: None,
         })),
+        EMBEDDINGS_ENGINE => {
+            let model_spec = parse_model_spec(
+                model.ok_or_else(|| anyhow!("protocol.model is required for embeddings"))?,
+            )?;
+            let model_directory = model_directory(&model_spec)?;
+            Ok(Box::new(EmbeddingsSearch {
+                engine_config_sha256: engine_config_sha256.to_owned(),
+                model_spec,
+                model_directory,
+                index: None,
+            }))
+        }
         _ => unreachable!("availability check rejected unsupported engine"),
     }
 }
@@ -763,7 +872,7 @@ fn fallback_behavior(engine: &str) -> Result<&'static str> {
     match engine {
         ENGINE => Ok("not-applicable"),
         SQLITE_ENGINE => Ok("explicit-direct-bm25"),
-        FTS5_ENGINE => Ok("explicit-fail-closed"),
+        FTS5_ENGINE | EMBEDDINGS_ENGINE => Ok("explicit-fail-closed"),
         _ => bail!("fallback behavior is unavailable for engine {engine}"),
     }
 }
@@ -790,10 +899,19 @@ fn validate_frozen_engine_configuration(id: &str, configuration: &Value) -> Resu
         ENGINE => LEXICAL_CONFIG_SHA256,
         SQLITE_ENGINE => SQLITE_CONFIG_SHA256,
         FTS5_ENGINE => FTS5_CONFIG_SHA256,
+        EMBEDDINGS_ENGINE => EMBEDDINGS_CONFIG_SHA256,
         _ => return Ok(()),
     };
-    if id == FTS5_ENGINE && configuration != &crate::fts5::frozen_configuration() {
-        bail!("FTS5 configuration values differ from the runtime implementation");
+    let runtime_configuration = match id {
+        FTS5_ENGINE => Some(crate::fts5::frozen_configuration()),
+        EMBEDDINGS_ENGINE => Some(crate::embeddings::frozen_configuration()),
+        _ => None,
+    };
+    if runtime_configuration
+        .as_ref()
+        .is_some_and(|runtime| runtime != configuration)
+    {
+        bail!("{id} configuration values differ from the runtime implementation");
     }
     let actual = canonical_json_sha256(configuration)?;
     if actual != expected {
@@ -1217,6 +1335,7 @@ fn validate_observation(
     let expected_index = match observation.engine.as_str() {
         SQLITE_ENGINE => Some(crate::sqlite_cache::cache_path(root)?),
         FTS5_ENGINE => Some(crate::fts5::index_path_for_root(root)?),
+        EMBEDDINGS_ENGINE => Some(crate::embeddings::index_path_for_root(root)?),
         _ => None,
     };
     if let Some(expected_index) = expected_index
@@ -1225,7 +1344,11 @@ fn validate_observation(
         bail!("indexed observation path differs from the deterministic cache path");
     }
     let loaded = corpus::load(root)?;
-    let mut validation_engine = engine(&observation.engine, &observation.engine_config_sha256)?;
+    let mut validation_engine = engine(
+        &observation.engine,
+        &observation.engine_config_sha256,
+        protocol.get("model"),
+    )?;
     validation_engine.open_existing(root, &loaded)?;
     if validation_engine.fault_injection_passed(root) != observation.fault_injection_passed {
         bail!("observation fault injection result is not reproducible");
@@ -1276,7 +1399,10 @@ fn validate_observation(
     if observation.retrieval.candidates_examined != recomputed_candidates {
         bail!("observation candidate count differs from the engine rerun");
     }
-    if matches!(observation.engine.as_str(), ENGINE | SQLITE_ENGINE) {
+    if matches!(
+        observation.engine.as_str(),
+        ENGINE | SQLITE_ENGINE | EMBEDDINGS_ENGINE
+    ) {
         let expected_candidates = observation
             .input
             .chunks
@@ -1329,7 +1455,7 @@ fn validate_engine_observation(observation: &Observation) -> Result<()> {
                 bail!("direct BM25 observation contains indexed-engine state");
             }
         }
-        SQLITE_ENGINE | FTS5_ENGINE => {
+        SQLITE_ENGINE | FTS5_ENGINE | EMBEDDINGS_ENGINE => {
             let full_build = observation
                 .indexing
                 .full_build_ms
@@ -1352,7 +1478,6 @@ fn validate_engine_observation(observation: &Observation) -> Result<()> {
                 })
                 || !observation.indexing.rebuild_succeeded
                 || !observation.indexing.corruption_detected
-                || observation.indexing.runtime_checks.len() != 3
                 || observation
                     .indexing
                     .runtime_checks
@@ -1362,16 +1487,32 @@ fn validate_engine_observation(observation: &Observation) -> Result<()> {
             {
                 bail!("indexed observation state is invalid");
             }
-            let runtime = observation
-                .sqlite_runtime
-                .as_ref()
-                .ok_or_else(|| anyhow!("indexed observation lacks SQLite runtime provenance"))?;
-            let actual = crate::sqlite_cache::validate_runtime()?;
-            if runtime.version != actual.version
-                || runtime.compile_options_sha256 != actual.compile_options_sha256
-                || observation.indexing.runtime_checks != actual.checks
-            {
-                bail!("indexed observation SQLite runtime provenance is invalid");
+            if observation.engine == EMBEDDINGS_ENGINE {
+                let expected_checks = BTreeMap::from([
+                    ("attention_mask_mean_pooling".to_owned(), true),
+                    ("candle_cpu_f32".to_owned(), true),
+                    ("model_artifacts_sha256_verified".to_owned(), true),
+                    ("tokenizer_truncation_right_512".to_owned(), true),
+                ]);
+                if observation.sqlite_runtime.is_some()
+                    || observation.indexing.runtime_checks != expected_checks
+                {
+                    bail!("embeddings observation runtime provenance is invalid");
+                }
+            } else {
+                if observation.indexing.runtime_checks.len() != 3 {
+                    bail!("SQLite indexed observation runtime checks are invalid");
+                }
+                let runtime = observation.sqlite_runtime.as_ref().ok_or_else(|| {
+                    anyhow!("indexed observation lacks SQLite runtime provenance")
+                })?;
+                let actual = crate::sqlite_cache::validate_runtime()?;
+                if runtime.version != actual.version
+                    || runtime.compile_options_sha256 != actual.compile_options_sha256
+                    || observation.indexing.runtime_checks != actual.checks
+                {
+                    bail!("indexed observation SQLite runtime provenance is invalid");
+                }
             }
         }
         _ => bail!("engine observation validation is unavailable"),
@@ -1530,7 +1671,6 @@ fn validate_measurements(
         || !measurements.timing_ms.end_to_end.is_finite()
         || measurements.timing_ms.startup < 0.0
         || measurements.timing_ms.end_to_end < measurements.timing_ms.startup
-        || measurements.resources_bytes.shared_model != 0
         || !looks_like_utc_timestamp(&measurements.started_at)
         || !looks_like_utc_timestamp(&measurements.finished_at)
     {
@@ -1550,6 +1690,9 @@ fn validate_measurements(
             }
         }
         SQLITE_ENGINE | FTS5_ENGINE => {
+            if measurements.resources_bytes.shared_model != 0 {
+                bail!("SQLite indexed-engine measurements contain shared model bytes");
+            }
             let runtime = observation
                 .sqlite_runtime
                 .as_ref()
@@ -1580,7 +1723,40 @@ fn validate_measurements(
                 bail!("indexed-engine measurements do not match the observed runtime or index");
             }
         }
+        EMBEDDINGS_ENGINE => {
+            let index_path = Path::new(
+                observation
+                    .index_path
+                    .as_deref()
+                    .ok_or_else(|| anyhow!("embeddings index path is missing"))?,
+            );
+            let metadata = fs::symlink_metadata(index_path)?;
+            let logical = metadata.len();
+            let allocated = metadata.blocks().saturating_mul(512);
+            let expected_model = required_u64(
+                &protocol["budgets"]["resources_bytes"],
+                "shared_model_exact",
+            )?;
+            if metadata.file_type().is_symlink()
+                || !metadata.is_file()
+                || measurements.environment.sqlite_version.is_some()
+                || measurements
+                    .environment
+                    .sqlite_compile_options_sha256
+                    .is_some()
+                || measurements.resources_bytes.index_logical != logical
+                || measurements.resources_bytes.index_allocated != allocated
+                || measurements.resources_bytes.shared_model != expected_model
+                || logical == 0
+                || allocated == 0
+            {
+                bail!("embeddings measurements do not match the observed index or frozen model");
+            }
+        }
         _ => bail!("measurement validation is unavailable for the engine"),
+    }
+    if observation.engine != EMBEDDINGS_ENGINE && measurements.resources_bytes.shared_model != 0 {
+        bail!("non-embedding measurements contain shared model bytes");
     }
     Ok(())
 }
@@ -1746,7 +1922,7 @@ fn budget_checks(
     )?;
     let (index_build, incremental_equivalence) = match observation.engine.as_str() {
         ENGINE => (observation.indexing.full_build_ms.is_none(), true),
-        SQLITE_ENGINE | FTS5_ENGINE => {
+        SQLITE_ENGINE | FTS5_ENGINE | EMBEDDINGS_ENGINE => {
             let indexing_budget = &protocol["budgets"]["indexing_ms"];
             let full_build = observation.indexing.full_build_ms.unwrap_or(f64::INFINITY);
             let full_cap = required_f64(
@@ -1808,7 +1984,12 @@ fn budget_checks(
         ("run_variation".to_owned(), run_variation),
         (
             "shared_model_size".to_owned(),
-            measurements.resources_bytes.shared_model == 0,
+            if observation.engine == EMBEDDINGS_ENGINE {
+                measurements.resources_bytes.shared_model
+                    == required_u64(resource_budget, "shared_model_exact")?
+            } else {
+                measurements.resources_bytes.shared_model == 0
+            },
         ),
     ]))
 }
@@ -1834,7 +2015,7 @@ fn report_queries(queries: &[ObservedQuery], engine: &str) -> Value {
                         "excerpt_chars": result.excerpt.chars().count(),
                         "source_ranks": {
                             "fts5": (engine == FTS5_ENGINE).then_some(result.rank),
-                            "embedding": null
+                            "embedding": (engine == EMBEDDINGS_ENGINE).then_some(result.rank)
                         },
                     })).collect::<Vec<_>>(),
                     "first_relevant_rank": query.first_relevant_rank,
@@ -2040,6 +2221,10 @@ mod tests {
             canonical_json_sha256(&fts5_configuration()).unwrap(),
             FTS5_CONFIG_SHA256
         );
+        assert_eq!(
+            canonical_json_sha256(&embedding_configuration()).unwrap(),
+            EMBEDDINGS_CONFIG_SHA256
+        );
         let mut tampered = fts5_configuration();
         tampered["candidate_depth"] = json!(49);
         assert!(validate_frozen_engine_configuration(FTS5_ENGINE, &tampered).is_err());
@@ -2080,8 +2265,8 @@ mod tests {
 
     #[test]
     fn unavailable_engine_is_explicit() {
-        let Err(error) = ensure_engine_available("local-embeddings-v1") else {
-            panic!("embeddings must remain unavailable before Phase 4.4");
+        let Err(error) = ensure_engine_available("hybrid-rrf-v1") else {
+            panic!("hybrid must remain unavailable before Phase 4.5");
         };
         assert!(error.to_string().contains("not implemented"));
         let Err(error) = ensure_engine_available("unknown") else {
@@ -2604,5 +2789,9 @@ mod tests {
 
     fn fts5_configuration() -> Value {
         crate::fts5::frozen_configuration()
+    }
+
+    fn embedding_configuration() -> Value {
+        crate::embeddings::frozen_configuration()
     }
 }

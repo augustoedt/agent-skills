@@ -1,6 +1,6 @@
 [package]
 name = "docs-search"
-version = "0.6.0-alpha.4"
+version = "0.6.0-alpha.5"
 edition = "2024"
 rust-version = "1.85"
 description = "Local, model-independent retrieval for project documentation"
@@ -9,11 +9,15 @@ license = "MIT"
 [dependencies]
 anyhow = "1.0"
 blake3 = "1.8"
+candle-core = { version = "=0.9.1", default-features = false }
+candle-nn = { version = "=0.9.1", default-features = false }
+candle-transformers = { version = "=0.9.1", default-features = false }
 clap = { version = "4.5", features = ["derive"] }
 ignore = "0.4"
 rusqlite = { version = "=0.40.2", features = ["bundled"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+tokenizers = { version = "=0.21.1", default-features = false, features = ["onig"] }
 unicode-normalization = "0.1"
 
 [dev-dependencies]

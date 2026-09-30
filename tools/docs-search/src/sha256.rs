@@ -1,3 +1,5 @@
+use std::io::{self, Read};
+
 const INITIAL_STATE: [u32; 8] = [
     0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
 ];
@@ -14,29 +16,87 @@ const ROUND_CONSTANTS: [u32; 64] = [
 ];
 
 pub(crate) fn digest_hex(input: &[u8]) -> String {
-    let bit_length = (input.len() as u64).wrapping_mul(8);
-    let mut padded = Vec::with_capacity(input.len() + 72);
-    padded.extend_from_slice(input);
-    padded.push(0x80);
-    while padded.len() % 64 != 56 {
-        padded.push(0);
-    }
-    padded.extend_from_slice(&bit_length.to_be_bytes());
+    let mut hasher = Sha256::new();
+    hasher.update(input);
+    hasher.finalize()
+}
 
-    let mut state = INITIAL_STATE;
-    for block in padded.chunks_exact(64) {
-        compress(&mut state, block);
+pub(crate) fn digest_reader(mut reader: impl Read) -> io::Result<String> {
+    let mut hasher = Sha256::new();
+    let mut buffer = [0u8; 1024 * 1024];
+    loop {
+        let read = reader.read(&mut buffer)?;
+        if read == 0 {
+            return Ok(hasher.finalize());
+        }
+        hasher.update(&buffer[..read]);
+    }
+}
+
+struct Sha256 {
+    state: [u32; 8],
+    buffer: [u8; 64],
+    buffered: usize,
+    total: u64,
+}
+
+impl Sha256 {
+    fn new() -> Self {
+        Self {
+            state: INITIAL_STATE,
+            buffer: [0; 64],
+            buffered: 0,
+            total: 0,
+        }
     }
 
-    let mut output = String::with_capacity(64);
-    for word in state {
-        use std::fmt::Write as _;
-        write!(&mut output, "{word:08x}").expect("writing to a String cannot fail");
+    fn update(&mut self, mut data: &[u8]) {
+        self.total = self.total.wrapping_add(data.len() as u64);
+        if self.buffered > 0 {
+            let take = (64 - self.buffered).min(data.len());
+            self.buffer[self.buffered..self.buffered + take].copy_from_slice(&data[..take]);
+            self.buffered += take;
+            data = &data[take..];
+            if self.buffered == 64 {
+                let block = self.buffer;
+                compress(&mut self.state, &block);
+                self.buffered = 0;
+            }
+        }
+        while data.len() >= 64 {
+            compress(&mut self.state, &data[..64]);
+            data = &data[64..];
+        }
+        if !data.is_empty() {
+            self.buffer[..data.len()].copy_from_slice(data);
+            self.buffered = data.len();
+        }
     }
-    output
+
+    fn finalize(mut self) -> String {
+        let bit_length = self.total.wrapping_mul(8);
+        let mut final_bytes = Vec::with_capacity(self.buffered + 72);
+        final_bytes.extend_from_slice(&self.buffer[..self.buffered]);
+        final_bytes.push(0x80);
+        while final_bytes.len() % 64 != 56 {
+            final_bytes.push(0);
+        }
+        final_bytes.extend_from_slice(&bit_length.to_be_bytes());
+        for block in final_bytes.chunks_exact(64) {
+            compress(&mut self.state, block);
+        }
+
+        let mut output = String::with_capacity(64);
+        for word in self.state {
+            use std::fmt::Write as _;
+            write!(&mut output, "{word:08x}").expect("writing to a String cannot fail");
+        }
+        output
+    }
 }
 
 fn compress(state: &mut [u32; 8], block: &[u8]) {
+    debug_assert_eq!(block.len(), 64);
     let mut schedule = [0u32; 64];
     for (index, word) in block.chunks_exact(4).enumerate() {
         schedule[index] = u32::from_be_bytes([word[0], word[1], word[2], word[3]]);
@@ -89,6 +149,8 @@ fn compress(state: &mut [u32; 8], block: &[u8]) {
 
 #[cfg(test)]
 mod tests {
+    use std::io::Cursor;
+
     use super::*;
 
     #[test]
@@ -105,5 +167,16 @@ mod tests {
             digest_hex(b"The quick brown fox jumps over the lazy dog"),
             "d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592"
         );
+    }
+
+    #[test]
+    fn streaming_matches_one_shot_across_block_boundaries() {
+        for length in [0, 1, 55, 56, 63, 64, 65, 1_000, 1_048_577] {
+            let input: Vec<u8> = (0..length).map(|index| (index % 251) as u8).collect();
+            assert_eq!(
+                digest_reader(Cursor::new(&input)).unwrap(),
+                digest_hex(&input)
+            );
+        }
     }
 }

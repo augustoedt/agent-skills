@@ -1,5 +1,6 @@
 pub mod bakeoff;
 pub mod corpus;
+mod embeddings;
 pub mod evaluate;
 pub mod evaluation;
 mod fts5;

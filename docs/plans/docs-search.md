@@ -11,7 +11,7 @@
 - gate de holdout: concluído uma única vez e fechado; holdouts consumidos não orientam retuning;
 - prefixo morfológico limitado 7/4: testado duas vezes em development e rejeitado sem ajustes;
 - bake-off de engines: aprovado; Fase 4.0 congelada e harness comum da Fase 4.1 implementado;
-- adapters disponíveis no bake-off: `lexical-bm25-v1`, `sqlite-cache-bm25-v1` e `fts5-v1`; E5 e RRF ainda recusados;
+- adapters disponíveis no bake-off: `lexical-bm25-v1`, `sqlite-cache-bm25-v1`, `fts5-v1` e `local-embeddings-v1`; apenas RRF ainda é recusado;
 - protocolo e relatório operacional: contratos públicos v1 formalizados, com instância, snapshots,
   checksums e verificador mantidos no ambiente privado;
 - variantes congeladas: BM25 direto, cache SQLite com BM25, FTS5, embeddings locais e híbrido por RRF;
@@ -419,7 +419,7 @@ auditoria. O default `lexical-bm25-v1` não mudou.
 
 ### 3.3 Diversidade por path — candidato medido
 
-O `docs-search 0.6.0-alpha.4` oferece `--max-results-per-path N` como seleção opt-in após o ranking BM25. O
+O `docs-search 0.6.0-alpha.5` oferece `--max-results-per-path N` como seleção opt-in após o ranking BM25. O
 seletor pode avançar além dos cinco primeiros chunks brutos, limita contribuições repetidas de um
 path e devolve ranks finais contíguos. Relatório e resposta de busca v2 preservam `raw_rank`; a
 resposta também expõe `selection.max_results_per_path`. O comportamento sem flag não muda.
@@ -584,9 +584,27 @@ da latência.
 
 ### Fase 4.4 — embeddings locais
 
-Implementar `local-embeddings-v1` com o único modelo congelado na Fase 4.0. Registrar id, versão,
-licença, dimensão, normalização, hash, requisitos de CPU/RAM e algoritmo de distância. Pesos ficam
-fora do banco; vetores incluem modelo e hash do chunk para invalidação reproduzível.
+**Status:** concluída em código e testes; medições congeladas continuam fechadas até os cinco
+adapters existirem na mesma revisão limpa.
+
+`local-embeddings-v1` usa somente o modelo e os artefatos congelados na Fase 4.0. O runtime local é
+Candle CPU 0.9.1 com Tokenizers 0.21.1, `BertModel`, prefixos E5, truncamento à direita em 512 tokens,
+padding dinâmico por lote, mean pooling pela attention mask, L2 em `f32` e dot product. A geração de
+candidatos faz scan exato de todos os vetores, ordena deterministicamente, retém top 50 e retorna
+vazio quando a melhor similaridade é menor que 0,80.
+
+O índice binário privado armazena vetores little-endian de 384 dimensões e evidência suficiente para
+revalidar path, heading, linhas, texto e hashes. Modelo, parser, configuração, root e fingerprint do
+corpus participam da invalidação. Criação e atualização usam arquivo temporário, `fsync` e rename
+atômico; add, modify, rename e remove são comparados com rebuild limpo. Artefato ausente, corrupção
+não recuperável ou falha forçada de rebuild encerram com erro, sem rede, fallback lexical ou
+resultado parcial. O relatório registra `source_ranks.embedding`, bytes compartilhados do modelo,
+disco, indexação e candidatos examinados.
+
+Um fluxo sintético pareado com os artefatos reais do modelo validou determinismo, schema,
+evidência, quatro updates com zero resultado stale, corrupção/rebuild e falha fechada. O status foi
+`fail` pelas guardas de `no_answer` e contexto da fixture, portanto esse smoke confirma o harness,
+não autoriza tuning nem adoção. Nenhuma medição congelada de development foi aberta.
 
 Não haverá seleção de modelo ou ajuste de threshold depois de observar os resultados congelados.
 Uma nova configuração exigirá outro protocolo e outra tag.

@@ -8,7 +8,7 @@ use docs_search::{
     SCHEMA_VERSION, parse_evaluation_set,
 };
 use serde::Deserialize;
-use serde_json::Value;
+use serde_json::{Value, json};
 
 #[derive(Debug, Deserialize)]
 struct FixtureManifest {
@@ -311,9 +311,15 @@ fn published_bakeoff_protocol_schema_freezes_engine_configuration() {
         "engine-bakeoff-v1"
     );
     assert_eq!(schema["properties"]["engines"]["minItems"], 5);
+    let fts5 = &schema["$defs"]["fts5Config"]["properties"];
+    assert_eq!(fts5["tokenizer"]["const"], "unicode61 remove_diacritics 2");
+    assert_eq!(fts5["table"]["const"], "chunks_fts");
+    assert_eq!(fts5["columns"]["const"], json!(["body", "heading", "path"]));
+    assert_eq!(fts5["column_weights"]["const"], json!([1.0, 2.0, 3.0]));
+    assert_eq!(fts5["candidate_depth"]["const"], 50);
     assert_eq!(
-        schema["$defs"]["fts5Config"]["properties"]["tokenizer"]["const"],
-        "unicode61 remove_diacritics 2"
+        fts5["abstention"]["const"],
+        "empty-only-when-fts5-match-has-no-row"
     );
     assert_eq!(
         schema["$defs"]["embeddingConfig"]["properties"]["candidate_depth"]["const"],

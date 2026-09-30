@@ -17,6 +17,11 @@ use crate::evaluate::{
     successful_query_evaluation, summarize,
 };
 use crate::evaluation::{EvaluationCategory, EvaluationQuery, parse_evaluation_set};
+use crate::fts5::{
+    CANDIDATE_DEPTH as FTS5_CANDIDATE_DEPTH, FTS5_ENGINE, Fts5Index,
+    fault_injection_passed as fts5_fault_injection_passed,
+    run_incremental_workload as run_fts5_incremental_workload,
+};
 use crate::search::{SearchTimings, search, search_with_timings};
 use crate::sha256;
 use crate::sqlite_cache::{
@@ -30,6 +35,11 @@ pub const BAKEOFF_REPORT_SCHEMA_VERSION: u32 = 1;
 pub const BAKEOFF_PROTOCOL_TAG: &str = "engine-bakeoff-v1";
 const LIMIT: usize = 5;
 const MAX_EXCERPT_CHARS: usize = 1_200;
+const LEXICAL_CONFIG_SHA256: &str =
+    "4b352dbc5fb1ed6818f6cca023664858ae563bd9bffdcc7c4b7db2e7fdec4b8d";
+const SQLITE_CONFIG_SHA256: &str =
+    "858fa10a7ea31eb46d9933817b221c2a722f936c4d8565f1bb830f66dbc64ab2";
+const FTS5_CONFIG_SHA256: &str = "3aedaee7026d230eea9345a962f6913c9d7890dd0fe175704c29aafb10384034";
 
 #[derive(Debug, Clone)]
 pub struct ObserveRequest {
@@ -116,6 +126,60 @@ struct SqliteCachedBm25 {
     engine_config_sha256: String,
     cache: Option<SqliteCache>,
     fallback_count: Cell<usize>,
+}
+
+struct Fts5Search {
+    engine_config_sha256: String,
+    index: Option<Fts5Index>,
+}
+
+impl BakeoffEngine for Fts5Search {
+    fn id(&self) -> &'static str {
+        FTS5_ENGINE
+    }
+
+    fn prepare(
+        &mut self,
+        root: &Path,
+        corpus: &corpus::Corpus,
+        queries: &[EvaluationQuery],
+    ) -> Result<(IndexingMetrics, Option<SqliteRuntime>)> {
+        let (index, mut indexing, runtime) =
+            Fts5Index::prepare_fresh(root, corpus, &self.engine_config_sha256)?;
+        let query_texts: Vec<_> = queries.iter().map(|query| query.query.clone()).collect();
+        indexing.incremental_steps =
+            run_fts5_incremental_workload(root, &query_texts, &self.engine_config_sha256)?;
+        index.verify_current(corpus)?;
+        self.index = Some(index);
+        Ok((indexing, Some(runtime)))
+    }
+
+    fn open_existing(&mut self, root: &Path, corpus: &corpus::Corpus) -> Result<()> {
+        self.index = Some(Fts5Index::open_existing(
+            root,
+            corpus,
+            &self.engine_config_sha256,
+        )?);
+        Ok(())
+    }
+
+    fn search(
+        &self,
+        request: SearchRequest,
+    ) -> Result<(crate::types::SearchResponse, SearchTimings)> {
+        self.index
+            .as_ref()
+            .ok_or_else(|| anyhow!("FTS5 engine was not prepared"))?
+            .search(request)
+    }
+
+    fn fault_injection_passed(&self, root: &Path) -> bool {
+        fts5_fault_injection_passed(root, &self.engine_config_sha256)
+    }
+
+    fn index_path(&self) -> Option<&Path> {
+        self.index.as_ref().map(Fts5Index::index_path)
+    }
 }
 
 impl BakeoffEngine for SqliteCachedBm25 {
@@ -376,6 +440,7 @@ pub fn observe(request: ObserveRequest) -> Result<()> {
         read_json(&request.provenance_path, "observation provenance")?;
     validate_provenance(&provenance, &protocol)?;
     let engine_configuration = engine_configuration(&protocol, &request.engine)?.clone();
+    validate_frozen_engine_configuration(&request.engine, &engine_configuration)?;
     let engine_config_sha256 = canonical_json_sha256(&engine_configuration)?;
     let mut engine = engine(&request.engine, &engine_config_sha256)?;
     let input = protocol_input(&protocol, &request.input_id)?;
@@ -511,6 +576,7 @@ pub fn observe(request: ObserveRequest) -> Result<()> {
         &baseline_path,
         required_string(input, "baseline_report_sha256")?,
         &report_input,
+        engine.id(),
         &quality,
         &per_category,
         &observed_queries,
@@ -519,7 +585,7 @@ pub fn observe(request: ObserveRequest) -> Result<()> {
     let evidence_projection_sha256 = evidence_projection(&observed_queries)?;
     let timing_ms = timing_value(&observed_queries);
     let fault_injection_passed = engine.fault_injection_passed(&root);
-    if engine.id() == SQLITE_ENGINE {
+    if matches!(engine.id(), SQLITE_ENGINE | FTS5_ENGINE) {
         indexing.corruption_detected |= fault_injection_passed;
         indexing.rebuild_succeeded &= fault_injection_passed;
     }
@@ -634,7 +700,7 @@ pub fn finalize(request: FinalizeRequest) -> Result<()> {
         },
         "quality": observation.quality,
         "per_category": observation.per_category,
-        "queries": report_queries(&observation.queries),
+        "queries": report_queries(&observation.queries, &observation.engine),
         "timing_ms": merge_timing(&observation.timing_ms, &measurements.timing_ms)?,
         "indexing": observation.indexing,
         "resources_bytes": measurements.resources_bytes,
@@ -668,8 +734,8 @@ pub fn finalize(request: FinalizeRequest) -> Result<()> {
 
 fn ensure_engine_available(id: &str) -> Result<()> {
     match id {
-        ENGINE | SQLITE_ENGINE => Ok(()),
-        "fts5-v1" | "local-embeddings-v1" | "hybrid-rrf-v1" => {
+        ENGINE | SQLITE_ENGINE | FTS5_ENGINE => Ok(()),
+        "local-embeddings-v1" | "hybrid-rrf-v1" => {
             bail!("engine {id} is frozen but not implemented before its planned phase")
         }
         _ => bail!("unknown bake-off engine {id}"),
@@ -685,6 +751,10 @@ fn engine(id: &str, engine_config_sha256: &str) -> Result<Box<dyn BakeoffEngine>
             cache: None,
             fallback_count: Cell::new(0),
         })),
+        FTS5_ENGINE => Ok(Box::new(Fts5Search {
+            engine_config_sha256: engine_config_sha256.to_owned(),
+            index: None,
+        })),
         _ => unreachable!("availability check rejected unsupported engine"),
     }
 }
@@ -693,6 +763,7 @@ fn fallback_behavior(engine: &str) -> Result<&'static str> {
     match engine {
         ENGINE => Ok("not-applicable"),
         SQLITE_ENGINE => Ok("explicit-direct-bm25"),
+        FTS5_ENGINE => Ok("explicit-fail-closed"),
         _ => bail!("fallback behavior is unavailable for engine {engine}"),
     }
 }
@@ -710,6 +781,23 @@ fn validate_protocol(protocol: &Value) -> Result<()> {
         || protocol["policy"]["runs_per_engine_input"] != 2
     {
         bail!("bake-off protocol policy does not match Phase 4.1");
+    }
+    Ok(())
+}
+
+fn validate_frozen_engine_configuration(id: &str, configuration: &Value) -> Result<()> {
+    let expected = match id {
+        ENGINE => LEXICAL_CONFIG_SHA256,
+        SQLITE_ENGINE => SQLITE_CONFIG_SHA256,
+        FTS5_ENGINE => FTS5_CONFIG_SHA256,
+        _ => return Ok(()),
+    };
+    if id == FTS5_ENGINE && configuration != &crate::fts5::frozen_configuration() {
+        bail!("FTS5 configuration values differ from the runtime implementation");
+    }
+    let actual = canonical_json_sha256(configuration)?;
+    if actual != expected {
+        bail!("engine {id} configuration differs from the frozen implementation contract");
     }
     Ok(())
 }
@@ -874,6 +962,7 @@ fn baseline_comparison(
     baseline_path: &Path,
     expected_sha256: &str,
     input: &ReportInput,
+    engine: &str,
     quality: &Value,
     per_category: &BTreeMap<String, Value>,
     queries: &[ObservedQuery],
@@ -896,7 +985,9 @@ fn baseline_comparison(
     {
         bail!("baseline report does not match the frozen input and retrieval contract");
     }
-    validate_lexical_baseline_equivalence(&baseline, queries)?;
+    if matches!(engine, ENGINE | SQLITE_ENGINE) {
+        validate_lexical_baseline_equivalence(&baseline, queries)?;
+    }
 
     let current = quality;
     let baseline_summary = &baseline["summary"];
@@ -1104,6 +1195,7 @@ fn validate_observation(
         bail!("observation input does not match the protocol");
     }
     let config = engine_configuration(protocol, &observation.engine)?;
+    validate_frozen_engine_configuration(&observation.engine, config)?;
     if canonical_json_sha256(config)? != observation.engine_config_sha256
         || config != &observation.engine_configuration
     {
@@ -1122,11 +1214,15 @@ fn validate_observation(
     }
     let set = parse_evaluation_set(std::str::from_utf8(&dataset)?)?;
     let root = Path::new(&observation.input.root);
-    if observation.engine == SQLITE_ENGINE {
-        let expected_index = crate::sqlite_cache::cache_path(root)?;
-        if observation.index_path.as_deref() != Some(expected_index.to_string_lossy().as_ref()) {
-            bail!("SQLite observation index path differs from the deterministic cache path");
-        }
+    let expected_index = match observation.engine.as_str() {
+        SQLITE_ENGINE => Some(crate::sqlite_cache::cache_path(root)?),
+        FTS5_ENGINE => Some(crate::fts5::index_path_for_root(root)?),
+        _ => None,
+    };
+    if let Some(expected_index) = expected_index
+        && observation.index_path.as_deref() != Some(expected_index.to_string_lossy().as_ref())
+    {
+        bail!("indexed observation path differs from the deterministic cache path");
     }
     let loaded = corpus::load(root)?;
     let mut validation_engine = engine(&observation.engine, &observation.engine_config_sha256)?;
@@ -1141,7 +1237,7 @@ fn validate_observation(
         set.queries.len(),
     )?;
     validate_engine_observation(observation)?;
-    let evaluations = recompute_observation(
+    let (evaluations, recomputed_candidates) = recompute_observation(
         &set.queries,
         &observation.queries,
         &loaded.chunks,
@@ -1177,19 +1273,32 @@ fn validate_observation(
     {
         bail!("observation metrics or timings are not reproducible");
     }
-    let expected_candidates = observation
-        .input
-        .chunks
-        .checked_mul(required_usize(&observation.quality, "executed")?)
-        .ok_or_else(|| anyhow!("candidate counter overflow"))?;
-    if observation.retrieval.candidates_examined != expected_candidates {
-        bail!("observation candidate count does not equal all chunks per executed query");
+    if observation.retrieval.candidates_examined != recomputed_candidates {
+        bail!("observation candidate count differs from the engine rerun");
+    }
+    if matches!(observation.engine.as_str(), ENGINE | SQLITE_ENGINE) {
+        let expected_candidates = observation
+            .input
+            .chunks
+            .checked_mul(required_usize(&observation.quality, "executed")?)
+            .ok_or_else(|| anyhow!("candidate counter overflow"))?;
+        if observation.retrieval.candidates_examined != expected_candidates {
+            bail!("BM25 observation candidate count does not equal all chunks per executed query");
+        }
+    } else if observation.engine == FTS5_ENGINE {
+        let maximum = FTS5_CANDIDATE_DEPTH
+            .checked_mul(required_usize(&observation.quality, "executed")?)
+            .ok_or_else(|| anyhow!("FTS5 candidate counter overflow"))?;
+        if observation.retrieval.candidates_examined > maximum {
+            bail!("FTS5 observation exceeds the frozen candidate depth");
+        }
     }
     let baseline_path = PathBuf::from(required_string(input, "baseline_report")?);
     let (expected_baseline, expected_category_deltas) = baseline_comparison(
         &baseline_path,
         required_string(input, "baseline_report_sha256")?,
         &observation.input,
+        &observation.engine,
         &quality,
         &per_category,
         &observation.queries,
@@ -1220,11 +1329,11 @@ fn validate_engine_observation(observation: &Observation) -> Result<()> {
                 bail!("direct BM25 observation contains indexed-engine state");
             }
         }
-        SQLITE_ENGINE => {
+        SQLITE_ENGINE | FTS5_ENGINE => {
             let full_build = observation
                 .indexing
                 .full_build_ms
-                .ok_or_else(|| anyhow!("SQLite observation lacks full build timing"))?;
+                .ok_or_else(|| anyhow!("indexed observation lacks full build timing"))?;
             let operations: Vec<_> = observation
                 .indexing
                 .incremental_steps
@@ -1251,18 +1360,18 @@ fn validate_engine_observation(observation: &Observation) -> Result<()> {
                     .any(|passed| !passed)
                 || observation.index_path.as_deref().is_none_or(str::is_empty)
             {
-                bail!("SQLite observation indexing state is invalid");
+                bail!("indexed observation state is invalid");
             }
             let runtime = observation
                 .sqlite_runtime
                 .as_ref()
-                .ok_or_else(|| anyhow!("SQLite observation lacks runtime provenance"))?;
+                .ok_or_else(|| anyhow!("indexed observation lacks SQLite runtime provenance"))?;
             let actual = crate::sqlite_cache::validate_runtime()?;
             if runtime.version != actual.version
                 || runtime.compile_options_sha256 != actual.compile_options_sha256
                 || observation.indexing.runtime_checks != actual.checks
             {
-                bail!("SQLite runtime provenance is invalid");
+                bail!("indexed observation SQLite runtime provenance is invalid");
             }
         }
         _ => bail!("engine observation validation is unavailable"),
@@ -1276,11 +1385,11 @@ fn recompute_observation(
     chunks: &[Chunk],
     root: &Path,
     engine: &dyn BakeoffEngine,
-) -> Result<Vec<crate::evaluate::QueryEvaluation>> {
+) -> Result<(Vec<crate::evaluate::QueryEvaluation>, usize)> {
     if queries.len() != observed.len() {
         bail!("observation query count changed");
     }
-    queries
+    let recomputed: Vec<(crate::evaluate::QueryEvaluation, usize)> = queries
         .iter()
         .zip(observed)
         .map(|(query, observed)| {
@@ -1305,9 +1414,9 @@ fn recompute_observation(
                 })
                 .collect();
             validate_results(chunks, &results)?;
-            let evaluation = match observed.status {
+            let (evaluation, candidates_examined) = match observed.status {
                 QueryStatus::Ok => {
-                    let (response, _) = engine.search(SearchRequest {
+                    let (response, timings) = engine.search(SearchRequest {
                         root: root.to_path_buf(),
                         query: query.query.clone(),
                         limit: LIMIT,
@@ -1335,10 +1444,13 @@ fn recompute_observation(
                             query.id
                         );
                     }
-                    successful_query_evaluation(
-                        query.clone(),
-                        results.clone(),
-                        observed.timing_ms.total,
+                    (
+                        successful_query_evaluation(
+                            query.clone(),
+                            results.clone(),
+                            observed.timing_ms.total,
+                        ),
+                        timings.candidates_examined,
                     )
                 }
                 QueryStatus::Error => {
@@ -1348,16 +1460,28 @@ fn recompute_observation(
                     let mut evaluation = base_query_evaluation(query.clone(), QueryStatus::Error);
                     evaluation.latency_ms = Some(observed.timing_ms.total);
                     evaluation.error = observed.error.clone();
-                    evaluation
+                    (evaluation, 0)
                 }
                 QueryStatus::Skipped => bail!("bake-off observations cannot skip queries"),
             };
             if observed_query(&evaluation, &results, observed.timing_ms) != *observed {
                 bail!("observation query metrics changed");
             }
-            Ok(evaluation)
+            Ok((evaluation, candidates_examined))
         })
-        .collect()
+        .collect::<Result<_>>()?;
+    let candidates_examined = recomputed.iter().try_fold(0usize, |total, (_, count)| {
+        total
+            .checked_add(*count)
+            .ok_or_else(|| anyhow!("candidate counter overflow during observation recomputation"))
+    })?;
+    Ok((
+        recomputed
+            .into_iter()
+            .map(|(evaluation, _)| evaluation)
+            .collect(),
+        candidates_examined,
+    ))
 }
 
 fn validate_pair(current: &Observation, other: &Observation) -> Result<()> {
@@ -1425,16 +1549,16 @@ fn validate_measurements(
                 bail!("direct BM25 measurements contain SQLite or index state");
             }
         }
-        SQLITE_ENGINE => {
+        SQLITE_ENGINE | FTS5_ENGINE => {
             let runtime = observation
                 .sqlite_runtime
                 .as_ref()
-                .ok_or_else(|| anyhow!("SQLite runtime provenance is missing"))?;
+                .ok_or_else(|| anyhow!("indexed-engine SQLite runtime provenance is missing"))?;
             let index_path = Path::new(
                 observation
                     .index_path
                     .as_deref()
-                    .ok_or_else(|| anyhow!("SQLite index path is missing"))?,
+                    .ok_or_else(|| anyhow!("indexed-engine path is missing"))?,
             );
             let metadata = fs::symlink_metadata(index_path)?;
             let logical = metadata.len();
@@ -1453,7 +1577,7 @@ fn validate_measurements(
                 || logical == 0
                 || allocated == 0
             {
-                bail!("SQLite measurements do not match the observed runtime or index");
+                bail!("indexed-engine measurements do not match the observed runtime or index");
             }
         }
         _ => bail!("measurement validation is unavailable for the engine"),
@@ -1622,11 +1746,13 @@ fn budget_checks(
     )?;
     let (index_build, incremental_equivalence) = match observation.engine.as_str() {
         ENGINE => (observation.indexing.full_build_ms.is_none(), true),
-        SQLITE_ENGINE => {
+        SQLITE_ENGINE | FTS5_ENGINE => {
             let indexing_budget = &protocol["budgets"]["indexing_ms"];
             let full_build = observation.indexing.full_build_ms.unwrap_or(f64::INFINITY);
-            let full_cap =
-                required_f64(&indexing_budget["full_build_max_by_engine"], SQLITE_ENGINE)?;
+            let full_cap = required_f64(
+                &indexing_budget["full_build_max_by_engine"],
+                &observation.engine,
+            )?;
             let relative_cap = required_f64(
                 indexing_budget,
                 "incremental_step_max_relative_to_full_build",
@@ -1687,7 +1813,7 @@ fn budget_checks(
     ]))
 }
 
-fn report_queries(queries: &[ObservedQuery]) -> Value {
+fn report_queries(queries: &[ObservedQuery], engine: &str) -> Value {
     Value::Array(
         queries
             .iter()
@@ -1706,7 +1832,10 @@ fn report_queries(queries: &[ObservedQuery]) -> Value {
                         "file_hash": result.file_hash,
                         "chunk_hash": result.chunk_hash,
                         "excerpt_chars": result.excerpt.chars().count(),
-                        "source_ranks": {"fts5": null, "embedding": null},
+                        "source_ranks": {
+                            "fts5": (engine == FTS5_ENGINE).then_some(result.rank),
+                            "embedding": null
+                        },
                     })).collect::<Vec<_>>(),
                     "first_relevant_rank": query.first_relevant_rank,
                     "first_relevant_heading_rank": query.first_relevant_heading_rank,
@@ -1901,12 +2030,19 @@ mod tests {
         );
         assert_eq!(
             canonical_json_sha256(&lexical_configuration()).unwrap(),
-            "4b352dbc5fb1ed6818f6cca023664858ae563bd9bffdcc7c4b7db2e7fdec4b8d"
+            LEXICAL_CONFIG_SHA256
         );
         assert_eq!(
             canonical_json_sha256(&sqlite_configuration()).unwrap(),
-            "858fa10a7ea31eb46d9933817b221c2a722f936c4d8565f1bb830f66dbc64ab2"
+            SQLITE_CONFIG_SHA256
         );
+        assert_eq!(
+            canonical_json_sha256(&fts5_configuration()).unwrap(),
+            FTS5_CONFIG_SHA256
+        );
+        let mut tampered = fts5_configuration();
+        tampered["candidate_depth"] = json!(49);
+        assert!(validate_frozen_engine_configuration(FTS5_ENGINE, &tampered).is_err());
     }
 
     #[test]
@@ -1944,8 +2080,8 @@ mod tests {
 
     #[test]
     fn unavailable_engine_is_explicit() {
-        let Err(error) = ensure_engine_available("fts5-v1") else {
-            panic!("FTS5 must remain unavailable before Phase 4.3");
+        let Err(error) = ensure_engine_available("local-embeddings-v1") else {
+            panic!("embeddings must remain unavailable before Phase 4.4");
         };
         assert!(error.to_string().contains("not implemented"));
         let Err(error) = ensure_engine_available("unknown") else {
@@ -1983,7 +2119,7 @@ mod tests {
     }
 
     #[test]
-    fn paired_observations_finalize_a_schema_shaped_lexical_report() {
+    fn paired_observations_finalize_schema_shaped_direct_sqlite_and_fts5_reports() {
         let directory = tempdir().unwrap();
         let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         let root = manifest_dir.join("evaluation/fixtures/stable-v1");
@@ -2042,7 +2178,8 @@ mod tests {
             },
             "engines": [
                 {"id": ENGINE, "configuration": lexical_config},
-                {"id": SQLITE_ENGINE, "configuration": sqlite_configuration()}
+                {"id": SQLITE_ENGINE, "configuration": sqlite_configuration()},
+                {"id": FTS5_ENGINE, "configuration": fts5_configuration()}
             ],
             "inputs": [{
                 "id": "stable-v1",
@@ -2077,11 +2214,13 @@ mod tests {
                 "latency_ms": {
                     "startup_max_by_engine": {
                         (ENGINE): 500.0,
-                        (SQLITE_ENGINE): 500.0
+                        (SQLITE_ENGINE): 500.0,
+                        (FTS5_ENGINE): 500.0
                     },
                     "query_p95_max_by_engine": {
                         (ENGINE): 500.0,
-                        (SQLITE_ENGINE): 500.0
+                        (SQLITE_ENGINE): 500.0,
+                        (FTS5_ENGINE): 500.0
                     },
                     "run_variation": {
                         "relative_max": 0.25,
@@ -2091,15 +2230,20 @@ mod tests {
                 "resources_bytes": {
                     "peak_rss_max_by_engine": {
                         (ENGINE): 536870912,
-                        (SQLITE_ENGINE): 536870912
+                        (SQLITE_ENGINE): 536870912,
+                        (FTS5_ENGINE): 536870912
                     },
                     "index_storage_max_by_engine": {
                         (ENGINE): 0,
-                        (SQLITE_ENGINE): 268435456
+                        (SQLITE_ENGINE): 268435456,
+                        (FTS5_ENGINE): 268435456
                     }
                 },
                 "indexing_ms": {
-                    "full_build_max_by_engine": {(SQLITE_ENGINE): 60000.0},
+                    "full_build_max_by_engine": {
+                        (SQLITE_ENGINE): 60000.0,
+                        (FTS5_ENGINE): 60000.0
+                    },
                     "incremental_step_max_relative_to_full_build": 1.0
                 }
             }
@@ -2332,6 +2476,78 @@ mod tests {
             4
         );
         assert_eq!(sqlite_report["indexing"]["corruption_detected"], true);
+
+        let fts5_observations = [
+            directory.path().join("fts5-observation-1.json"),
+            directory.path().join("fts5-observation-2.json"),
+        ];
+        for run in [1, 2] {
+            observe(ObserveRequest {
+                protocol_path: directory.path().join("protocol.json"),
+                input_id: "stable-v1".to_owned(),
+                engine: FTS5_ENGINE.to_owned(),
+                run,
+                provenance_path: provenance_path.clone(),
+                ready_file: directory.path().join(format!("fts5-ready-{run}")),
+                output: fts5_observations[usize::from(run - 1)].clone(),
+            })
+            .unwrap();
+        }
+        let fts5_observation: Value =
+            serde_json::from_slice(&fs::read(&fts5_observations[0]).unwrap()).unwrap();
+        let fts5_index_path = PathBuf::from(fts5_observation["index_path"].as_str().unwrap());
+        let fts5_index_metadata = fs::metadata(&fts5_index_path).unwrap();
+        let mut fts5_measurements = measurements;
+        fts5_measurements["engine"] = Value::String(FTS5_ENGINE.to_owned());
+        fts5_measurements["observation_sha256"] = Value::String(sha256::digest_hex(
+            &fs::read(&fts5_observations[0]).unwrap(),
+        ));
+        fts5_measurements["environment"]["sqlite_version"] =
+            fts5_observation["sqlite_runtime"]["version"].clone();
+        fts5_measurements["environment"]["sqlite_compile_options_sha256"] =
+            fts5_observation["sqlite_runtime"]["compile_options_sha256"].clone();
+        fts5_measurements["resources_bytes"]["index_logical"] = json!(fts5_index_metadata.len());
+        fts5_measurements["resources_bytes"]["index_allocated"] =
+            json!(fts5_index_metadata.blocks() * 512);
+        let fts5_measurements_path = directory.path().join("fts5-measurements.json");
+        fs::write(
+            &fts5_measurements_path,
+            format!(
+                "{}\n",
+                serde_json::to_string_pretty(&fts5_measurements).unwrap()
+            ),
+        )
+        .unwrap();
+        let fts5_report_path = directory.path().join("fts5-report.json");
+        finalize(FinalizeRequest {
+            protocol_path: directory.path().join("protocol.json"),
+            observation_path: fts5_observations[0].clone(),
+            other_observation_path: fts5_observations[1].clone(),
+            measurements_path: fts5_measurements_path,
+            report_tag: "engine-bakeoff-v1-stable-v1-fts5-v1-run-1".to_owned(),
+            output: fts5_report_path.clone(),
+        })
+        .unwrap();
+        let fts5_report: Value =
+            serde_json::from_slice(&fs::read(fts5_report_path).unwrap()).unwrap();
+        assert_eq!(fts5_report["engine"], FTS5_ENGINE);
+        assert_eq!(fts5_report["fallback"]["behavior"], "explicit-fail-closed");
+        assert_eq!(
+            fts5_report["indexing"]["incremental_steps"]
+                .as_array()
+                .unwrap()
+                .len(),
+            4
+        );
+        assert_eq!(fts5_report["indexing"]["corruption_detected"], true);
+        assert!(
+            fts5_report["queries"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .flat_map(|query| query["results"].as_array().unwrap())
+                .all(|result| result["source_ranks"]["fts5"].is_number())
+        );
         crate::sqlite_cache::set_test_cache_home(None);
     }
 
@@ -2384,5 +2600,9 @@ mod tests {
             "candidate_depth": "all-cached-chunks",
             "abstention": "empty-only-when-no-chunk-meets-minimum-should-match"
         })
+    }
+
+    fn fts5_configuration() -> Value {
+        crate::fts5::frozen_configuration()
     }
 }

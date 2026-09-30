@@ -365,7 +365,7 @@
   <section class="block" id="visao-geral">
     <div class="block-head">
       <h2>Visão geral</h2>
-      <span class="status done">v0.6.0-alpha.3</span>
+      <span class="status done">v0.6.0-alpha.4</span>
     </div>
     <div class="prose">
       <p><span class="chip-code">docs-search</span> transforma documentação Markdown em uma lista curta de evidências rastreáveis. O agente não recebe um resumo opaco: recebe arquivo, seção, linhas, hashes e trecho para conferir a fonte original.</p>
@@ -585,7 +585,7 @@
         <thead><tr><th>Corpus</th><th>Configuração</th><th>Recall@5 macro</th><th>Contexto</th></tr></thead>
         <tbody>
           <tr><td>Fixture estável</td><td>ilimitado → cap 1</td><td class="new">0,617647 → 0,676471</td><td class="new">7.453 → 3.995</td></tr>
-          <tr><td>Corpus público</td><td>ilimitado → cap 1</td><td>0,588235 → 0,588235</td><td class="new">18.504 → 14.071</td></tr>
+          <tr><td>Corpus público</td><td>ilimitado → cap 1</td><td>0,588235 → 0,588235</td><td class="new">18.513 → 14.080</td></tr>
           <tr><td>Validação local</td><td>fora do Git</td><td>métricas não publicadas</td><td>gate concluído · no-go</td></tr>
         </tbody>
       </table>
@@ -717,8 +717,8 @@
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">4.0</span>Protocolo</div></div>
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">4.1</span>Harness</div></div>
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">4.2</span>SQLite</div></div>
-        <div class="step wip"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">4.3</span>FTS5</div></div>
-        <div class="step"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">4.4</span>Embeddings</div></div>
+        <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">4.3</span>FTS5</div></div>
+        <div class="step wip"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">4.4</span>Embeddings</div></div>
         <div class="step"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">4.5</span>RRF</div></div>
         <div class="step"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">4.6</span>Development</div></div>
         <div class="step"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">5</span>Holdout novo</div></div>
@@ -760,33 +760,33 @@
           <tr><td>BM25 exato</td><td>Baseline reproduzível, contratos estáveis e abstention mensurável.</td><td class="new">Default mantido</td></tr>
           <tr><td>Cap 1</td><td>Melhora pública, sem generalização suficiente no gate.</td><td>Opt-in; não default</td></tr>
           <tr><td>Prefixo 7/4</td><td>Ganho-alvo acompanhado de falhas nas guardas pré-registradas.</td><td class="old">Rejeitado sem retuning</td></tr>
-          <tr><td>Bake-off de engines</td><td>Protocolo e harness prontos; adapters direto e SQLite/BM25 implementados.</td><td class="new">Fases 4.0–4.2 concluídas</td></tr>
+          <tr><td>Bake-off de engines</td><td>Protocolo e harness prontos; adapters direto, SQLite/BM25 e FTS5 implementados.</td><td class="new">Fases 4.0–4.3 concluídas</td></tr>
         </tbody>
       </table>
     </div>
-    <div class="callout"><strong>Adoção ainda bloqueada:</strong> SQLite/BM25 já preserva o ranking direto em testes, mas ainda faltam FTS5, E5, RRF e as rodadas congeladas. O próximo braço é FTS5, sem mudar default ou instalação global.</div>
+    <div class="callout"><strong>Adoção ainda bloqueada:</strong> SQLite/BM25 e FTS5 estão validados em testes, mas ainda faltam E5, RRF e as rodadas congeladas. O próximo braço são embeddings locais, sem mudar default ou instalação global.</div>
   </section>
 
   <section class="block" id="status">
     <div class="block-head">
       <h2>Onde o sistema se encontra agora</h2>
-      <span class="status wip">estável · Fases 4.0–4.2 concluídas</span>
+      <span class="status wip">estável · Fases 4.0–4.3 concluídas</span>
     </div>
     <div class="prose">
-      <p>O produto funcional está no código-fonte v0.6.0-alpha.3. O motor padrão continua lexical e os contratos de busca e avaliação são v2. O bake-off possui protocolo, harness e cache SQLite/BM25 validado em testes; as medições congeladas seguem fechadas.</p>
+      <p>O produto funcional está no código-fonte v0.6.0-alpha.4. O motor padrão continua lexical e os contratos de busca e avaliação são v2. O bake-off possui protocolo, harness, cache SQLite/BM25 e FTS5 validados em testes; as medições congeladas seguem fechadas.</p>
     </div>
     <div class="data-table-wrap">
       <table class="data-table">
         <thead><tr><th>Componente</th><th>Estado atual</th><th>Implicação prática</th></tr></thead>
         <tbody>
-          <tr><td>Código-fonte</td><td><code>docs-search 0.6.0-alpha.3</code></td><td>Implementação atual e testada no checkout.</td></tr>
+          <tr><td>Código-fonte</td><td><code>docs-search 0.6.0-alpha.4</code></td><td>Implementação atual e testada no checkout.</td></tr>
           <tr><td>Binário global</td><td><code>docs-search 0.1.0</code></td><td class="old">Ainda desatualizado; nenhuma instalação automática foi feita.</td></tr>
           <tr><td>Motor default</td><td><code>lexical-bm25-v1</code></td><td>Ranking exato e ilimitado por padrão.</td></tr>
           <tr><td>Contratos</td><td>busca/queries/avaliação v2 · bake-off v1</td><td>Pré-inscrição e resultados operacionais são contratos separados.</td></tr>
           <tr><td>Diversidade</td><td><code>--max-results-per-path 1</code></td><td>Disponível apenas quando solicitada explicitamente.</td></tr>
           <tr><td>Freeze experimental</td><td><code>engine-bakeoff-v1</code></td><td>Configurações, inputs, modelo, budgets e denylist verificados.</td></tr>
-          <tr><td>Engines experimentais</td><td>SQLite/BM25 implementado</td><td>FTS5, embeddings e RRF continuam indisponíveis.</td></tr>
-          <tr><td>Próximo marco</td><td>Fase 4.3</td><td>Implementar FTS5 com query segura e evidência verificável.</td></tr>
+          <tr><td>Engines experimentais</td><td>SQLite/BM25 e FTS5 implementados</td><td>Embeddings e RRF continuam indisponíveis.</td></tr>
+          <tr><td>Próximo marco</td><td>Fase 4.4</td><td>Implementar E5 local com modelo, pooling e threshold congelados.</td></tr>
         </tbody>
       </table>
     </div>
@@ -802,10 +802,11 @@
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">8</span>Protocolo bake-off</div></div>
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">9</span>Harness comum</div></div>
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">10</span>SQLite/BM25</div></div>
-        <div class="step wip"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">11</span>FTS5</div></div>
+        <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">11</span>FTS5</div></div>
+        <div class="step wip"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">12</span>Embeddings E5</div></div>
       </div>
     </div>
-    <div class="callout"><strong>Leitura correta do estado:</strong> a base, o freeze, o harness e SQLite/BM25 estão prontos no checkout, mas o executável global ainda é antigo. Medições congeladas, holdouts novos e mudança de default ainda não começaram.</div>
+    <div class="callout"><strong>Leitura correta do estado:</strong> a base, o freeze, o harness, SQLite/BM25 e FTS5 estão prontos no checkout, mas o executável global ainda é antigo. Medições congeladas, holdouts novos e mudança de default ainda não começaram.</div>
   </section>
 </main>
 

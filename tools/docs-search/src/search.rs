@@ -202,7 +202,7 @@ pub(crate) fn search_documents(
     ))
 }
 
-fn validate_request(request: &SearchRequest) -> Result<()> {
+pub(crate) fn validate_request(request: &SearchRequest) -> Result<()> {
     if request.query.trim().is_empty() {
         bail!("query must not be empty");
     }
@@ -221,11 +221,11 @@ fn validate_request(request: &SearchRequest) -> Result<()> {
     Ok(())
 }
 
-fn elapsed_ms(started: Instant) -> f64 {
+pub(crate) fn elapsed_ms(started: Instant) -> f64 {
     (started.elapsed().as_secs_f64() * 1_000_000.0).round() / 1_000.0
 }
 
-fn select_with_path_diversity<T, F>(
+pub(crate) fn select_with_path_diversity<T, F>(
     ranked: Vec<T>,
     limit: usize,
     max_results_per_path: Option<usize>,
@@ -350,7 +350,11 @@ fn contains_phrase(haystack: &str, phrase: &str) -> bool {
     padded_haystack.contains(&padded_phrase)
 }
 
-fn excerpt(chunk: &Chunk, query_tokens: &[String], max_chars: usize) -> (String, usize, usize) {
+pub(crate) fn excerpt(
+    chunk: &Chunk,
+    query_tokens: &[String],
+    max_chars: usize,
+) -> (String, usize, usize) {
     let lines: Vec<_> = chunk.text.lines().collect();
     if lines.is_empty() {
         return (String::new(), chunk.line_start, chunk.line_start);
@@ -400,7 +404,7 @@ fn excerpt(chunk: &Chunk, query_tokens: &[String], max_chars: usize) -> (String,
     )
 }
 
-fn meaningful_query_tokens(query: &str) -> Vec<String> {
+pub(crate) fn meaningful_query_tokens(query: &str) -> Vec<String> {
     let all = tokens(query);
     let filtered: Vec<_> = all
         .iter()
@@ -415,14 +419,14 @@ fn meaningful_query_tokens(query: &str) -> Vec<String> {
         .collect()
 }
 
-fn tokens(value: &str) -> Vec<String> {
+pub(crate) fn tokens(value: &str) -> Vec<String> {
     normalize(value)
         .split_whitespace()
         .map(ToOwned::to_owned)
         .collect()
 }
 
-fn normalize(value: &str) -> String {
+pub(crate) fn normalize(value: &str) -> String {
     value
         .nfd()
         .filter(|character| !is_combining_mark(*character))
@@ -474,7 +478,7 @@ fn is_stopword(token: &str) -> bool {
     )
 }
 
-fn round_score(score: f64) -> f64 {
+pub(crate) fn round_score(score: f64) -> f64 {
     (score * 1_000_000.0).round() / 1_000_000.0
 }
 

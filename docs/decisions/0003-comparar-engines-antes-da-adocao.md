@@ -50,7 +50,9 @@ o segundo revalida corpus, dataset, ranking, baseline, evidência, provenance e 
 de produzir o relatório operacional v1. O runner atesta binário release, revisão Git, `Cargo.lock`,
 host, ambiente de processo e denylist. A Fase 4.2 adicionou o adapter SQLite/BM25 com ranking
 idêntico, índice atômico reconstruível, atualização incremental verificada, corrupção e fallback
-explícito. FTS5, embeddings e RRF continuam rejeitados até suas fases próprias.
+explícito. A Fase 4.3 adicionou FTS5 com configuração ligada ao runtime, query literal segura,
+projeção integral verificável e falha fechada. Embeddings e RRF continuam rejeitados até suas fases
+próprias.
 
 ## Consequências
 

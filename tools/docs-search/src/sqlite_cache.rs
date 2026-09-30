@@ -21,6 +21,11 @@ use crate::types::{SearchRequest, SearchResponse};
 
 pub const SQLITE_ENGINE: &str = "sqlite-cache-bm25-v1";
 pub const EXPECTED_SQLITE_VERSION: &str = "3.53.2";
+pub(crate) const SQLITE_RUNTIME_CHECKS: [&str; 3] = [
+    "sqlite_version_equals_expected",
+    "compile_option_ENABLE_FTS5",
+    "fts5_create-insert-match-bm25-smoke",
+];
 const INDEX_SCHEMA_VERSION: &str = "1";
 const PARSER_VERSION: &str = "markdown-heading-fence-aware-v1";
 const INDEX_FILE: &str = "index.sqlite3";
@@ -267,9 +272,9 @@ pub(crate) fn validate_runtime() -> Result<SqliteRuntime> {
     let compile_options_sha256 = sha256::digest_hex(options.join("\n").as_bytes());
     let smoke = fts5_smoke(&connection).is_ok();
     let checks = BTreeMap::from([
-        ("sqlite_version_equals_expected".to_owned(), version_ok),
-        ("compile_option_ENABLE_FTS5".to_owned(), fts5_enabled),
-        ("fts5_create-insert-match-bm25-smoke".to_owned(), smoke),
+        (SQLITE_RUNTIME_CHECKS[0].to_owned(), version_ok),
+        (SQLITE_RUNTIME_CHECKS[1].to_owned(), fts5_enabled),
+        (SQLITE_RUNTIME_CHECKS[2].to_owned(), smoke),
     ]);
     if !checks.values().all(|passed| *passed) {
         bail!("SQLite runtime contract failed: version={version}, checks={checks:?}");

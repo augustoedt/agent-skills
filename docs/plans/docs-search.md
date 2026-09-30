@@ -11,7 +11,7 @@
 - gate de holdout: concluído uma única vez e fechado; holdouts consumidos não orientam retuning;
 - prefixo morfológico limitado 7/4: testado duas vezes em development e rejeitado sem ajustes;
 - bake-off de engines: aprovado; Fase 4.0 congelada e harness comum da Fase 4.1 implementado;
-- adapters disponíveis no bake-off: `lexical-bm25-v1` e `sqlite-cache-bm25-v1`; FTS5, E5 e RRF ainda recusados;
+- adapters disponíveis no bake-off: `lexical-bm25-v1`, `sqlite-cache-bm25-v1` e `fts5-v1`; E5 e RRF ainda recusados;
 - protocolo e relatório operacional: contratos públicos v1 formalizados, com instância, snapshots,
   checksums e verificador mantidos no ambiente privado;
 - variantes congeladas: BM25 direto, cache SQLite com BM25, FTS5, embeddings locais e híbrido por RRF;
@@ -419,7 +419,7 @@ auditoria. O default `lexical-bm25-v1` não mudou.
 
 ### 3.3 Diversidade por path — candidato medido
 
-O `docs-search 0.6.0-alpha.3` oferece `--max-results-per-path N` como seleção opt-in após o ranking BM25. O
+O `docs-search 0.6.0-alpha.4` oferece `--max-results-per-path N` como seleção opt-in após o ranking BM25. O
 seletor pode avançar além dos cinco primeiros chunks brutos, limita contribuições repetidas de um
 path e devolve ranks finais contíguos. Relatório e resposta de busca v2 preservam `raw_rank`; a
 resposta também expõe `selection.max_results_per_path`. O comportamento sem flag não muda.
@@ -565,9 +565,22 @@ Markdown selecionados; cada passo é comparado com um rebuild limpo e exige zero
 
 ### Fase 4.3 — recuperação FTS5
 
-Implementar `fts5-v1` sobre os mesmos chunks e metadados. Queries do usuário nunca serão tratadas
-como sintaxe FTS bruta. O relatório deve distinguir ganho de latência de qualquer mudança de
-qualidade e preservar path, heading, linhas e hashes verificáveis.
+**Status:** concluída em código e testes; medições congeladas continuam fechadas até os cinco
+adapters existirem na mesma revisão limpa.
+
+`fts5-v1` foi implementado sobre os mesmos chunks e metadados, com tabela `chunks_fts`, tokenizer
+`unicode61 remove_diacritics 2`, pesos body/heading/path 1/2/3 e profundidade 50. Termos
+significativos são deduplicados, escapados, colocados entre aspas e unidos por `OR`; a query bruta
+do usuário nunca é tratada como sintaxe FTS.
+
+O índice usa arquivo próprio fora do repositório, criação e atualização por arquivo temporário com
+`fsync` e rename atômico, invalidação por fingerprint/parser/configuração e validação de hashes,
+conteúdo, schema e integridade interna FTS5. Add, modify, rename e remove são comparados tanto pela
+projeção integral do índice quanto pelos rankings contra rebuild limpo. Corrupção aciona rebuild
+atômico; falha forçada de rebuild encerra com erro, sem fallback lexical ou resultado parcial.
+Path, heading, linhas, excerpts e hashes permanecem verificáveis. O harness registra top 50,
+`source_ranks.fts5`, runtime, disco, indexação, candidatos e mudança de qualidade/contexto separada
+da latência.
 
 ### Fase 4.4 — embeddings locais
 

@@ -2,6 +2,7 @@ pub mod bakeoff;
 pub mod corpus;
 pub mod evaluate;
 pub mod evaluation;
+mod fts5;
 pub mod search;
 mod sha256;
 mod sqlite_cache;

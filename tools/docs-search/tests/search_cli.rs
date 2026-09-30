@@ -334,7 +334,7 @@ fn cli_rejects_unimplemented_bakeoff_engines_before_reading_inputs() {
             "--input",
             "stable-v1",
             "--engine",
-            "fts5-v1",
+            "local-embeddings-v1",
             "--run",
             "1",
             "--provenance",

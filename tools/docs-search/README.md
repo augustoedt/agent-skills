@@ -6,7 +6,7 @@ confira a fonte original antes de alterar código.
 
 ## Estado atual
 
-A versão de código-fonte 0.6.0-alpha.3 mantém o baseline lexical padrão sem banco e sem embeddings e usa
+A versão de código-fonte 0.6.0-alpha.4 mantém o baseline lexical padrão sem banco e sem embeddings e usa
 somente os contratos atuais: resposta de busca v2, dataset de consultas v2 e relatório v2:
 
 - corpus: `docs/**/*.md` e, na raiz, `README.md`, `CLAUDE.md`, `AGENTS.md` e `pi-warden.md`;
@@ -98,11 +98,12 @@ Os subcomandos experimentais `bakeoff observe` e `bakeoff finalize` implementam 
 Fase 4.1. Eles são exclusivos do runner privado: exigem protocolo congelado, provenance do binário,
 host, ambiente e isolamento de holdout, usam somente inputs `development`, revalidam corpus,
 dataset, baseline e evidências, recusam overwrite e escrevem artefatos `0600`. Apenas
-`lexical-bm25-v1` e `sqlite-cache-bm25-v1` possuem adapters. O braço SQLite preserva o ranking BM25,
-usa `rusqlite 0.40.2` com SQLite bundled 3.53.2, cache privado reconstruível, atualização atômica,
-invalidação por fingerprint, workload incremental e fallback direto sob falha forçada. FTS5,
-embeddings e RRF continuam indisponíveis por erro explícito. Esses subcomandos não alteram `search`,
-o engine padrão nem a instalação global.
+`lexical-bm25-v1`, `sqlite-cache-bm25-v1` e `fts5-v1` possuem adapters. O braço SQLite preserva o
+ranking BM25 e usa cache privado reconstruível. O braço FTS5 usa o tokenizer e os pesos congelados,
+50 candidatos, query literal segura, índice atômico, validação integral de conteúdo/evidência,
+workload incremental e falha fechada quando o rebuild é forçado a falhar. Ambos usam
+`rusqlite 0.40.2` com SQLite bundled 3.53.2. Embeddings e RRF continuam indisponíveis por erro
+explícito. Esses subcomandos não alteram `search`, o engine padrão nem a instalação global.
 
 O conjunto inicial de avaliação está em `evaluation/queries.json`. Somente o schema v2 é aceito; ele
 está documentado em `evaluation/README.md` e formalizado por
@@ -115,8 +116,8 @@ morfológico limitado 7/4, foi testada duas vezes em development e rejeitada pel
 pré-registradas; seu código não entrou em `main`. O próximo ciclo é um bake-off faseado entre o
 BM25 direto, cache SQLite com BM25 preservado, FTS5, embeddings locais e híbrido por RRF. A Fase 4.0
 já congelou protocolo, configurações, inputs, modelo, budgets e contratos públicos de protocolo e
-relatório operacional v1. As Fases 4.1 e 4.2 implementaram o harness, o adapter direto e o cache
-SQLite/BM25, com equivalência não volátil, runtime FTS5, rebuild, atualização incremental,
-concorrência, corrupção e fallback cobertos por testes. Medições congeladas continuam bloqueadas até
+relatório operacional v1. As Fases 4.1–4.3 implementaram o harness, o adapter direto, o cache
+SQLite/BM25 e a recuperação FTS5, com query segura, runtime, rebuild, atualização incremental,
+concorrência, corrupção, evidência e fallback/falha fechada cobertos por testes. Medições congeladas continuam bloqueadas até
 todos os adapters existirem na mesma revisão. Somente finalistas de development poderão chegar a um
 novo gate com holdouts ainda não consumidos.

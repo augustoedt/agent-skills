@@ -667,14 +667,17 @@ Após escolher as finalistas em development, foram concluídos:
 - reserva de holdouts inteiramente novos, reproduzíveis e extraídos de objetos Git;
 - revisão dos julgamentos diretamente contra as fontes, sem executar rankings;
 - freeze de datasets, revisões, manifests, fingerprints, finalistas, ordem e critérios absolutos;
-- contrato público `evaluation/engine-holdout-protocol.schema.json` e protocolo privado com gate
+- contrato público `evaluation/engine-holdout-protocol-v2.schema.json` e protocolo privado com gate
   fechado;
 - isolamento dos holdouts consumidos e permissão somente para as roots exatas do novo protocolo.
 
 O gate exige uma única execução de cada finalista por input, equivalência integral de evidência,
 métricas e contexto, zero falsos positivos `no_answer`, limites absolutos de qualidade e operação e
 ganho médio mínimo de 20% no p95 de consulta para SQLite, sem regressão de p95 em nenhum input.
-Mudar consulta, julgamento, engine, parâmetro, orçamento ou input exige outra tag.
+Mudar consulta, julgamento, engine, parâmetro, orçamento ou input exige outra tag. O protocolo v1
+foi supersedido ainda fechado, antes de implementação ou ranking, porque apontava para as
+configurações das engines sem fixar o conteúdo e o hash; v2 incorpora os objetos completos e seus
+SHA-256.
 
 ### Fase 5.2 — implementar e auditar o harness one-shot
 

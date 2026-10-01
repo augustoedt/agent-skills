@@ -68,7 +68,9 @@ retuning. Nenhum holdout foi acessado; a decisão de produto continua condiciona
 A Fase 5.1 reservou e congelou um conjunto inteiramente novo antes de qualquer ranking. Snapshots
 vieram de objetos Git; julgamentos foram revisados contra a fonte; revisões, manifests, hashes,
 fingerprints, ordem contrabalanceada, limites absolutos e a regra de decisão ficaram fixos no
-protocolo `engine-finalists-holdout-v1`. O gate permanece desabilitado enquanto o harness one-shot é
+protocolo `engine-finalists-holdout-v2`. O v1 foi preservado fechado e supersedido antes de
+implementação porque não vinculava por hash a configuração externa das engines; v2 incorpora os
+objetos congelados e seus hashes. O gate permanece desabilitado enquanto o harness one-shot é
 implementado e auditado. SQLite só poderá avançar como opt-in se preservar evidência, métricas e
 contexto exatamente, passar todas as guardas e repetir o ganho operacional congelado; o default não
 muda neste gate.

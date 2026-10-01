@@ -126,5 +126,5 @@ fallback/falha fechada cobertos por testes. A Fase 4.6 concluiu duas rodadas sob
 development. BM25 direto e cache SQLite/BM25 foram as únicas engines aprovadas em todas as guardas e
 formam a fronteira de Pareto; FTS5, E5 e RRF foram eliminados sem retuning. Os detalhes permanecem
 nos relatórios privados. A Fase 5.1 já reservou e congelou holdouts novos sem executar rankings; o
-contrato público está em `evaluation/engine-holdout-protocol.schema.json`. O gate continua fechado
+contrato público ativo está em `evaluation/engine-holdout-protocol-v2.schema.json`. O gate continua fechado
 enquanto o harness one-shot é implementado e auditado.

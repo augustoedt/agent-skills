@@ -784,7 +784,7 @@
           <tr><td>Motor default</td><td><code>lexical-bm25-v1</code></td><td>Ranking exato e ilimitado por padrão.</td></tr>
           <tr><td>Contratos</td><td>busca/queries/avaliação v2 · bake-off/holdout v1</td><td>Development e gate final possuem pré-inscrições independentes.</td></tr>
           <tr><td>Diversidade</td><td><code>--max-results-per-path 1</code></td><td>Disponível apenas quando solicitada explicitamente.</td></tr>
-          <tr><td>Freeze experimental</td><td><code>engine-finalists-holdout-v1</code></td><td>Novos snapshots, julgamentos, budgets e ordem fixados; execução desabilitada.</td></tr>
+          <tr><td>Freeze experimental</td><td><code>engine-finalists-holdout-v2</code></td><td>Novos snapshots, julgamentos, budgets e ordem fixados; execução desabilitada.</td></tr>
           <tr><td>Resultado development</td><td>BM25 direto + SQLite/BM25</td><td>Fronteira de Pareto; nenhuma promoção automática.</td></tr>
           <tr><td>Próximo marco</td><td>Fase 5.2</td><td>Implementar e auditar o harness one-shot sem abrir o gate.</td></tr>
         </tbody>
@@ -806,7 +806,7 @@
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">12</span>Embeddings E5</div></div>
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">13</span>Híbrido RRF</div></div>
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">14</span>Comparação dev</div></div>
-        <div class="step wip"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">15</span>Gate v1</div></div>
+        <div class="step wip"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">15</span>Gate v2</div></div>
       </div>
     </div>
     <div class="callout"><strong>Leitura correta do estado:</strong> os holdouts novos já foram congelados, mas ainda não foram executados. SQLite continua somente finalista; o próximo trabalho é construir o harness fechado, não medir nem mudar o default.</div>

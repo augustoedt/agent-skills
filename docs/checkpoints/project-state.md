@@ -100,8 +100,10 @@ holdout foi usado.
 A Fase 5.1 está concluída e o novo gate continua fechado. Novos corpora reproduzíveis foram extraídos
 de objetos Git, os julgamentos foram revisados diretamente contra os Markdown sem ranking e o
 protocolo one-shot congelou hashes, fingerprints, ordem, finalistas, limites absolutos e decisão. O
-contrato público é `evaluation/engine-holdout-protocol.schema.json`; identidades, consultas, roots e
-artefatos permanecem privados. Nenhuma finalista foi executada nesses holdouts.
+contrato público ativo é `evaluation/engine-holdout-protocol-v2.schema.json`; identidades,
+consultas, roots e artefatos permanecem privados. O v1 foi fechado e supersedido antes de qualquer
+implementação porque não fixava o hash da configuração externa das engines; v2 incorpora
+configuração e hash. Nenhuma finalista foi executada nesses holdouts.
 
 ## Em andamento
 
@@ -131,7 +133,7 @@ decisão anterior sobre cap 1 permanece no [`ADR 0002`](../decisions/0002-manter
 - Não alterar tokenizer, threshold 0,80, profundidade 50, RRF `k = 60`, modelo, inputs ou budgets
   dentro de `engine-bakeoff-v1`; qualquer mudança exige protocolo e tag novos.
 - Não abrir, executar ou editar os novos holdouts durante a implementação do harness one-shot;
-  qualquer mudança de julgamentos, parâmetros, ordem ou budgets invalida `engine-finalists-holdout-v1`.
+  qualquer mudança de julgamentos, parâmetros, ordem ou budgets invalida `engine-finalists-holdout-v2`.
 - O corpus padrão exclui `skills/**`; por isso avaliações devem apontar para documentação em
   `README.md` ou `docs/`, não apenas para conteúdo de `SKILL.md`.
 - Resultado lexical vazio não prova ausência da informação.

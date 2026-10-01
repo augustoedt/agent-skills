@@ -97,7 +97,7 @@ de latência de consulta, em troca de startup, memória e disco maiores; por iss
 fronteira de Pareto. FTS5, E5 e RRF foram eliminados pelas guardas congeladas, sem retuning. Nenhum
 holdout foi usado.
 
-A Fase 5.1 está concluída e o novo gate continua fechado. Novos corpora reproduzíveis foram extraídos
+A Fase 5.1 congelou o novo gate inicialmente fechado. Novos corpora reproduzíveis foram extraídos
 de objetos Git, os julgamentos foram revisados diretamente contra os Markdown sem ranking e o
 protocolo one-shot congelou hashes, fingerprints, ordem, finalistas, limites absolutos e decisão. O
 contrato público ativo é `evaluation/engine-holdout-protocol-v2.schema.json`; identidades,
@@ -112,25 +112,32 @@ nega paths consumidos antes de resolução, exige roots exatas, grava uma tentat
 do processo e bloqueia rerun inclusive após falha. Contratos públicos independentes formalizam
 autorização, observação, relatório e decisão. Testes sintéticos cobrem as duas engines, gate fechado, relatório,
 decisão, ordem, overwrite e tentativa consumida. O registry operacional continua fechado, com
-medições desabilitadas; não existem artefatos reais dos novos holdouts.
+medições desabilitadas; naquele marco ainda não existiam artefatos reais dos novos holdouts.
+
+A Fase 5.3 foi autorizada e concluída em quatro tentativas, uma por engine/input, na ordem
+congelada. BM25 direto e SQLite/BM25 produziram evidência, métricas e contexto exatamente iguais,
+sem erros de consulta ou falsos positivos `no_answer`; SQLite também passou a guarda operacional de
+latência. As duas engines, porém, falharam os pisos absolutos de qualidade nos novos inputs. Como o
+gate é eliminatório, a decisão final é `lexical-retained`: SQLite não avança nem como opt-in,
+`lexical-bm25-v1` permanece sozinho e os holdouts estão consumidos sem possibilidade de rerun ou
+retuning.
 
 ## Em andamento
 
 - manter cap 1 apenas como opção explícita, sem alterar o default;
 - preservar o freeze e os 50 relatórios privados imutáveis da Fase 4.6;
 - preservar a rejeição do prefixo morfológico 7/4 sem retuning de parâmetros;
-- manter `lexical-bm25-v1` e `sqlite-cache-bm25-v1` como as duas finalistas de development;
+- manter `lexical-bm25-v1` como única engine do produto e default;
 - não usar os holdouts consumidos para seleção, tuning ou mudança de julgamentos;
-- preservar o novo protocolo de holdout fechado, o harness auditado e seus datasets imutáveis;
-- não integrar SQLite antes de concluir o gate novo e one-shot;
-- aguardar autorização explícita antes de substituir o registry fechado por outro habilitado.
+- preservar protocolo, tentativas, relatórios e decisão one-shot como artefatos imutáveis;
+- não integrar SQLite/BM25: o gate final rejeitou sua promoção.
 
 ## Próximo passo
 
-1. Manter o registry da Fase 5.2 fechado e pedir autorização explícita antes de qualquer execução.
-2. Após autorização, criar e auditar um novo registry habilitado sem alterar protocolo ou harness.
-3. Executar as quatro combinações na ordem congelada, uma única tentativa por combinação.
-4. Gerar a decisão imutável: SQLite opt-in ou manutenção exclusiva do BM25 direto.
+1. Fechar o registry operacional com hashes das quatro tentativas, relatórios e decisão.
+2. Preservar BM25 direto sem mudança no default nem na instalação global.
+3. Remover SQLite/BM25 do caminho de adoção; mantê-lo apenas como histórico experimental auditável.
+4. Só formular outra hipótese com justificativa independente em development e novos holdouts.
 
 O default continua `lexical-bm25-v1`. O plano faseado está no [`plano`](../plans/docs-search.md), a
 comparação foi aprovada no [`ADR 0003`](../decisions/0003-comparar-engines-antes-da-adocao.md) e a
@@ -142,8 +149,8 @@ decisão anterior sobre cap 1 permanece no [`ADR 0002`](../decisions/0002-manter
 - Os índices SQLite/BM25, FTS5, E5 e a composição RRF existem somente no bake-off; a busca padrão ainda não possui índice persistente nem embeddings.
 - Não alterar tokenizer, threshold 0,80, profundidade 50, RRF `k = 60`, modelo, inputs ou budgets
   dentro de `engine-bakeoff-v1`; qualquer mudança exige protocolo e tag novos.
-- Não abrir, executar ou editar os novos holdouts durante a implementação do harness one-shot;
-  qualquer mudança de julgamentos, parâmetros, ordem ou budgets invalida `engine-finalists-holdout-v2`.
+- Não reabrir, rerodar ou editar os holdouts consumidos da Fase 5.3; qualquer nova hipótese exige
+  outros holdouts e outro protocolo/tag.
 - O corpus padrão exclui `skills/**`; por isso avaliações devem apontar para documentação em
   `README.md` ou `docs/`, não apenas para conteúdo de `SKILL.md`.
 - Resultado lexical vazio não prova ausência da informação.

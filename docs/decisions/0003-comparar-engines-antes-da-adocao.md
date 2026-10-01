@@ -82,6 +82,13 @@ overwrite, ordem incorreta e qualquer retry, inclusive após falha. O fluxo comp
 somente em fixture sintética. O registry real permanece fechado, com medições desabilitadas e sem
 artefatos dos novos holdouts; abri-lo exige autorização explícita e outro registry imutável.
 
+A Fase 5.3 foi aberta por autorização explícita e consumiu exatamente as quatro tentativas na ordem
+congelada. As finalistas foram equivalentes em evidência, métricas e contexto, sem erros de consulta
+ou falsos positivos `no_answer`; SQLite passou a exigência operacional de latência. Contudo, ambas
+falharam os pisos absolutos de qualidade nos dois novos inputs. Como qualquer guarda falha encerra o
+gate, a decisão final é manter somente `lexical-bm25-v1`. SQLite/BM25 não avança como opt-in, os
+holdouts estão consumidos e nenhum resultado poderá orientar retuning ou rerun.
+
 ## Consequências
 
 - (+) armazenamento, ranking lexical, semântica e fusão serão avaliados separadamente;
@@ -89,8 +96,11 @@ artefatos dos novos holdouts; abri-lo exige autorização explícita e outro reg
 - (+) o baseline e os contratos atuais permanecem estáveis durante o experimento;
 - (+) resultados negativos continuarão auditáveis;
 - (+) parâmetros, budgets, inputs e contratos ficaram verificáveis antes da primeira engine;
+- (+) o gate final preservou o default simples e rejeitou uma otimização que não generalizou nos
+  pisos absolutos de qualidade;
 - (−) o bake-off exige harness operacional e instrumentação de RAM, disco, startup e indexação;
 - (−) embeddings adicionam dependência de modelo, licença, distribuição e custo computacional;
 - ⚠️ parâmetros e limites devem ser congelados antes de observar os rankings;
 - ⚠️ nenhuma variante pode ser promovida usando os holdouts consumidos;
+- ⚠️ SQLite/BM25 está rejeitado para este ciclo, apesar do ganho operacional;
 - ⚠️ implementar um protótipo não implica adoção nem manutenção futura.

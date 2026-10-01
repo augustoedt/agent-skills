@@ -131,6 +131,8 @@ development. BM25 direto e cache SQLite/BM25 foram as únicas engines aprovadas 
 formam a fronteira de Pareto; FTS5, E5 e RRF foram eliminados sem retuning. Os detalhes permanecem
 nos relatórios privados. A Fase 5.1 reservou e congelou holdouts novos sem executar rankings; o
 contrato público ativo está em `evaluation/engine-holdout-protocol-v2.schema.json`. A Fase 5.2
-implementou o harness, contratos de autorização/relatório/decisão, tentativa consumida antes do
-processo, recusa de rerun e fluxo sintético. O gate real continua fechado e nenhuma finalista foi
-executada nos novos holdouts.
+implementou o harness, contratos de autorização/observação/relatório/decisão, tentativa consumida
+antes do processo, recusa de rerun e fluxo sintético. Após autorização explícita, a Fase 5.3
+consumiu as quatro tentativas: as finalistas foram exatamente equivalentes, mas ambas falharam os
+pisos absolutos de qualidade. SQLite/BM25 não foi promovido; BM25 direto permanece como única
+engine do produto e default.

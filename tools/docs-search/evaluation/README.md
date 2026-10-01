@@ -173,6 +173,13 @@ measurements disabled after synthetic tests; creating these contracts does not e
 real holdout. The v1 schema remains for history: its closed protocol was superseded before
 implementation because an external engine configuration source was not hash-bound.
 
+Phase 5.3 later opened a separately hash-bound registry after explicit authorization and consumed
+all four attempts in frozen order. The finalists remained exactly equivalent in evidence, metrics,
+and context, but both failed the preregistered absolute quality floors on the fresh inputs. The
+result is `lexical-retained`: SQLite/BM25 is not promoted even as opt-in, the direct lexical engine
+remains the only product engine, and the holdouts cannot be rerun or used for retuning. Detailed
+queries, metrics, reports, and identities remain private.
+
 Only the schemas are public. Protocol instances, snapshot manifests, private datasets, baseline
 reports, model paths, and checksum registries stay in machine-local encrypted storage. Frozen
 Markdown comes from Git objects rather than live working trees. A local verifier must pass before

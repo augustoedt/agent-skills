@@ -16,9 +16,8 @@
 - protocolo e relatório operacional: contratos públicos formalizados, com instância, snapshots,
   checksums e verificador mantidos no ambiente privado;
 - variantes congeladas: BM25 direto, cache SQLite com BM25, FTS5, embeddings locais e híbrido por RRF;
-- harness one-shot de finalistas: implementado e validado somente com fixture sintética; registry
-  real fechado e medições desabilitadas;
-- adoção: proibida antes da execução única do gate novo com autorização explícita.
+- harness one-shot de finalistas: implementado, auditado e consumido na ordem congelada;
+- gate final: concluído sem promoção; SQLite/BM25 foi rejeitado e BM25 direto permanece sozinho.
 
 ## Objetivo
 
@@ -697,19 +696,20 @@ Sem abrir o gate, foram concluídos:
 - fluxo sintético cobrindo gate fechado/aberto, as duas engines, relatório, decisão e estado one-shot;
 - registry privado imutável com gate e medições desabilitados.
 
-Nenhuma finalista foi executada em `corpus-008` ou `corpus-009`; a Fase 5.3 depende de autorização
-explícita e de um novo registry habilitado.
+Ao concluir a Fase 5.2, nenhuma finalista havia sido executada nos novos holdouts; a Fase 5.3
+permaneceu condicionada a autorização explícita e a um novo registry habilitado.
 
-### Fase 5.3 — executar e decidir
+### Fase 5.3 — executar e decidir — concluída
 
-Depois de auditoria e nova autorização explícita, executar a ordem congelada uma única vez e
-registrar uma destas saídas:
+Após autorização explícita, as quatro combinações foram executadas uma única vez na ordem
+congelada. As finalistas preservaram exatamente evidência, métricas e contexto; não houve erro de
+consulta, falso positivo `no_answer` nem regressão operacional de p95 do SQLite. Mesmo assim, ambas
+falharam os pisos absolutos de qualidade predefinidos nos novos inputs. Pelo gate eliminatório, o
+ganho operacional não compensa essa falha.
 
-- permitir SQLite/BM25 apenas como opt-in, mantendo `lexical-bm25-v1` como default;
-- manter somente `lexical-bm25-v1` se qualquer guarda falhar.
-
-Passar em development não garante promoção. Qualquer falha fecha o protocolo sem rerun, retuning,
-troca de holdout ou mudança de julgamentos.
+Decisão: `lexical-bm25-v1` permanece como única engine do produto e como default. SQLite/BM25 não
+avança nem como opt-in. Os holdouts estão consumidos; não haverá rerun, retuning, troca de
+julgamentos ou holdouts substitutos para esta decisão.
 
 ---
 
@@ -759,9 +759,8 @@ Etapas 4.1–4.5: harness + quatro engines experimentais ✓
 Etapa 4.6: comparação em development ✓
     └── finalistas: BM25 direto + cache SQLite/BM25
               ↓
-Etapa 5: holdouts novos, gate one-shot e ADR
-    ├── no-go → manter BM25 direto
-    └── vencedora aprovada
+Etapa 5: holdouts novos, gate one-shot e ADR ✓
+    └── no-go → manter somente BM25 direto
               ↓
 Etapa 6: integrar e distribuir somente a vencedora
 ```

@@ -22,11 +22,11 @@ if command -v asdf >/dev/null 2>&1; then
 fi
 
 if [ -n "$INSTALL_ROOT" ]; then
-  cargo install --locked --force --root "$INSTALL_ROOT" --path "$REPO_DIR/tools/docs-search"
+  cargo install --locked --force --no-default-features --root "$INSTALL_ROOT" --path "$REPO_DIR/tools/docs-search"
   asdf reshim rust
 else
   INSTALL_ROOT="${CARGO_INSTALL_ROOT:-${CARGO_HOME:-$HOME/.cargo}}"
-  cargo install --locked --force --root "$INSTALL_ROOT" --path "$REPO_DIR/tools/docs-search"
+  cargo install --locked --force --no-default-features --root "$INSTALL_ROOT" --path "$REPO_DIR/tools/docs-search"
 fi
 
 hash -r

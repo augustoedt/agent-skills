@@ -365,7 +365,7 @@
   <section class="block" id="visao-geral">
     <div class="block-head">
       <h2>Visão geral</h2>
-      <span class="status done">v0.6.0-alpha.6</span>
+      <span class="status done">v0.6.0-alpha.7</span>
     </div>
     <div class="prose">
       <p><span class="chip-code">docs-search</span> transforma documentação Markdown em uma lista curta de evidências rastreáveis. O agente não recebe um resumo opaco: recebe arquivo, seção, linhas, hashes e trecho para conferir a fonte original.</p>
@@ -772,23 +772,25 @@
   <section class="block" id="status">
     <div class="block-head">
       <h2>Onde o sistema se encontra agora</h2>
-      <span class="status done">Fase 5.3 concluída · lexical retido</span>
+      <span class="status done">Etapa 6.1 concluída · adapters isolados</span>
     </div>
     <div class="prose">
-      <p>O produto funcional está no código-fonte v0.6.0-alpha.6. O gate one-shot terminou sem promoção: BM25 direto permanece como única engine do produto. SQLite/BM25 foi rejeitado e os holdouts agora estão consumidos.</p>
+      <p>O produto funcional está no código-fonte v0.6.0-alpha.7. BM25 direto permanece como única engine do produto. Os adapters rejeitados continuam auditáveis, mas agora estão fora da build, das dependências e do CLI normal.</p>
     </div>
     <div class="data-table-wrap">
       <table class="data-table">
         <thead><tr><th>Componente</th><th>Estado atual</th><th>Implicação prática</th></tr></thead>
         <tbody>
-          <tr><td>Código-fonte</td><td><code>docs-search 0.6.0-alpha.6</code></td><td>Implementação atual e testada no checkout.</td></tr>
+          <tr><td>Código-fonte</td><td><code>docs-search 0.6.0-alpha.7</code></td><td>Implementação atual e testada no checkout.</td></tr>
           <tr><td>Binário global</td><td><code>docs-search 0.1.0</code></td><td class="old">Ainda desatualizado; nenhuma instalação automática foi feita.</td></tr>
           <tr><td>Motor default</td><td><code>lexical-bm25-v1</code></td><td>Ranking exato e ilimitado por padrão.</td></tr>
           <tr><td>Contratos</td><td>protocolo holdout v2 · autorização/observação/relatório/decisão v1</td><td>Gate e outputs possuem schemas independentes e hash-bound.</td></tr>
           <tr><td>Diversidade</td><td><code>--max-results-per-path 1</code></td><td>Disponível apenas quando solicitada explicitamente.</td></tr>
           <tr><td>Gate final</td><td><code>lexical-retained</code></td><td>Quatro tentativas concluídas; holdouts consumidos e registry novamente fechado.</td></tr>
           <tr><td>Resultado</td><td>Somente BM25 direto</td><td>SQLite/BM25 rejeitado apesar da equivalência e do ganho operacional.</td></tr>
-          <tr><td>Próximo marco</td><td>Preservação</td><td>Sem integração, rerun ou retuning a partir deste gate.</td></tr>
+          <tr><td>Build normal</td><td><code>default = []</code></td><td>Sem Candle, Tokenizers, SQLite bundled, <code>bakeoff</code> ou <code>holdout</code>.</td></tr>
+          <tr><td>Arquivo experimental</td><td><code>experimental-adapters</code></td><td>Compila apenas quando solicitado; não autoriza rerun ou distribuição.</td></tr>
+          <tr><td>Próximo marco</td><td>Versão estável</td><td>Testar atualização e rollback antes de alterar a instalação global.</td></tr>
         </tbody>
       </table>
     </div>
@@ -810,9 +812,10 @@
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">14</span>Comparação dev</div></div>
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">15</span>Harness one-shot</div></div>
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">16</span>Lexical retido</div></div>
+        <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">17</span>Adapters isolados</div></div>
       </div>
     </div>
-    <div class="callout"><strong>Leitura correta do estado:</strong> o gate foi consumido e encerrado. SQLite não será opção de produto neste ciclo; BM25 direto continua sozinho, sem mudança na instalação global. Qualquer hipótese futura começa em development e exige protocolo e holdouts novos.</div>
+    <div class="callout"><strong>Leitura correta do estado:</strong> o gate foi consumido e encerrado. SQLite não será opção de produto neste ciclo; a feature experimental preserva auditoria, não adoção. BM25 direto continua sozinho, sem mudança na instalação global.</div>
   </section>
 </main>
 

@@ -89,6 +89,11 @@ falharam os pisos absolutos de qualidade nos dois novos inputs. Como qualquer gu
 gate, a decisão final é manter somente `lexical-bm25-v1`. SQLite/BM25 não avança como opt-in, os
 holdouts estão consumidos e nenhum resultado poderá orientar retuning ou rerun.
 
+A Etapa 6.1 consolidou o no-go: os quatro adapters rejeitados, suas dependências pesadas e os
+comandos privados permanecem auditáveis somente atrás da feature não default
+`experimental-adapters`. A build e a instalação normais contêm apenas o produto lexical; compilar
+com `--all-features` serve para preservação histórica, não para reabrir o experimento.
+
 ## Consequências
 
 - (+) armazenamento, ranking lexical, semântica e fusão serão avaliados separadamente;
@@ -98,6 +103,7 @@ holdouts estão consumidos e nenhum resultado poderá orientar retuning ou rerun
 - (+) parâmetros, budgets, inputs e contratos ficaram verificáveis antes da primeira engine;
 - (+) o gate final preservou o default simples e rejeitou uma otimização que não generalizou nos
   pisos absolutos de qualidade;
+- (+) adapters rejeitados e suas dependências não entram mais na build ou no CLI de produto;
 - (−) o bake-off exige harness operacional e instrumentação de RAM, disco, startup e indexação;
 - (−) embeddings adicionam dependência de modelo, licença, distribuição e custo computacional;
 - ⚠️ parâmetros e limites devem ser congelados antes de observar os rankings;

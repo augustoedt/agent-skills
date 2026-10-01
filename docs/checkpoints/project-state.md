@@ -6,7 +6,7 @@ O repositório é a fonte oficial das skills próprias e agora também abriga
 `tools/docs-search`, um binário Rust para recuperação documental independente de modelo.
 
 O motor lexical preserva o ranking BM25 original como default, com chunking por headings,
-normalização Unicode e hashes BLAKE3. O código-fonte `docs-search` v0.6.0-alpha.6 aceita somente os
+normalização Unicode e hashes BLAKE3. O código-fonte `docs-search` v0.6.0-alpha.7 aceita somente os
 contratos atuais: resposta de busca v2, dataset de consultas v2 e relatório v2. A resposta registra
 `selection.max_results_per_path`, rank final e rank BM25 bruto; versões de schema diferentes são
 rejeitadas em vez de manter compatibilidade legada.
@@ -16,7 +16,8 @@ corpus real. Um smoke test completo da fixture executou 20/20 consultas sem erro
 Recall@5 macro 0,617647, Recall@5 micro 0,619048, MRR@5 0,705882, zero falsos positivos em três
 casos no-answer e 7.453 caracteres de contexto. Com cap 1, Recall@5 macro/micro subiu para
 0,676471/0,714286 e o contexto caiu para 3.995 caracteres, sem alterar Hit@1, MRR ou no-answer.
-`fmt`, `clippy` e 102 testes passam; busca v2 usa `evaluation/search-response.schema.json` e
+`fmt`, Clippy e as duas matrizes passam: 47 testes no produto default e 104 com o arquivo
+experimental habilitado; busca v2 usa `evaluation/search-response.schema.json` e
 relatórios v2 usam `evaluation/report.schema.json`. As medições públicas atuais ficam em
 `tools/docs-search/evaluation/reports/` e substituem artefatos históricos incompatíveis.
 
@@ -45,15 +46,18 @@ escopo, fluxo de busca, contrato de evidência, avaliação, privacidade, decis�
 bake-off e estado operacional atual sem expor nomes ou paths privados.
 
 O binário instalado via Rust 1.98.1 gerenciado por `asdf` continua na versão 0.1.0; ele não foi
-atualizado automaticamente. O v0.6.0-alpha.6 pode ser executado no checkout com `cargo run --
-evaluate` até uma instalação ser solicitada.
+atualizado automaticamente. O v0.6.0-alpha.7 pode ser executado no checkout com `cargo run --
+evaluate` até uma instalação ser solicitada. A instalação temporária foi validada, mas o binário
+global não mudou.
 
 A skill `search-project-docs` também está sincronizada em `~/.agents/skills/` e ligada aos agentes
 locais detectados. O plano detalhado em `docs/plans/docs-search.md` divide o próximo ciclo em um
 bake-off de cinco braços: BM25 direto, cache SQLite com BM25 preservado, FTS5, embeddings locais e
 híbrido por RRF. A decisão está no ADR 0003; o harness e os adapters `lexical-bm25-v1`,
 `sqlite-cache-bm25-v1`, `fts5-v1`, `local-embeddings-v1` e `hybrid-rrf-v1` estão implementados. A
-implementação dos adapters está completa; nenhum deles foi promovido ao produto.
+implementação dos adapters está completa; nenhum deles foi promovido ao produto. Os quatro
+adapters rejeitados e os harnesses agora estão isolados pela feature não default
+`experimental-adapters`.
 
 A Fase 4.0 está concluída e congelada. Os contratos públicos
 `engine-bakeoff-protocol.schema.json` e `engine-bakeoff-report.schema.json` separam a
@@ -68,8 +72,8 @@ timings internos, qualidade, contexto, evidência, determinismo, fault injection
 privado, fixado por registry próprio, mede startup, end-to-end, RSS e disco, atesta release limpo,
 `Cargo.lock`, toolchain, host, ambiente e denylist e valida o relatório operacional v1. Observações e relatórios recusam overwrite e usam
 `0600`. Duas observações sintéticas pareadas passaram; nenhuma medição congelada foi executada fora
-da ordem contrabalanceada. Os cinco adapters estão disponíveis no harness; o default e o binário
-global permanecem inalterados.
+da ordem contrabalanceada. Os cinco adapters continuam disponíveis somente no harness compilado com
+`experimental-adapters`; o default e o binário global permanecem inalterados.
 
 As Fases 4.2–4.5 estão concluídas em código e testes. O cache SQLite/BM25 e o índice FTS5 usam
 `rusqlite 0.40.2` e SQLite bundled 3.53.2. FTS5 adiciona query literal segura, pesos 1/2/3 e top 50.
@@ -105,8 +109,8 @@ consultas, roots e artefatos permanecem privados. O v1 foi fechado e supersedido
 implementação porque não fixava o hash da configuração externa das engines; v2 incorpora
 configuração e hash. Nenhuma finalista foi executada nesses holdouts.
 
-A Fase 5.2 também está concluída sem abrir o gate. O binário contém `holdout observe`, `holdout
-finalize` e `holdout decide`, com autorização hash-bound, sequência exata, somente as duas
+A Fase 5.2 também está concluída sem abrir o gate. O build experimental contém `holdout observe`,
+`holdout finalize` e `holdout decide`, com autorização hash-bound, sequência exata, somente as duas
 finalistas, revalidação sem segunda execução de retrieval e saída imutável. O coordenador privado
 nega paths consumidos antes de resolução, exige roots exatas, grava uma tentativa append-only antes
 do processo e bloqueia rerun inclusive após falha. Contratos públicos independentes formalizam
@@ -122,21 +126,28 @@ gate é eliminatório, a decisão final é `lexical-retained`: SQLite não avan�
 `lexical-bm25-v1` permanece sozinho e os holdouts estão consumidos sem possibilidade de rerun ou
 retuning.
 
+A Etapa 6.1 isolou o arquivo experimental sem apagar seu histórico. A build default usa features
+vazias e não compila nem expõe SQLite/BM25, FTS5, E5, RRF, Candle, Tokenizers, SQLite bundled,
+`bakeoff` ou `holdout`. A build explícita com `--all-features` preserva os 104 testes históricos.
+Uma medição release local reduziu o binário de aproximadamente 10,96 MB para 3,09 MB. Busca,
+schemas e instalação global permaneceram inalterados.
+
 ## Em andamento
 
 - manter cap 1 apenas como opção explícita, sem alterar o default;
 - preservar o freeze e os 50 relatórios privados imutáveis da Fase 4.6;
 - preservar a rejeição do prefixo morfológico 7/4 sem retuning de parâmetros;
 - manter `lexical-bm25-v1` como única engine do produto e default;
+- manter `experimental-adapters` fora da instalação e da distribuição normal;
 - não usar os holdouts consumidos para seleção, tuning ou mudança de julgamentos;
 - preservar protocolo, tentativas, relatórios e decisão one-shot como artefatos imutáveis;
 - não integrar SQLite/BM25: o gate final rejeitou sua promoção.
 
 ## Próximo passo
 
-1. Fechar o registry operacional com hashes das quatro tentativas, relatórios e decisão.
-2. Preservar BM25 direto sem mudança no default nem na instalação global.
-3. Remover SQLite/BM25 do caminho de adoção; mantê-lo apenas como histórico experimental auditável.
+1. Preparar a versão estável do produto lexical e definir seu número final.
+2. Testar atualização e rollback do instalador sem habilitar `experimental-adapters`.
+3. Atualizar o binário global somente mediante autorização explícita.
 4. Só formular outra hipótese com justificativa independente em development e novos holdouts.
 
 O default continua `lexical-bm25-v1`. O plano faseado está no [`plano`](../plans/docs-search.md), a
@@ -146,7 +157,10 @@ decisão anterior sobre cap 1 permanece no [`ADR 0002`](../decisions/0002-manter
 ## Armadilhas conhecidas
 
 - `skills/` é fonte da verdade; não editar cópias em `~/.agents/skills/`.
-- Os índices SQLite/BM25, FTS5, E5 e a composição RRF existem somente no bake-off; a busca padrão ainda não possui índice persistente nem embeddings.
+- Os índices SQLite/BM25, FTS5, E5 e a composição RRF existem somente com a feature não default
+  `experimental-adapters`; a busca padrão não possui índice persistente nem embeddings.
+- Não execute builds Cargo com conjuntos de features diferentes em paralelo no mesmo `target/`;
+  rode as matrizes sequencialmente ou use `CARGO_TARGET_DIR` distintos.
 - Não alterar tokenizer, threshold 0,80, profundidade 50, RRF `k = 60`, modelo, inputs ou budgets
   dentro de `engine-bakeoff-v1`; qualquer mudança exige protocolo e tag novos.
 - Não reabrir, rerodar ou editar os holdouts consumidos da Fase 5.3; qualquer nova hipótese exige

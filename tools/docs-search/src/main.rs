@@ -4,9 +4,12 @@ use std::path::PathBuf;
 use anyhow::{Context, Result, bail};
 use clap::{Parser, Subcommand};
 use docs_search::{
-    EvaluateRequest, EvaluationReport, FinalizeRequest, HoldoutDecideRequest,
-    HoldoutFinalizeRequest, HoldoutObserveRequest, ObserveRequest, SearchRequest, SearchResponse,
-    evaluate, finalize, holdout_decide, holdout_finalize, holdout_observe, observe, search,
+    EvaluateRequest, EvaluationReport, SearchRequest, SearchResponse, evaluate, search,
+};
+#[cfg(feature = "experimental-adapters")]
+use docs_search::{
+    FinalizeRequest, HoldoutDecideRequest, HoldoutFinalizeRequest, HoldoutObserveRequest,
+    ObserveRequest, finalize, holdout_decide, holdout_finalize, holdout_observe, observe,
 };
 
 #[derive(Debug, Parser)]
@@ -80,19 +83,22 @@ enum Command {
         output: Option<PathBuf>,
     },
 
-    /// Experimental engine bake-off harness; does not change the default search engine.
+    /// Experimental engine bake-off harness; excluded from normal product builds.
+    #[cfg(feature = "experimental-adapters")]
     Bakeoff {
         #[command(subcommand)]
         command: BakeoffCommand,
     },
 
-    /// Closed one-shot finalist holdout harness; requires an enabled audited authorization.
+    /// Closed one-shot finalist holdout harness; excluded from normal product builds.
+    #[cfg(feature = "experimental-adapters")]
     Holdout {
         #[command(subcommand)]
         command: HoldoutCommand,
     },
 }
 
+#[cfg(feature = "experimental-adapters")]
 #[derive(Debug, Subcommand)]
 enum BakeoffCommand {
     /// Execute one frozen engine/input run and write an immutable private observation.
@@ -130,6 +136,7 @@ enum BakeoffCommand {
     },
 }
 
+#[cfg(feature = "experimental-adapters")]
 #[derive(Debug, Subcommand)]
 enum HoldoutCommand {
     /// Execute one authorized finalist/input pair exactly once.
@@ -239,6 +246,7 @@ fn main() -> Result<()> {
                 );
             }
         }
+        #[cfg(feature = "experimental-adapters")]
         Command::Bakeoff { command } => match command {
             BakeoffCommand::Observe {
                 protocol,
@@ -273,6 +281,7 @@ fn main() -> Result<()> {
                 output,
             })?,
         },
+        #[cfg(feature = "experimental-adapters")]
         Command::Holdout { command } => match command {
             HoldoutCommand::Observe {
                 protocol,

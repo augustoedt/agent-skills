@@ -164,8 +164,8 @@ Phase 5.2 adds four independent contracts:
 - `engine-holdout-decision.schema.json`: the closed comparison of all reports, exact
   evidence/metric/context equivalence, per-input p95 checks, mean SQLite gain, and opt-in-only result.
 
-The public binary exposes `holdout observe`, `holdout finalize`, and `holdout decide`, but
-`observe` fails before corpus path resolution unless an enabled authorization matches the exact
+The Phase 5.2 experimental build exposed `holdout observe`, `holdout finalize`, and `holdout decide`;
+`observe` failed before corpus path resolution unless an enabled authorization matched the exact
 protocol. The private coordinator additionally writes a consumed attempt marker before process
 launch, enforces the counterbalanced order, refuses overwrite and rerun, and combines observation,
 measurement, and finalization in one operation. Its immutable registry remains closed with
@@ -179,6 +179,12 @@ and context, but both failed the preregistered absolute quality floors on the fr
 result is `lexical-retained`: SQLite/BM25 is not promoted even as opt-in, the direct lexical engine
 remains the only product engine, and the holdouts cannot be rerun or used for retuning. Detailed
 queries, metrics, reports, and identities remain private.
+
+After that no-go, version 0.6.0-alpha.7 moved the four rejected adapters, their optional heavy
+dependencies, and the `bakeoff`/`holdout` commands behind the non-default
+`experimental-adapters` feature. A normal build or `cargo install --locked --no-default-features --path
+tools/docs-search` excludes them. `--all-features` is retained only to compile and test the
+historical implementation; it does not authorize another execution.
 
 Only the schemas are public. Protocol instances, snapshot manifests, private datasets, baseline
 reports, model paths, and checksum registries stay in machine-local encrypted storage. Frozen

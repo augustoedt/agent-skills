@@ -24,6 +24,7 @@ pub struct Corpus {
     pub chunks: Vec<Chunk>,
 }
 
+#[cfg(feature = "experimental-adapters")]
 pub(crate) fn file_hashes(root: &Path) -> Result<(PathBuf, BTreeMap<String, String>)> {
     if !root.exists() {
         bail!("project root does not exist: {}", root.display());

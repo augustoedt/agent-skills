@@ -713,37 +713,39 @@ julgamentos ou holdouts substitutos para esta decisão.
 
 ---
 
-## Etapa 6 — integrar somente o vencedor
+## Etapa 6 — consolidar somente o vencedor — em andamento
 
-Esta etapa só começa depois do ADR da Etapa 5. Não será construída uma plataforma de produção para
-engines descartadas.
+O vencedor foi o baseline já integrado. Não existe nova engine para promover: a etapa consolida a
+fronteira entre produto e arquivo experimental sem apagar o histórico auditável.
 
-### 6.1 Produto e compatibilidade
+### 6.1 Produto e compatibilidade — concluída
 
-- integrar somente a engine aprovada, inicialmente de forma opt-in;
-- preservar o motor lexical direto como fallback;
-- manter documentos como fonte autoritativa e todo índice reconstruível;
-- versionar qualquer mudança incompatível dos contratos;
-- adicionar testes de corrupção, rebuild, atualização e rollback aplicáveis ao vencedor.
+- `lexical-bm25-v1` permanece como única engine da build padrão e como default;
+- `experimental-adapters` é uma feature não default que contém SQLite/BM25, FTS5, E5, RRF e os
+  comandos privados `bakeoff`/`holdout`;
+- Candle, Tokenizers, `rusqlite` e SQLite bundled são dependências opcionais e não entram no grafo
+  normal, no instalador ou na distribuição de produto;
+- a build padrão não mostra comandos experimentais; a build `--all-features` continua compilável e
+  testada exclusivamente para preservar o histórico;
+- documentos continuam autoritativos e nenhum contrato público de busca ou avaliação foi alterado.
 
-### 6.2 CI e distribuição
+### 6.2 CI e distribuição — pendente
 
-- executar `cargo fmt --check`, Clippy com warnings negados e todos os testes;
+- manter checks separados para produto e arquivo experimental: Clippy e testes default, depois
+  Clippy e testes com `--all-features`;
 - avaliar a fixture estável e o conjunto público permitido;
-- testar instalador, atualização e rollback;
+- testar atualização e rollback antes da versão estável;
 - manter `cargo install --locked` enquanto for suficiente;
 - publicar binários somente se a instalação por Cargo se tornar barreira medida;
 - publicar checksums e testar arquiteturas suportadas quando houver artefatos.
 
-### 6.3 Documentação operacional
+Uma instalação temporária da build padrão foi validada sem modificar o binário global. A promoção
+de versão e o update global continuam fora desta etapa sem autorização específica.
 
-Ao mudar fluxo ou contrato, atualizar juntos:
+### 6.3 Documentação operacional — concluída para o isolamento
 
-- `tools/docs-search/README.md`;
-- `docs/runbooks/buscar-documentacao-de-projetos.md`;
-- `skills/search-project-docs/SKILL.md`;
-- `docs/checkpoints/project-state.md`;
-- apresentação, ADRs e este plano.
+O isolamento foi registrado no README do binário, runbook, skill, checkpoint, ADR e apresentação.
+Mudanças futuras de fluxo ou contrato devem manter esses documentos sincronizados.
 
 ---
 
@@ -762,7 +764,9 @@ Etapa 4.6: comparação em development ✓
 Etapa 5: holdouts novos, gate one-shot e ADR ✓
     └── no-go → manter somente BM25 direto
               ↓
-Etapa 6: integrar e distribuir somente a vencedora
+Etapa 6.1: isolar adapters rejeitados da build de produto ✓
+              ↓
+Etapa 6.2: preparar versão estável, atualização e rollback
 ```
 
 O bake-off compara todas as alternativas planejadas sem confundir armazenamento, ranking lexical,

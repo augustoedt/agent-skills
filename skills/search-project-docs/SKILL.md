@@ -83,6 +83,10 @@ command -v docs-search >/dev/null 2>&1 || {
 docs-search --version
 ```
 
+A instalação normal usa a build de produto, sem a feature `experimental-adapters`. Não habilite essa
+feature para busca ou instalação: ela existe somente para compilar o histórico rejeitado de
+SQLite/BM25, FTS5, E5, RRF e dos harnesses privados.
+
 ## Contexto mínimo suficiente
 
 - Comece com `--limit 5`; não despeje todos os resultados no prompt.

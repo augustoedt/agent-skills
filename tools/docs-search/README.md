@@ -6,8 +6,10 @@ confira a fonte original antes de alterar código.
 
 ## Estado atual
 
-A versão de código-fonte 0.6.0-alpha.6 mantém o baseline lexical padrão sem banco e sem embeddings e usa
-somente os contratos atuais: resposta de busca v2, dataset de consultas v2 e relatório v2:
+A versão de código-fonte 0.6.0-alpha.7 mantém o baseline lexical padrão sem banco e sem embeddings.
+A build normal possui features vazias por default: adapters rejeitados, suas dependências e os comandos
+privados de experimento só existem com `--features experimental-adapters`. O produto usa somente os
+contratos atuais: resposta de busca v2, dataset de consultas v2 e relatório v2:
 
 - corpus: `docs/**/*.md` e, na raiz, `README.md`, `CLAUDE.md`, `AGENTS.md` e `pi-warden.md`;
 - chunking por headings Markdown, preservando breadcrumbs e ignorando headings aparentes dentro de
@@ -35,7 +37,7 @@ scripts/install-docs-search.sh
 Ou diretamente:
 
 ```bash
-cargo install --locked --force --path tools/docs-search
+cargo install --locked --force --no-default-features --path tools/docs-search
 ```
 
 ## Uso
@@ -90,9 +92,25 @@ neutro e passe os caminhos locais explicitamente. Veja `evaluation/README.md`.
 ```bash
 cd tools/docs-search
 cargo fmt --check
-cargo clippy --all-targets --all-features -- -D warnings
-cargo test
+
+# Produto: sem adapters ou dependências experimentais.
+cargo clippy --locked --all-targets -- -D warnings
+cargo test --locked --all-targets
+cargo tree --locked --no-default-features -e normal
+
+# Arquivo histórico experimental: valida que continua compilando, mas não o distribui.
+cargo clippy --locked --all-targets --all-features -- -D warnings
+cargo test --locked --all-targets --all-features
 ```
+
+Execute as duas matrizes sequencialmente ou use `CARGO_TARGET_DIR` distintos; builds concorrentes com
+features diferentes não devem compartilhar o mesmo diretório de artefatos.
+
+A feature não default `experimental-adapters` isola `sqlite-cache-bm25-v1`, `fts5-v1`,
+`local-embeddings-v1` e `hybrid-rrf-v1`, além de Candle, Tokenizers, SQLite bundled e dos
+subcomandos `bakeoff`/`holdout`. O instalador usa `--no-default-features` e não compila nem
+expõe esse conjunto. O build com `--all-features` existe somente para preservar e testar o histórico
+auditável; não autoriza nova medição, rerun de holdout ou adoção.
 
 Os subcomandos experimentais `bakeoff observe` e `bakeoff finalize` implementam o harness comum da
 Fase 4.1. Eles são exclusivos do runner privado: exigem protocolo congelado, provenance do binário,
@@ -110,8 +128,9 @@ mask, L2, scan exato, top 50 e threshold 0,80. O híbrido combina as duas listas
 deduplica por `chunk_hash`, preserva os ranks das fontes e falha como um todo se E5 falhar. Os
 índices são privados e atômicos, verificam atualização incremental e corrupção; FTS5, embeddings e
 híbrido falham fechados quando o rebuild ou o modelo impedem uma resposta íntegra. SQLite e FTS5
-usam `rusqlite 0.40.2` com SQLite bundled 3.53.2. Esses subcomandos não alteram `search`, o engine
-padrão nem a instalação global.
+usam `rusqlite 0.40.2` com SQLite bundled 3.53.2. Todo esse código está atrás da feature não default;
+esses subcomandos não fazem parte do produto, não alteram `search`, o engine padrão nem a instalação
+global.
 
 O conjunto inicial de avaliação está em `evaluation/queries.json`. Somente o schema v2 é aceito; ele
 está documentado em `evaluation/README.md` e formalizado por

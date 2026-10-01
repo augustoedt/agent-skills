@@ -16,6 +16,7 @@ Decisões arquiteturais permanentes e suas consequências.
 - `0001-docs-search-como-binario-local.md` — adoção de Rust, CLI/JSON e evolução medida do motor de busca.
 - `0002-manter-cap-1-opt-in-apos-holdout.md` — não promoção do cap 1 após o gate e preservação dos holdouts consumidos.
 - `0003-comparar-engines-antes-da-adocao.md` — bake-off isolado de persistência, recuperação lexical, embeddings e RRF antes de integrar um vencedor.
+- `0004-isolar-adapters-rejeitados-da-build-de-produto.md` — mantém os protótipos auditáveis atrás de uma feature não default e fora da distribuição normal.
 
 ## plans/
 

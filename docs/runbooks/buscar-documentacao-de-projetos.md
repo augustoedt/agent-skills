@@ -74,9 +74,24 @@ credenciais nunca devem ser documentadas no corpus.
 ```bash
 cd tools/docs-search
 cargo fmt --check
-cargo clippy --all-targets --all-features -- -D warnings
-cargo test
+
+# Caminho de produto: não habilita adapters rejeitados.
+cargo clippy --locked --all-targets -- -D warnings
+cargo test --locked --all-targets
+
+# Histórico experimental: compila e testa isoladamente.
+cargo clippy --locked --all-targets --all-features -- -D warnings
+cargo test --locked --all-targets --all-features
 ```
+
+Execute as matrizes sequencialmente ou defina `CARGO_TARGET_DIR` distintos; não rode builds com
+features diferentes em paralelo sobre o mesmo diretório de artefatos.
+
+A feature não default `experimental-adapters` contém SQLite/BM25, FTS5, E5, RRF e os comandos
+privados `bakeoff`/`holdout`. Não a habilite para busca, instalação ou distribuição normal. A build
+padrão exclui tanto os comandos quanto Candle, Tokenizers e SQLite bundled; `cargo install --locked
+--path tools/docs-search` produz essa build enxuta. `--all-features` serve apenas para garantir que o
+histórico auditável ainda compila e passa seus testes — nunca para reabrir medições consumidas.
 
 As consultas de avaliação ficam em `tools/docs-search/evaluation/queries.json`. Medir Hit@1,
 Recall@5, MRR, falsos positivos em consultas sem resposta, latência e caracteres retornados antes
@@ -117,6 +132,7 @@ exige outra tag e outro protocolo.
 - Não carregar todos os resultados sem necessidade.
 - Não incluir secrets ou `.env` no corpus.
 - Não adicionar embeddings, classificador ou infraestrutura sem comparar métricas com o baseline.
+- Não habilitar `experimental-adapters` na instalação, busca ou distribuição de produto.
 - Não implementar ou medir o bake-off se o verificador do freeze falhar.
 - Não acessar holdouts consumidos, contornar a denylist ou alterar parâmetros de `engine-bakeoff-v1`.
 - Não invocar `docs-search` sem antes confirmar `command -v docs-search`.

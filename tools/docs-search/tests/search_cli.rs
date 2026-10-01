@@ -318,6 +318,7 @@ fn cli_reports_disabled_queries_as_skipped() {
     assert_eq!(json["queries"][1]["disabled_reason"], "fixture migration");
 }
 
+#[cfg(feature = "experimental-adapters")]
 #[test]
 fn cli_rejects_unknown_bakeoff_engines_before_reading_inputs() {
     let directory = tempdir().unwrap();
@@ -353,6 +354,20 @@ fn cli_rejects_unknown_bakeoff_engines_before_reading_inputs() {
 
     assert!(!output.status.success());
     assert!(String::from_utf8_lossy(&output.stderr).contains("unknown bake-off engine"));
+}
+
+#[cfg(not(feature = "experimental-adapters"))]
+#[test]
+fn product_cli_excludes_experimental_adapter_commands() {
+    let output = Command::new(env!("CARGO_BIN_EXE_docs-search"))
+        .arg("--help")
+        .output()
+        .unwrap();
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(!stdout.contains("bakeoff"));
+    assert!(!stdout.contains("holdout"));
 }
 
 #[test]

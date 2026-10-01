@@ -70,10 +70,17 @@ vieram de objetos Git; julgamentos foram revisados contra a fonte; revisões, ma
 fingerprints, ordem contrabalanceada, limites absolutos e a regra de decisão ficaram fixos no
 protocolo `engine-finalists-holdout-v2`. O v1 foi preservado fechado e supersedido antes de
 implementação porque não vinculava por hash a configuração externa das engines; v2 incorpora os
-objetos congelados e seus hashes. O gate permanece desabilitado enquanto o harness one-shot é
-implementado e auditado. SQLite só poderá avançar como opt-in se preservar evidência, métricas e
-contexto exatamente, passar todas as guardas e repetir o ganho operacional congelado; o default não
-muda neste gate.
+objetos congelados e seus hashes. SQLite só poderá avançar como opt-in se preservar evidência,
+métricas e contexto exatamente, passar todas as guardas e repetir o ganho operacional congelado; o
+default não muda neste gate.
+
+A Fase 5.2 implementou o harness one-shot sem abrir esse gate. Autorização, observação, relatório e
+decisão têm schemas independentes; o binário vincula protocolo, configurações, revisão, sequência e provenance,
+e finaliza a observação sem executar retrieval novamente. O coordenador privado restringe roots,
+nega holdouts consumidos antes de resolver paths, registra a tentativa antes do processo e recusa
+overwrite, ordem incorreta e qualquer retry, inclusive após falha. O fluxo completo foi exercitado
+somente em fixture sintética. O registry real permanece fechado, com medições desabilitadas e sem
+artefatos dos novos holdouts; abri-lo exige autorização explícita e outro registry imutável.
 
 ## Consequências
 

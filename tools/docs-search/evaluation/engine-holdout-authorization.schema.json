@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/docs-search/engine-holdout-authorization.schema.json",
+  "title": "docs-search one-shot finalist holdout authorization",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "protocol_tag",
+    "protocol_sha256",
+    "registry_tag",
+    "public_revision",
+    "sequence_sha256",
+    "gate_enabled",
+    "measurements_enabled"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "protocol_tag": { "const": "engine-finalists-holdout-v2" },
+    "protocol_sha256": { "$ref": "#/$defs/hash" },
+    "registry_tag": { "type": "string", "minLength": 1 },
+    "public_revision": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "sequence_sha256": { "$ref": "#/$defs/hash" },
+    "gate_enabled": { "const": true },
+    "measurements_enabled": { "const": true }
+  },
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  }
+}

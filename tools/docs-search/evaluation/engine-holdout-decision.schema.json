@@ -1,0 +1,183 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/docs-search/engine-holdout-decision.schema.json",
+  "title": "docs-search one-shot finalist holdout decision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "protocol_tag",
+    "protocol_sha256",
+    "authorization_sha256",
+    "report_sha256",
+    "pair_checks",
+    "all_reports_pass",
+    "exact_finalist_equivalence",
+    "sqlite_query_p95_regressions",
+    "sqlite_mean_query_p95_relative_reduction",
+    "sqlite_required_relative_reduction",
+    "sqlite_advances_as_opt_in",
+    "default_engine",
+    "global_install_changed",
+    "holdouts_consumed",
+    "status"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "protocol_tag": {
+      "const": "engine-finalists-holdout-v2"
+    },
+    "protocol_sha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "authorization_sha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "report_sha256": {
+      "type": "object",
+      "minProperties": 2,
+      "additionalProperties": {
+        "$ref": "#/$defs/hash"
+      }
+    },
+    "pair_checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "input",
+          "evidence_equal",
+          "metrics_equal",
+          "context_equal",
+          "lexical_query_p95_ms",
+          "sqlite_query_p95_ms",
+          "sqlite_relative_reduction",
+          "sqlite_p95_not_worse"
+        ],
+        "properties": {
+          "input": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence_equal": {
+            "type": "boolean"
+          },
+          "metrics_equal": {
+            "type": "boolean"
+          },
+          "context_equal": {
+            "type": "boolean"
+          },
+          "lexical_query_p95_ms": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "sqlite_query_p95_ms": {
+            "type": "number",
+            "minimum": 0
+          },
+          "sqlite_relative_reduction": {
+            "type": "number"
+          },
+          "sqlite_p95_not_worse": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "all_reports_pass": {
+      "type": "boolean"
+    },
+    "exact_finalist_equivalence": {
+      "type": "boolean"
+    },
+    "sqlite_query_p95_regressions": {
+      "type": "boolean"
+    },
+    "sqlite_mean_query_p95_relative_reduction": {
+      "type": "number"
+    },
+    "sqlite_required_relative_reduction": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "sqlite_advances_as_opt_in": {
+      "type": "boolean"
+    },
+    "default_engine": {
+      "const": "lexical-bm25-v1"
+    },
+    "global_install_changed": {
+      "const": false
+    },
+    "holdouts_consumed": {
+      "const": true
+    },
+    "status": {
+      "enum": [
+        "sqlite-opt-in-approved",
+        "lexical-retained"
+      ]
+    }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "sqlite-opt-in-approved"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "sqlite_advances_as_opt_in": {
+            "const": true
+          },
+          "all_reports_pass": {
+            "const": true
+          },
+          "exact_finalist_equivalence": {
+            "const": true
+          },
+          "sqlite_query_p95_regressions": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "lexical-retained"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "sqlite_advances_as_opt_in": {
+            "const": false
+          }
+        }
+      }
+    }
+  ]
+}

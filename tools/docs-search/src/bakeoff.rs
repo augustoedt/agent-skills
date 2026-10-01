@@ -41,6 +41,10 @@ use crate::types::{ENGINE, SearchRequest, SearchResult};
 pub const BAKEOFF_OBSERVATION_SCHEMA_VERSION: u32 = 1;
 pub const BAKEOFF_REPORT_SCHEMA_VERSION: u32 = 1;
 pub const BAKEOFF_PROTOCOL_TAG: &str = "engine-bakeoff-v1";
+pub const HOLDOUT_PROTOCOL_TAG: &str = "engine-finalists-holdout-v2";
+pub const HOLDOUT_OBSERVATION_SCHEMA_VERSION: u32 = 1;
+pub const HOLDOUT_REPORT_SCHEMA_VERSION: u32 = 1;
+pub const HOLDOUT_DECISION_SCHEMA_VERSION: u32 = 1;
 const LIMIT: usize = 5;
 const MAX_EXCERPT_CHARS: usize = 1_200;
 const LEXICAL_CONFIG_SHA256: &str =
@@ -68,6 +72,36 @@ pub struct FinalizeRequest {
     pub other_observation_path: PathBuf,
     pub measurements_path: PathBuf,
     pub report_tag: String,
+    pub output: PathBuf,
+}
+
+#[derive(Debug, Clone)]
+pub struct HoldoutObserveRequest {
+    pub protocol_path: PathBuf,
+    pub authorization_path: PathBuf,
+    pub input_id: String,
+    pub engine: String,
+    pub sequence_position: usize,
+    pub provenance_path: PathBuf,
+    pub ready_file: PathBuf,
+    pub output: PathBuf,
+}
+
+#[derive(Debug, Clone)]
+pub struct HoldoutFinalizeRequest {
+    pub protocol_path: PathBuf,
+    pub authorization_path: PathBuf,
+    pub observation_path: PathBuf,
+    pub measurements_path: PathBuf,
+    pub report_tag: String,
+    pub output: PathBuf,
+}
+
+#[derive(Debug, Clone)]
+pub struct HoldoutDecideRequest {
+    pub protocol_path: PathBuf,
+    pub authorization_path: PathBuf,
+    pub report_paths: Vec<PathBuf>,
     pub output: PathBuf,
 }
 
@@ -428,6 +462,12 @@ struct Observation {
     engine_configuration: Value,
     run: u8,
     provenance: ObservationProvenance,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    authorization_sha256: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    authorization_registry_tag: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    sequence_position: Option<usize>,
     input: ReportInput,
     retrieval: ObservationRetrieval,
     quality: Value,
@@ -533,6 +573,19 @@ struct ObservationProvenance {
 struct IsolationAttestation {
     denylist_sha256: String,
     verified_before_path_resolution: bool,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct HoldoutAuthorization {
+    schema_version: u32,
+    protocol_tag: String,
+    protocol_sha256: String,
+    registry_tag: String,
+    public_revision: String,
+    sequence_sha256: String,
+    gate_enabled: bool,
+    measurements_enabled: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -803,6 +856,9 @@ pub fn observe(request: ObserveRequest) -> Result<()> {
         engine_configuration,
         run: request.run,
         provenance,
+        authorization_sha256: None,
+        authorization_registry_tag: None,
+        sequence_position: None,
         input: report_input,
         retrieval: ObservationRetrieval {
             limit: LIMIT,
@@ -931,6 +987,1070 @@ pub fn finalize(request: FinalizeRequest) -> Result<()> {
         "finished_at": measurements.finished_at,
     });
     write_json_value_new(&request.output, &report)
+}
+
+pub fn holdout_observe(request: HoldoutObserveRequest) -> Result<()> {
+    ensure_holdout_engine(&request.engine)?;
+    let protocol_bytes = fs::read(&request.protocol_path).with_context(|| {
+        format!(
+            "failed to read holdout protocol {}",
+            request.protocol_path.display()
+        )
+    })?;
+    let protocol: Value =
+        serde_json::from_slice(&protocol_bytes).context("holdout protocol must be valid JSON")?;
+    validate_holdout_protocol(&protocol)?;
+    let protocol_sha256 = sha256::digest_hex(&protocol_bytes);
+
+    let authorization_bytes = fs::read(&request.authorization_path).with_context(|| {
+        format!(
+            "failed to read holdout authorization {}",
+            request.authorization_path.display()
+        )
+    })?;
+    let authorization: HoldoutAuthorization = serde_json::from_slice(&authorization_bytes)
+        .context("holdout authorization must be valid JSON")?;
+    validate_holdout_authorization(&authorization, &protocol, &protocol_sha256)?;
+    validate_holdout_sequence(
+        &protocol,
+        &request.input_id,
+        &request.engine,
+        request.sequence_position,
+    )?;
+
+    let provenance: ObservationProvenance =
+        read_json(&request.provenance_path, "holdout observation provenance")?;
+    validate_holdout_provenance(&provenance, &protocol, &authorization)?;
+    let engine_configuration = engine_configuration(&protocol, &request.engine)?.clone();
+    validate_frozen_engine_configuration(&request.engine, &engine_configuration)?;
+    let engine_config_sha256 = canonical_json_sha256(&engine_configuration)?;
+    let protocol_engine = protocol["engines"]
+        .as_array()
+        .and_then(|engines| engines.iter().find(|engine| engine["id"] == request.engine))
+        .ok_or_else(|| anyhow!("holdout protocol does not define engine {}", request.engine))?;
+    if required_string(protocol_engine, "configuration_sha256")? != engine_config_sha256 {
+        bail!("holdout engine configuration hash does not match its embedded configuration");
+    }
+    let mut engine = engine(&request.engine, &engine_config_sha256, None)?;
+    let input = holdout_protocol_input(&protocol, &request.input_id)?;
+    let root = PathBuf::from(required_string(input, "root")?);
+    let queries_path = PathBuf::from(required_string(input, "queries")?);
+    verify_file_sha256(
+        &queries_path,
+        required_string(input, "queries_sha256")?,
+        "holdout query dataset",
+    )?;
+    let snapshot_manifest = PathBuf::from(required_string(input, "snapshot_manifest")?);
+    verify_file_sha256(
+        &snapshot_manifest,
+        required_string(input, "snapshot_manifest_sha256")?,
+        "holdout snapshot manifest",
+    )?;
+    let source_review = PathBuf::from(required_string(input, "source_review")?);
+    verify_file_sha256(
+        &source_review,
+        required_string(input, "source_review_sha256")?,
+        "holdout source review",
+    )?;
+
+    let dataset_bytes = fs::read(&queries_path)
+        .with_context(|| format!("failed to read query dataset {}", queries_path.display()))?;
+    let dataset_text = std::str::from_utf8(&dataset_bytes).context("query dataset is not UTF-8")?;
+    let set = parse_evaluation_set(dataset_text).context("invalid holdout query dataset")?;
+    if set
+        .queries
+        .iter()
+        .any(|query| query.disabled_reason.is_some())
+    {
+        bail!("holdout datasets cannot contain disabled queries");
+    }
+    if blake3::hash(&dataset_bytes).to_hex().as_str() != required_string(input, "dataset_blake3")? {
+        bail!("holdout query dataset BLAKE3 does not match the frozen protocol");
+    }
+
+    let loaded = corpus::load(&root)?;
+    let fingerprint = corpus_fingerprint(&loaded.file_hashes);
+    verify_input_corpus(input, &loaded, &fingerprint, set.queries.len())?;
+    let (mut indexing, sqlite_runtime) = engine.prepare(&root, &loaded, &set.queries)?;
+    let index_paths = engine.index_paths();
+    if index_paths.len() > 1 {
+        bail!("holdout finalist may expose at most one index file");
+    }
+    let index_path = index_paths
+        .first()
+        .map(|path| path.to_string_lossy().into_owned());
+    write_ready_file(&request.ready_file)?;
+
+    let mut evaluations = Vec::with_capacity(set.queries.len());
+    let mut observed_queries = Vec::with_capacity(set.queries.len());
+    let mut candidates_examined = 0usize;
+    let mut errors = Vec::new();
+    for query in set.queries {
+        let started = Instant::now();
+        match engine.search(SearchRequest {
+            root: root.clone(),
+            query: query.query.clone(),
+            limit: LIMIT,
+            max_excerpt_chars: MAX_EXCERPT_CHARS,
+            max_results_per_path: None,
+        }) {
+            Ok(output) => {
+                let response = output.response;
+                let timings = output.timings;
+                validate_results(&loaded.chunks, &response.results)?;
+                if output.source_ranks.len() != response.results.len() {
+                    bail!("engine source-rank count does not match the result count");
+                }
+                candidates_examined = candidates_examined
+                    .checked_add(timings.candidates_examined)
+                    .ok_or_else(|| anyhow!("candidate counter overflow"))?;
+                let evaluation = successful_query_evaluation(
+                    query.clone(),
+                    response.results.clone(),
+                    timings.total_ms,
+                );
+                observed_queries.push(observed_query(
+                    &evaluation,
+                    &response.results,
+                    &output.source_ranks,
+                    QueryTimings {
+                        lookup: timings.lookup_ms,
+                        ranking: timings.ranking_ms,
+                        excerpt: timings.excerpt_ms,
+                        total: timings.total_ms,
+                    },
+                ));
+                evaluations.push(evaluation);
+            }
+            Err(error) => {
+                let elapsed = elapsed_ms(started);
+                errors.push(format!("{}: {error}", query.id));
+                let mut evaluation = base_query_evaluation(query, QueryStatus::Error);
+                evaluation.latency_ms = Some(elapsed);
+                evaluation.error = Some(error.to_string());
+                observed_queries.push(observed_query(
+                    &evaluation,
+                    &[],
+                    &[],
+                    QueryTimings {
+                        lookup: 0.0,
+                        ranking: 0.0,
+                        excerpt: 0.0,
+                        total: elapsed,
+                    },
+                ));
+                evaluations.push(evaluation);
+            }
+        }
+    }
+
+    let summary = summarize(evaluations.iter());
+    let mut per_category = BTreeMap::new();
+    for (name, category) in categories() {
+        per_category.insert(
+            name.to_owned(),
+            summary_value(&summarize(
+                evaluations
+                    .iter()
+                    .filter(|evaluation| evaluation.category == category),
+            )),
+        );
+    }
+    let quality = summary_value(&summary);
+    let report_input = ReportInput {
+        id: request.input_id,
+        role: "holdout".to_owned(),
+        root: root.to_string_lossy().into_owned(),
+        files: loaded.files,
+        chunks: loaded.chunks.len(),
+        corpus_fingerprint: fingerprint,
+        queries_schema_version: set.schema_version,
+        dataset_blake3: blake3::hash(&dataset_bytes).to_hex().to_string(),
+        queries_sha256: sha256::digest_hex(&dataset_bytes),
+        query_count: evaluations.len(),
+    };
+    let ranking_projection_sha256 = ranking_projection(&observed_queries)?;
+    let evidence_projection_sha256 = evidence_projection(&observed_queries)?;
+    let timing_ms = timing_value(&observed_queries);
+    let fault_injection_passed = engine.fault_injection_passed(&root);
+    if engine.id() == SQLITE_ENGINE {
+        indexing.corruption_detected |= fault_injection_passed;
+        indexing.rebuild_succeeded &= fault_injection_passed;
+    }
+    let sqlite_runtime = sqlite_runtime.map(|runtime| ObservedSqliteRuntime {
+        version: runtime.version,
+        compile_options_sha256: runtime.compile_options_sha256,
+    });
+    let observation = Observation {
+        schema_version: HOLDOUT_OBSERVATION_SCHEMA_VERSION,
+        protocol_tag: HOLDOUT_PROTOCOL_TAG.to_owned(),
+        protocol_sha256,
+        engine: engine.id().to_owned(),
+        engine_config_sha256,
+        engine_configuration,
+        run: 1,
+        provenance,
+        authorization_sha256: Some(sha256::digest_hex(&authorization_bytes)),
+        authorization_registry_tag: Some(authorization.registry_tag),
+        sequence_position: Some(request.sequence_position),
+        input: report_input,
+        retrieval: ObservationRetrieval {
+            limit: LIMIT,
+            recall_cutoff: RECALL_CUTOFF,
+            max_excerpt_chars: MAX_EXCERPT_CHARS,
+            max_results_per_path: None,
+            candidates_examined,
+        },
+        quality,
+        per_category,
+        queries: observed_queries,
+        timing_ms,
+        indexing,
+        sqlite_runtime,
+        index_path,
+        auxiliary_index_path: None,
+        normal_fallback_count: engine.fallback_count(),
+        baseline_comparison: Value::Null,
+        category_deltas: BTreeMap::new(),
+        ranking_projection_sha256,
+        evidence_projection_sha256,
+        evidence_valid: true,
+        fault_injection_passed,
+        errors,
+    };
+    write_json_new(&request.output, &observation)
+}
+
+pub fn holdout_finalize(request: HoldoutFinalizeRequest) -> Result<()> {
+    let protocol_bytes = fs::read(&request.protocol_path)?;
+    let protocol: Value =
+        serde_json::from_slice(&protocol_bytes).context("holdout protocol must be valid JSON")?;
+    validate_holdout_protocol(&protocol)?;
+    let protocol_sha256 = sha256::digest_hex(&protocol_bytes);
+    let authorization_bytes = fs::read(&request.authorization_path)?;
+    let authorization: HoldoutAuthorization = serde_json::from_slice(&authorization_bytes)
+        .context("holdout authorization must be valid JSON")?;
+    validate_holdout_authorization(&authorization, &protocol, &protocol_sha256)?;
+    let observation: Observation = read_json(&request.observation_path, "holdout observation")?;
+    let measurements: ExternalMeasurements =
+        read_json(&request.measurements_path, "holdout external measurements")?;
+    validate_holdout_observation(
+        &observation,
+        &protocol,
+        &protocol_sha256,
+        &authorization,
+        &sha256::digest_hex(&authorization_bytes),
+    )?;
+    validate_holdout_measurements(
+        &measurements,
+        &protocol,
+        &observation,
+        &sha256::digest_hex(&fs::read(&request.observation_path)?),
+    )?;
+    validate_holdout_report_tag(
+        &request.report_tag,
+        &observation.input.id,
+        &observation.engine,
+    )?;
+    let checks = holdout_budget_checks(&observation, &measurements, &protocol)?;
+    let status = if checks.values().all(|passed| *passed) && observation.errors.is_empty() {
+        "pass"
+    } else {
+        "fail"
+    };
+    let report = json!({
+        "schema_version": HOLDOUT_REPORT_SCHEMA_VERSION,
+        "protocol_tag": HOLDOUT_PROTOCOL_TAG,
+        "protocol_sha256": observation.protocol_sha256,
+        "authorization": {
+            "registry_tag": observation.authorization_registry_tag,
+            "sha256": observation.authorization_sha256,
+            "sequence_position": observation.sequence_position,
+        },
+        "report_tag": request.report_tag,
+        "run": 1,
+        "engine": observation.engine,
+        "engine_config_sha256": observation.engine_config_sha256,
+        "tool": measurements.tool,
+        "input": observation.input,
+        "environment": measurements.environment,
+        "retrieval": {
+            "limit": observation.retrieval.limit,
+            "recall_cutoff": observation.retrieval.recall_cutoff,
+            "max_excerpt_chars": observation.retrieval.max_excerpt_chars,
+            "max_results_per_path": observation.retrieval.max_results_per_path,
+            "candidates_examined": observation.retrieval.candidates_examined,
+            "engine_configuration": observation.engine_configuration,
+        },
+        "quality": observation.quality,
+        "per_category": observation.per_category,
+        "queries": report_queries(&observation.queries, &observation.engine),
+        "timing_ms": merge_timing(&observation.timing_ms, &measurements.timing_ms)?,
+        "indexing": observation.indexing,
+        "resources_bytes": measurements.resources_bytes,
+        "integrity": {
+            "ranking_projection_sha256": observation.ranking_projection_sha256,
+            "evidence_projection_sha256": observation.evidence_projection_sha256,
+            "observation_sha256": measurements.observation_sha256,
+            "revalidated_without_rerunning_retrieval": true,
+        },
+        "evidence_validation": {
+            "paths": true,
+            "headings": true,
+            "lines": true,
+            "file_hashes": true,
+            "chunk_hashes": true,
+            "excerpts": true,
+        },
+        "fallback": {
+            "used_during_normal_run": observation.normal_fallback_count > 0,
+            "normal_run_count": observation.normal_fallback_count,
+            "fault_injection_passed": observation.fault_injection_passed,
+            "behavior": fallback_behavior(&observation.engine)?,
+        },
+        "errors": observation.errors,
+        "budget_checks": checks,
+        "status": status,
+        "started_at": measurements.started_at,
+        "finished_at": measurements.finished_at,
+    });
+    write_json_value_new(&request.output, &report)
+}
+
+pub fn holdout_decide(request: HoldoutDecideRequest) -> Result<()> {
+    let protocol_bytes = fs::read(&request.protocol_path)?;
+    let protocol: Value =
+        serde_json::from_slice(&protocol_bytes).context("holdout protocol must be valid JSON")?;
+    validate_holdout_protocol(&protocol)?;
+    let protocol_sha256 = sha256::digest_hex(&protocol_bytes);
+    let authorization_bytes = fs::read(&request.authorization_path)?;
+    let authorization: HoldoutAuthorization = serde_json::from_slice(&authorization_bytes)
+        .context("holdout authorization must be valid JSON")?;
+    validate_holdout_authorization(&authorization, &protocol, &protocol_sha256)?;
+
+    let expected_pairs = holdout_sequence(&protocol)?;
+    if request.report_paths.len() != expected_pairs.len() {
+        bail!("holdout decision requires exactly one report for every frozen pair");
+    }
+    let authorization_sha256 = sha256::digest_hex(&authorization_bytes);
+    let mut reports = BTreeMap::new();
+    let mut report_hashes = BTreeMap::new();
+    for path in &request.report_paths {
+        let bytes = fs::read(path)
+            .with_context(|| format!("failed to read holdout report {}", path.display()))?;
+        let report: Value =
+            serde_json::from_slice(&bytes).context("holdout report must be valid JSON")?;
+        let input = required_string(&report["input"], "id")?.to_owned();
+        let engine = required_string(&report, "engine")?.to_owned();
+        let pair = (input, engine);
+        let expected_position = expected_pairs
+            .iter()
+            .position(|candidate| candidate == &pair)
+            .map(|index| index + 1)
+            .ok_or_else(|| anyhow!("holdout report pair is outside the frozen sequence"))?;
+        let protocol_engine = protocol["engines"]
+            .as_array()
+            .and_then(|engines| engines.iter().find(|candidate| candidate["id"] == pair.1))
+            .ok_or_else(|| anyhow!("holdout report engine is outside the protocol"))?;
+        validate_holdout_report_tag(required_string(&report, "report_tag")?, &pair.0, &pair.1)?;
+        if reports.contains_key(&pair)
+            || report["schema_version"] != HOLDOUT_REPORT_SCHEMA_VERSION
+            || report["protocol_tag"] != HOLDOUT_PROTOCOL_TAG
+            || report["protocol_sha256"] != protocol_sha256
+            || report["authorization"]["sha256"] != authorization_sha256
+            || report["authorization"]["registry_tag"] != authorization.registry_tag
+            || report["authorization"]["sequence_position"] != expected_position
+            || report["run"] != 1
+            || report["input"]["role"] != "holdout"
+            || report["engine_config_sha256"]
+                != required_string(protocol_engine, "configuration_sha256")?
+            || report["integrity"]["revalidated_without_rerunning_retrieval"] != true
+        {
+            bail!("holdout report set does not match the frozen protocol and authorization");
+        }
+        report_hashes.insert(format!("{}:{}", pair.0, pair.1), sha256::digest_hex(&bytes));
+        reports.insert(pair, report);
+    }
+
+    let mut pair_checks = Vec::new();
+    let mut reductions = Vec::new();
+    let mut all_reports_pass = true;
+    let mut all_equivalent = true;
+    let mut no_p95_regression = true;
+    for input in protocol["inputs"]
+        .as_array()
+        .ok_or_else(|| anyhow!("holdout inputs must be an array"))?
+    {
+        let id = required_string(input, "id")?;
+        let lexical = reports
+            .get(&(id.to_owned(), ENGINE.to_owned()))
+            .ok_or_else(|| anyhow!("missing direct BM25 report for {id}"))?;
+        let sqlite = reports
+            .get(&(id.to_owned(), SQLITE_ENGINE.to_owned()))
+            .ok_or_else(|| anyhow!("missing SQLite/BM25 report for {id}"))?;
+        all_reports_pass &= holdout_report_passes(lexical)? && holdout_report_passes(sqlite)?;
+        let evidence_equal = lexical["integrity"]["evidence_projection_sha256"]
+            == sqlite["integrity"]["evidence_projection_sha256"];
+        let metrics_equal = lexical["quality"] == sqlite["quality"]
+            && lexical["per_category"] == sqlite["per_category"];
+        let lexical_context = query_context_projection(lexical)?;
+        let sqlite_context = query_context_projection(sqlite)?;
+        let context_equal = lexical_context == sqlite_context;
+        all_equivalent &= evidence_equal && metrics_equal && context_equal;
+        let lexical_p95 = required_f64(&lexical["timing_ms"]["query_total"], "p95")?;
+        let sqlite_p95 = required_f64(&sqlite["timing_ms"]["query_total"], "p95")?;
+        if lexical_p95 <= 0.0 {
+            bail!("direct BM25 p95 must be positive for holdout comparison");
+        }
+        let reduction = round_six((lexical_p95 - sqlite_p95) / lexical_p95);
+        reductions.push(reduction);
+        let p95_not_worse = sqlite_p95 <= lexical_p95;
+        no_p95_regression &= p95_not_worse;
+        pair_checks.push(json!({
+            "input": id,
+            "evidence_equal": evidence_equal,
+            "metrics_equal": metrics_equal,
+            "context_equal": context_equal,
+            "lexical_query_p95_ms": lexical_p95,
+            "sqlite_query_p95_ms": sqlite_p95,
+            "sqlite_relative_reduction": reduction,
+            "sqlite_p95_not_worse": p95_not_worse,
+        }));
+    }
+    let mean_reduction = round_six(reductions.iter().sum::<f64>() / reductions.len() as f64);
+    let required_gain = required_f64(
+        &protocol["budgets"]["meaningful_sqlite_gain"],
+        "mean_query_p95_relative_reduction_across_both_inputs_min",
+    )?;
+    let sqlite_advances =
+        all_reports_pass && all_equivalent && no_p95_regression && mean_reduction >= required_gain;
+    let decision = json!({
+        "schema_version": HOLDOUT_DECISION_SCHEMA_VERSION,
+        "protocol_tag": HOLDOUT_PROTOCOL_TAG,
+        "protocol_sha256": protocol_sha256,
+        "authorization_sha256": authorization_sha256,
+        "report_sha256": report_hashes,
+        "pair_checks": pair_checks,
+        "all_reports_pass": all_reports_pass,
+        "exact_finalist_equivalence": all_equivalent,
+        "sqlite_query_p95_regressions": !no_p95_regression,
+        "sqlite_mean_query_p95_relative_reduction": mean_reduction,
+        "sqlite_required_relative_reduction": required_gain,
+        "sqlite_advances_as_opt_in": sqlite_advances,
+        "default_engine": ENGINE,
+        "global_install_changed": false,
+        "holdouts_consumed": true,
+        "status": if sqlite_advances { "sqlite-opt-in-approved" } else { "lexical-retained" },
+    });
+    write_json_value_new(&request.output, &decision)
+}
+
+fn validate_holdout_protocol(protocol: &Value) -> Result<()> {
+    if protocol["schema_version"] != 2
+        || protocol["protocol_tag"] != HOLDOUT_PROTOCOL_TAG
+        || protocol["status"] != "frozen-gate-closed"
+        || protocol["scope"] != "one-shot-holdout"
+        || protocol["policy"]["runs_per_engine_input"] != 1
+        || protocol["policy"]["reruns_after_first_attempt"] != false
+        || protocol["policy"]["default_engine_before_decision"] != ENGINE
+        || protocol["isolation"]["gate_enabled"] != false
+        || protocol["isolation"]["holdouts_consumed"] != false
+    {
+        bail!("unsupported or unfrozen finalist holdout protocol");
+    }
+    let engines: Vec<_> = protocol["engines"]
+        .as_array()
+        .ok_or_else(|| anyhow!("holdout engines must be an array"))?
+        .iter()
+        .filter_map(|engine| engine["id"].as_str())
+        .collect();
+    if engines != [ENGINE, SQLITE_ENGINE] {
+        bail!("holdout protocol must contain only the two frozen finalists in order");
+    }
+    Ok(())
+}
+
+fn ensure_holdout_engine(id: &str) -> Result<()> {
+    match id {
+        ENGINE | SQLITE_ENGINE => Ok(()),
+        _ => bail!("engine {id} is not a finalist in the holdout protocol"),
+    }
+}
+
+fn holdout_protocol_input<'a>(protocol: &'a Value, input_id: &str) -> Result<&'a Value> {
+    let input = protocol["inputs"]
+        .as_array()
+        .ok_or_else(|| anyhow!("holdout inputs must be an array"))?
+        .iter()
+        .find(|input| input["id"] == input_id)
+        .ok_or_else(|| anyhow!("input {input_id} is not part of the frozen holdout protocol"))?;
+    if input["role"] != "holdout" {
+        bail!("input {input_id} is not a holdout input");
+    }
+    Ok(input)
+}
+
+fn holdout_sequence(protocol: &Value) -> Result<Vec<(String, String)>> {
+    let mut sequence = Vec::new();
+    for item in protocol["measurement"]["run_order"]
+        .as_array()
+        .ok_or_else(|| anyhow!("holdout run order must be an array"))?
+    {
+        let input = required_string(item, "input")?.to_owned();
+        for engine in item["engines"]
+            .as_array()
+            .ok_or_else(|| anyhow!("holdout run-order engines must be an array"))?
+        {
+            let engine = engine
+                .as_str()
+                .ok_or_else(|| anyhow!("holdout run-order engine must be a string"))?;
+            ensure_holdout_engine(engine)?;
+            sequence.push((input.clone(), engine.to_owned()));
+        }
+    }
+    if sequence.is_empty() {
+        bail!("holdout run order cannot be empty");
+    }
+    Ok(sequence)
+}
+
+fn validate_holdout_sequence(
+    protocol: &Value,
+    input: &str,
+    engine: &str,
+    position: usize,
+) -> Result<()> {
+    let sequence = holdout_sequence(protocol)?;
+    if position == 0 || sequence.get(position - 1) != Some(&(input.to_owned(), engine.to_owned())) {
+        bail!("holdout engine/input pair is outside its frozen sequence position");
+    }
+    Ok(())
+}
+
+fn validate_holdout_authorization(
+    authorization: &HoldoutAuthorization,
+    protocol: &Value,
+    protocol_sha256: &str,
+) -> Result<()> {
+    if authorization.schema_version != 1
+        || authorization.protocol_tag != HOLDOUT_PROTOCOL_TAG
+        || authorization.protocol_sha256 != protocol_sha256
+        || authorization.registry_tag.trim().is_empty()
+        || !is_hex(&authorization.public_revision, 40)
+        || authorization.sequence_sha256
+            != canonical_json_sha256(&protocol["measurement"]["run_order"])?
+        || !authorization.gate_enabled
+        || !authorization.measurements_enabled
+    {
+        bail!("holdout authorization is invalid or closed");
+    }
+    Ok(())
+}
+
+fn validate_holdout_provenance(
+    provenance: &ObservationProvenance,
+    protocol: &Value,
+    authorization: &HoldoutAuthorization,
+) -> Result<()> {
+    validate_tool(&provenance.tool)?;
+    if provenance.tool.git_revision != authorization.public_revision
+        || provenance.tool.rust_version != required_string(&protocol["toolchain"], "rust_version")?
+        || provenance.tool.cargo_lock_sha256
+            != required_string(&protocol["toolchain"], "cargo_lock_sha256")?
+        || provenance.cargo_version != required_string(&protocol["toolchain"], "cargo_version")?
+    {
+        bail!("holdout toolchain or reviewed harness revision differs from authorization");
+    }
+    if !provenance.host_verified
+        || provenance.host_sha256 != canonical_json_sha256(&protocol["measurement"]["host"])?
+    {
+        bail!("holdout benchmark host attestation is invalid");
+    }
+    let expected_environment = protocol["measurement"]["process_environment"]
+        .as_object()
+        .ok_or_else(|| anyhow!("holdout process environment must be an object"))?;
+    if provenance.process_environment.len() != expected_environment.len() {
+        bail!("holdout process environment does not match the protocol");
+    }
+    for (name, expected) in expected_environment {
+        let expected = expected
+            .as_str()
+            .ok_or_else(|| anyhow!("holdout environment value must be a string"))?;
+        if provenance.process_environment.get(name).map(String::as_str) != Some(expected)
+            || std::env::var(name).ok().as_deref() != Some(expected)
+        {
+            bail!("process environment variable {name} does not match the holdout protocol");
+        }
+    }
+    if !provenance.isolation.verified_before_path_resolution
+        || provenance.isolation.denylist_sha256
+            != required_string(&protocol["isolation"], "consumed_holdout_denylist_sha256")?
+    {
+        bail!("consumed-holdout isolation attestation is invalid");
+    }
+    Ok(())
+}
+
+fn validate_holdout_observation(
+    observation: &Observation,
+    protocol: &Value,
+    protocol_sha256: &str,
+    authorization: &HoldoutAuthorization,
+    authorization_sha256: &str,
+) -> Result<()> {
+    if observation.schema_version != HOLDOUT_OBSERVATION_SCHEMA_VERSION
+        || observation.protocol_tag != HOLDOUT_PROTOCOL_TAG
+        || observation.protocol_sha256 != protocol_sha256
+        || ensure_holdout_engine(&observation.engine).is_err()
+        || observation.run != 1
+        || observation.input.role != "holdout"
+        || observation.authorization_sha256.as_deref() != Some(authorization_sha256)
+        || observation.authorization_registry_tag.as_deref()
+            != Some(authorization.registry_tag.as_str())
+        || observation.sequence_position.is_none()
+        || observation.retrieval.limit != LIMIT
+        || observation.retrieval.recall_cutoff != RECALL_CUTOFF
+        || observation.retrieval.max_excerpt_chars != MAX_EXCERPT_CHARS
+        || observation.retrieval.max_results_per_path.is_some()
+        || !observation.evidence_valid
+        || !observation.baseline_comparison.is_null()
+        || !observation.category_deltas.is_empty()
+    {
+        bail!("observation does not match the frozen one-shot holdout contract");
+    }
+    validate_holdout_sequence(
+        protocol,
+        &observation.input.id,
+        &observation.engine,
+        observation.sequence_position.unwrap_or_default(),
+    )?;
+    validate_holdout_provenance(&observation.provenance, protocol, authorization)?;
+    let input = holdout_protocol_input(protocol, &observation.input.id)?;
+    if required_string(input, "root")? != observation.input.root
+        || required_string(input, "queries_sha256")? != observation.input.queries_sha256
+        || required_string(input, "dataset_blake3")? != observation.input.dataset_blake3
+        || required_string(input, "corpus_fingerprint")? != observation.input.corpus_fingerprint
+        || required_usize(input, "files")? != observation.input.files
+        || required_usize(input, "chunks")? != observation.input.chunks
+        || required_usize(input, "query_count")? != observation.input.query_count
+        || observation.input.queries_schema_version != 2
+    {
+        bail!("holdout observation input does not match the protocol");
+    }
+    let config = engine_configuration(protocol, &observation.engine)?;
+    validate_frozen_engine_configuration(&observation.engine, config)?;
+    let protocol_engine = protocol["engines"]
+        .as_array()
+        .and_then(|engines| {
+            engines
+                .iter()
+                .find(|engine| engine["id"] == observation.engine)
+        })
+        .ok_or_else(|| anyhow!("holdout engine configuration is missing"))?;
+    if canonical_json_sha256(config)? != observation.engine_config_sha256
+        || required_string(protocol_engine, "configuration_sha256")?
+            != observation.engine_config_sha256
+        || config != &observation.engine_configuration
+    {
+        bail!("holdout observation engine configuration does not match the protocol");
+    }
+    let query_path = PathBuf::from(required_string(input, "queries")?);
+    verify_file_sha256(
+        &query_path,
+        required_string(input, "queries_sha256")?,
+        "holdout query dataset",
+    )?;
+    let dataset = fs::read(&query_path)?;
+    if blake3::hash(&dataset).to_hex().as_str() != observation.input.dataset_blake3 {
+        bail!("holdout observation dataset BLAKE3 changed");
+    }
+    let set = parse_evaluation_set(std::str::from_utf8(&dataset)?)?;
+    let root = Path::new(&observation.input.root);
+    let expected_index = match observation.engine.as_str() {
+        SQLITE_ENGINE => Some(crate::sqlite_cache::cache_path(root)?),
+        ENGINE => None,
+        _ => unreachable!("finalist check rejected unsupported engine"),
+    };
+    if observation.index_path.as_deref()
+        != expected_index
+            .as_deref()
+            .map(|path| path.to_string_lossy())
+            .as_deref()
+        || observation.auxiliary_index_path.is_some()
+    {
+        bail!("holdout observation index path differs from the deterministic cache path");
+    }
+    let loaded = corpus::load(root)?;
+    verify_input_corpus(
+        input,
+        &loaded,
+        &corpus_fingerprint(&loaded.file_hashes),
+        set.queries.len(),
+    )?;
+    validate_engine_observation(observation)?;
+    let evaluations =
+        recompute_holdout_metrics(&set.queries, &observation.queries, &loaded.chunks)?;
+    let quality = summary_value(&summarize(evaluations.iter()));
+    let mut per_category = BTreeMap::new();
+    for (name, category) in categories() {
+        per_category.insert(
+            name.to_owned(),
+            summary_value(&summarize(
+                evaluations
+                    .iter()
+                    .filter(|evaluation| evaluation.category == category),
+            )),
+        );
+    }
+    let expected_errors: Vec<_> = observation
+        .queries
+        .iter()
+        .filter_map(|query| {
+            query
+                .error
+                .as_ref()
+                .map(|error| format!("{}: {error}", query.id))
+        })
+        .collect();
+    if quality != observation.quality
+        || per_category != observation.per_category
+        || timing_value(&observation.queries) != observation.timing_ms
+        || expected_errors != observation.errors
+        || ranking_projection(&observation.queries)? != observation.ranking_projection_sha256
+        || evidence_projection(&observation.queries)? != observation.evidence_projection_sha256
+    {
+        bail!("holdout observation metrics, timings, or projections are invalid");
+    }
+    let expected_candidates = observation
+        .input
+        .chunks
+        .checked_mul(required_usize(&observation.quality, "executed")?)
+        .ok_or_else(|| anyhow!("candidate counter overflow"))?;
+    if observation.retrieval.candidates_examined != expected_candidates {
+        bail!("holdout finalist candidate count does not equal all chunks per executed query");
+    }
+    Ok(())
+}
+
+fn recompute_holdout_metrics(
+    queries: &[EvaluationQuery],
+    observed: &[ObservedQuery],
+    chunks: &[Chunk],
+) -> Result<Vec<crate::evaluate::QueryEvaluation>> {
+    if queries.len() != observed.len() {
+        bail!("holdout observation query count changed");
+    }
+    queries
+        .iter()
+        .zip(observed)
+        .map(|(query, observed)| {
+            if query.id != observed.id || query.category != observed.category {
+                bail!("holdout observation query identity or category changed");
+            }
+            let results: Vec<_> = observed
+                .results
+                .iter()
+                .map(|result| SearchResult {
+                    rank: result.rank,
+                    raw_rank: result.rank,
+                    path: result.path.clone(),
+                    heading: result.heading.clone(),
+                    line_start: result.line_start,
+                    line_end: result.line_end,
+                    excerpt: result.excerpt.clone(),
+                    file_hash: result.file_hash.clone(),
+                    chunk_hash: result.chunk_hash.clone(),
+                    score: result.score,
+                    matched_terms: Vec::new(),
+                })
+                .collect();
+            validate_results(chunks, &results)?;
+            let evaluation = match observed.status {
+                QueryStatus::Ok => successful_query_evaluation(
+                    query.clone(),
+                    results.clone(),
+                    observed.timing_ms.total,
+                ),
+                QueryStatus::Error => {
+                    if !results.is_empty() || observed.error.is_none() {
+                        bail!("failed holdout query has results or lacks an error");
+                    }
+                    let mut evaluation = base_query_evaluation(query.clone(), QueryStatus::Error);
+                    evaluation.latency_ms = Some(observed.timing_ms.total);
+                    evaluation.error = observed.error.clone();
+                    evaluation
+                }
+                QueryStatus::Skipped => bail!("holdout observations cannot skip queries"),
+            };
+            let source_ranks: Vec<_> = observed
+                .results
+                .iter()
+                .map(|result| result.source_ranks)
+                .collect();
+            if observed_query(&evaluation, &results, &source_ranks, observed.timing_ms) != *observed
+            {
+                bail!("holdout query metrics changed");
+            }
+            Ok(evaluation)
+        })
+        .collect()
+}
+
+fn validate_holdout_measurements(
+    measurements: &ExternalMeasurements,
+    protocol: &Value,
+    observation: &Observation,
+    observation_sha256: &str,
+) -> Result<()> {
+    let host = &protocol["measurement"]["host"];
+    if measurements.schema_version != 1
+        || measurements.protocol_sha256 != observation.protocol_sha256
+        || measurements.input_id != observation.input.id
+        || measurements.engine != observation.engine
+        || measurements.run != 1
+        || measurements.observation_sha256 != observation_sha256
+        || measurements.tool != observation.provenance.tool
+        || measurements.environment.os != required_string(host, "os")?
+        || measurements.environment.architecture != required_string(host, "architecture")?
+        || measurements.environment.machine != required_string(host, "machine")?
+        || measurements.environment.cpu != required_string(host, "cpu")?
+        || measurements.environment.logical_cpus != required_usize(host, "logical_cpus")?
+        || measurements.environment.memory_bytes != required_u64(host, "memory_bytes")?
+        || measurements
+            .environment
+            .load_average
+            .iter()
+            .any(|value| !value.is_finite() || *value < 0.0)
+        || !measurements.timing_ms.startup.is_finite()
+        || !measurements.timing_ms.end_to_end.is_finite()
+        || measurements.timing_ms.startup < 0.0
+        || measurements.timing_ms.end_to_end < measurements.timing_ms.startup
+        || !looks_like_utc_timestamp(&measurements.started_at)
+        || !looks_like_utc_timestamp(&measurements.finished_at)
+    {
+        bail!("external measurements do not match the one-shot holdout contract");
+    }
+    if measurements.resources_bytes.shared_model != 0 {
+        bail!("holdout finalists cannot report shared model bytes");
+    }
+    match observation.engine.as_str() {
+        ENGINE => {
+            if measurements.environment.sqlite_version.is_some()
+                || measurements
+                    .environment
+                    .sqlite_compile_options_sha256
+                    .is_some()
+                || measurements.resources_bytes.index_logical != 0
+                || measurements.resources_bytes.index_allocated != 0
+            {
+                bail!("direct BM25 holdout measurements contain SQLite or index state");
+            }
+        }
+        SQLITE_ENGINE => {
+            let runtime = observation
+                .sqlite_runtime
+                .as_ref()
+                .ok_or_else(|| anyhow!("SQLite holdout runtime provenance is missing"))?;
+            let index_path = Path::new(
+                observation
+                    .index_path
+                    .as_deref()
+                    .ok_or_else(|| anyhow!("SQLite holdout index path is missing"))?,
+            );
+            let metadata = fs::symlink_metadata(index_path)?;
+            let logical = metadata.len();
+            let allocated = metadata.blocks().saturating_mul(512);
+            if metadata.file_type().is_symlink()
+                || !metadata.is_file()
+                || measurements.environment.sqlite_version.as_deref()
+                    != Some(runtime.version.as_str())
+                || measurements
+                    .environment
+                    .sqlite_compile_options_sha256
+                    .as_deref()
+                    != Some(runtime.compile_options_sha256.as_str())
+                || measurements.resources_bytes.index_logical != logical
+                || measurements.resources_bytes.index_allocated != allocated
+                || logical == 0
+                || allocated == 0
+            {
+                bail!("SQLite holdout measurements do not match the observed runtime or index");
+            }
+        }
+        _ => unreachable!("finalist check rejected unsupported engine"),
+    }
+    Ok(())
+}
+
+fn holdout_budget_checks(
+    observation: &Observation,
+    measurements: &ExternalMeasurements,
+    protocol: &Value,
+) -> Result<BTreeMap<String, bool>> {
+    let budget = &protocol["budgets"];
+    let quality = &budget["quality_absolute_each_input"];
+    let category = |name: &str| -> Result<&Value> {
+        observation
+            .per_category
+            .get(name)
+            .ok_or_else(|| anyhow!("missing {name} category metrics"))
+    };
+    let quality_passed = required_f64(&observation.quality, "hit_at_1")?
+        >= required_f64(quality, "hit_at_1_min")?
+        && required_f64(&observation.quality, "recall_at_5_macro")?
+            >= required_f64(quality, "recall_at_5_macro_min")?
+        && required_f64(&observation.quality, "mrr_at_5")?
+            >= required_f64(quality, "mrr_at_5_min")?
+        && required_f64(category("exact")?, "hit_at_1")?
+            >= required_f64(quality, "exact_hit_at_1_min")?
+        && required_f64(category("exact")?, "recall_at_5_macro")?
+            >= required_f64(quality, "exact_recall_at_5_macro_min")?
+        && required_f64(category("semantic")?, "hit_at_1")?
+            >= required_f64(quality, "semantic_hit_at_1_min")?
+        && required_f64(category("semantic")?, "recall_at_5_macro")?
+            >= required_f64(quality, "semantic_recall_at_5_macro_min")?
+        && required_f64(category("ambiguous")?, "hit_at_1")?
+            >= required_f64(quality, "ambiguous_hit_at_1_min")?
+        && required_f64(category("ambiguous")?, "recall_at_5_macro")?
+            >= required_f64(quality, "ambiguous_recall_at_5_macro_min")?;
+    let safety = &budget["safety_each_input_engine"];
+    let no_answer = required_u64(&observation.quality, "no_answer_false_positives")?
+        <= required_u64(safety, "no_answer_false_positives")?;
+    let execution = required_usize(&observation.quality, "failed")?
+        <= required_usize(safety, "query_errors")?
+        && required_usize(&observation.quality, "skipped")?
+            <= required_usize(safety, "skipped_queries")?;
+    let context = observation.queries.iter().all(|query| {
+        query.results.len() <= LIMIT
+            && query
+                .results
+                .iter()
+                .all(|result| result.excerpt.chars().count() <= MAX_EXCERPT_CHARS)
+    });
+    let latency = &budget["latency_ms_each_input_engine"];
+    let query_p95 = required_f64(&observation.timing_ms["query_total"], "p95")?;
+    let (index_build, incremental_equivalence) = match observation.engine.as_str() {
+        ENGINE => (observation.indexing.full_build_ms.is_none(), true),
+        SQLITE_ENGINE => {
+            let indexing = &budget["sqlite_indexing_ms"];
+            let full = observation.indexing.full_build_ms.unwrap_or(f64::INFINITY);
+            let relative = required_f64(indexing, "incremental_step_max_relative_to_full_build")?;
+            (
+                full <= required_f64(indexing, "full_build_max")?,
+                observation.indexing.incremental_steps.len() == 4
+                    && observation.indexing.incremental_steps.iter().all(|step| {
+                        step.equivalent_to_full_rebuild
+                            && step.stale_results == 0
+                            && step.elapsed_ms <= full * relative
+                    }),
+            )
+        }
+        _ => (false, false),
+    };
+    let resources = &budget["resources_bytes_each_input_engine"];
+    let disk = match observation.engine.as_str() {
+        ENGINE => {
+            measurements.resources_bytes.index_logical
+                == required_u64(resources, "lexical_index_storage_exact")?
+                && measurements.resources_bytes.index_allocated
+                    == required_u64(resources, "lexical_index_storage_exact")?
+        }
+        SQLITE_ENGINE => {
+            measurements.resources_bytes.index_logical
+                <= required_u64(resources, "sqlite_index_storage_max")?
+                && measurements.resources_bytes.index_allocated
+                    <= required_u64(resources, "sqlite_index_storage_max")?
+        }
+        _ => false,
+    };
+    Ok(BTreeMap::from([
+        ("quality".to_owned(), quality_passed),
+        ("no_answer".to_owned(), no_answer),
+        ("query_execution".to_owned(), execution),
+        ("evidence".to_owned(), observation.evidence_valid),
+        ("context".to_owned(), context),
+        (
+            "startup".to_owned(),
+            measurements.timing_ms.startup <= required_f64(latency, "startup_max")?,
+        ),
+        (
+            "query_latency".to_owned(),
+            query_p95 <= required_f64(latency, "query_p95_max")?,
+        ),
+        ("index_build".to_owned(), index_build),
+        (
+            "incremental_equivalence".to_owned(),
+            incremental_equivalence,
+        ),
+        (
+            "memory".to_owned(),
+            measurements.resources_bytes.peak_rss <= required_u64(resources, "peak_rss_max")?,
+        ),
+        ("disk".to_owned(), disk),
+        ("rebuild".to_owned(), observation.indexing.rebuild_succeeded),
+        (
+            "fallback".to_owned(),
+            observation.normal_fallback_count == 0 && observation.fault_injection_passed,
+        ),
+        (
+            "holdout_isolation".to_owned(),
+            observation
+                .provenance
+                .isolation
+                .verified_before_path_resolution,
+        ),
+        (
+            "configuration_binding".to_owned(),
+            required_string(
+                protocol["engines"]
+                    .as_array()
+                    .and_then(|engines| {
+                        engines
+                            .iter()
+                            .find(|engine| engine["id"] == observation.engine)
+                    })
+                    .ok_or_else(|| anyhow!("holdout engine is missing"))?,
+                "configuration_sha256",
+            )? == observation.engine_config_sha256,
+        ),
+    ]))
+}
+
+fn validate_holdout_report_tag(tag: &str, input: &str, engine: &str) -> Result<()> {
+    let expected = format!("{HOLDOUT_PROTOCOL_TAG}-{input}-{engine}");
+    if tag != expected {
+        bail!("holdout report tag must equal {expected}");
+    }
+    Ok(())
+}
+
+fn holdout_report_passes(report: &Value) -> Result<bool> {
+    let checks = report["budget_checks"]
+        .as_object()
+        .ok_or_else(|| anyhow!("holdout report budget checks must be an object"))?;
+    if checks.len() != 15 || checks.values().any(|value| !value.is_boolean()) {
+        bail!("holdout report budget check set is invalid");
+    }
+    let errors = report["errors"]
+        .as_array()
+        .ok_or_else(|| anyhow!("holdout report errors must be an array"))?;
+    Ok(report["status"] == "pass"
+        && errors.is_empty()
+        && checks.values().all(|value| value == true))
+}
+
+fn query_context_projection(report: &Value) -> Result<Vec<(String, u64)>> {
+    report["queries"]
+        .as_array()
+        .ok_or_else(|| anyhow!("holdout report queries must be an array"))?
+        .iter()
+        .map(|query| {
+            Ok((
+                required_string(query, "id")?.to_owned(),
+                required_u64(query, "context_chars")?,
+            ))
+        })
+        .collect()
 }
 
 fn ensure_engine_available(id: &str) -> Result<()> {
@@ -3005,6 +4125,301 @@ mod tests {
                 .flat_map(|query| query["results"].as_array().unwrap())
                 .all(|result| result["source_ranks"]["fts5"].is_number())
         );
+        crate::sqlite_cache::set_test_cache_home(None);
+    }
+
+    #[test]
+    fn one_shot_holdout_harness_runs_only_with_enabled_authorization() {
+        let directory = tempdir().unwrap();
+        let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let root = manifest_dir.join("evaluation/fixtures/stable-v1");
+        let queries = manifest_dir.join("evaluation/queries.json");
+        let loaded = corpus::load(&root).unwrap();
+        let dataset = fs::read(&queries).unwrap();
+        let query_set = parse_evaluation_set(std::str::from_utf8(&dataset).unwrap()).unwrap();
+        let snapshot_manifest = directory.path().join("snapshot-manifest.json");
+        let source_review = directory.path().join("source-review.md");
+        fs::write(&snapshot_manifest, "{}\n").unwrap();
+        fs::write(&source_review, "# Reviewed\n").unwrap();
+        let run_order = json!([{
+            "input": "synthetic-holdout",
+            "engines": [ENGINE, SQLITE_ENGINE]
+        }]);
+        let protocol = json!({
+            "schema_version": 2,
+            "protocol_tag": HOLDOUT_PROTOCOL_TAG,
+            "status": "frozen-gate-closed",
+            "scope": "one-shot-holdout",
+            "policy": {
+                "runs_per_engine_input": 1,
+                "reruns_after_first_attempt": false,
+                "default_engine_before_decision": ENGINE
+            },
+            "isolation": {
+                "gate_enabled": false,
+                "holdouts_consumed": false,
+                "consumed_holdout_denylist_sha256": "2".repeat(64)
+            },
+            "toolchain": {
+                "source_revision": "0".repeat(40),
+                "rust_version": "test-rust",
+                "cargo_version": "test-cargo",
+                "cargo_lock_sha256": sha256::digest_hex(&fs::read(manifest_dir.join("Cargo.lock")).unwrap())
+            },
+            "engines": [
+                {
+                    "id": ENGINE,
+                    "configuration_sha256": LEXICAL_CONFIG_SHA256,
+                    "configuration": lexical_configuration()
+                },
+                {
+                    "id": SQLITE_ENGINE,
+                    "configuration_sha256": SQLITE_CONFIG_SHA256,
+                    "configuration": sqlite_configuration()
+                }
+            ],
+            "inputs": [{
+                "id": "synthetic-holdout",
+                "role": "holdout",
+                "root": root,
+                "queries": queries,
+                "queries_sha256": sha256::digest_hex(&dataset),
+                "dataset_blake3": blake3::hash(&dataset).to_hex().to_string(),
+                "query_count": query_set.queries.len(),
+                "files": loaded.files,
+                "chunks": loaded.chunks.len(),
+                "corpus_fingerprint": corpus_fingerprint(&loaded.file_hashes),
+                "snapshot_manifest": snapshot_manifest,
+                "snapshot_manifest_sha256": sha256::digest_hex(&fs::read(directory.path().join("snapshot-manifest.json")).unwrap()),
+                "source_review": source_review,
+                "source_review_sha256": sha256::digest_hex(&fs::read(directory.path().join("source-review.md")).unwrap())
+            }],
+            "measurement": {
+                "process_environment": {},
+                "host": {
+                    "os": "test-os",
+                    "architecture": "arm64",
+                    "machine": "test-machine",
+                    "cpu": "test-cpu",
+                    "logical_cpus": 1,
+                    "memory_bytes": 1
+                },
+                "run_order": run_order
+            },
+            "budgets": {
+                "quality_absolute_each_input": {
+                    "hit_at_1_min": 0.0,
+                    "recall_at_5_macro_min": 0.0,
+                    "mrr_at_5_min": 0.0,
+                    "exact_hit_at_1_min": 0.0,
+                    "exact_recall_at_5_macro_min": 0.0,
+                    "semantic_hit_at_1_min": 0.0,
+                    "semantic_recall_at_5_macro_min": 0.0,
+                    "ambiguous_hit_at_1_min": 0.0,
+                    "ambiguous_recall_at_5_macro_min": 0.0
+                },
+                "safety_each_input_engine": {
+                    "no_answer_false_positives": 100,
+                    "query_errors": 0,
+                    "skipped_queries": 0
+                },
+                "latency_ms_each_input_engine": {
+                    "startup_max": 1000.0,
+                    "query_p95_max": 1000.0
+                },
+                "resources_bytes_each_input_engine": {
+                    "peak_rss_max": 1073741824,
+                    "lexical_index_storage_exact": 0,
+                    "sqlite_index_storage_max": 268435456
+                },
+                "sqlite_indexing_ms": {
+                    "full_build_max": 60000.0,
+                    "incremental_step_max_relative_to_full_build": 10.0
+                },
+                "meaningful_sqlite_gain": {
+                    "mean_query_p95_relative_reduction_across_both_inputs_min": 0.2
+                }
+            }
+        });
+        let protocol_path = directory.path().join("protocol.json");
+        fs::write(
+            &protocol_path,
+            format!("{}\n", serde_json::to_string_pretty(&protocol).unwrap()),
+        )
+        .unwrap();
+        let protocol_hash = sha256::digest_hex(&fs::read(&protocol_path).unwrap());
+        let authorization_path = directory.path().join("authorization.json");
+        let authorization = json!({
+            "schema_version": 1,
+            "protocol_tag": HOLDOUT_PROTOCOL_TAG,
+            "protocol_sha256": protocol_hash,
+            "registry_tag": "synthetic-holdout-enabled-v1",
+            "public_revision": "0".repeat(40),
+            "sequence_sha256": canonical_json_sha256(&run_order).unwrap(),
+            "gate_enabled": true,
+            "measurements_enabled": true
+        });
+        fs::write(
+            &authorization_path,
+            format!(
+                "{}\n",
+                serde_json::to_string_pretty(&authorization).unwrap()
+            ),
+        )
+        .unwrap();
+        let tool = json!({
+            "version": env!("CARGO_PKG_VERSION"),
+            "git_revision": "0".repeat(40),
+            "binary_sha256": "1".repeat(64),
+            "rust_version": "test-rust",
+            "cargo_lock_sha256": sha256::digest_hex(&fs::read(manifest_dir.join("Cargo.lock")).unwrap()),
+            "profile": "release"
+        });
+        let provenance_path = directory.path().join("provenance.json");
+        fs::write(
+            &provenance_path,
+            format!(
+                "{}\n",
+                serde_json::to_string_pretty(&json!({
+                    "tool": tool,
+                    "cargo_version": "test-cargo",
+                    "process_environment": {},
+                    "host_sha256": canonical_json_sha256(&protocol["measurement"]["host"]).unwrap(),
+                    "host_verified": true,
+                    "isolation": {
+                        "denylist_sha256": "2".repeat(64),
+                        "verified_before_path_resolution": true
+                    }
+                }))
+                .unwrap()
+            ),
+        )
+        .unwrap();
+
+        let mut closed_authorization = authorization.clone();
+        closed_authorization["measurements_enabled"] = Value::Bool(false);
+        let closed_path = directory.path().join("closed-authorization.json");
+        fs::write(
+            &closed_path,
+            format!(
+                "{}\n",
+                serde_json::to_string_pretty(&closed_authorization).unwrap()
+            ),
+        )
+        .unwrap();
+        let refused = holdout_observe(HoldoutObserveRequest {
+            protocol_path: protocol_path.clone(),
+            authorization_path: closed_path,
+            input_id: "synthetic-holdout".to_owned(),
+            engine: ENGINE.to_owned(),
+            sequence_position: 1,
+            provenance_path: provenance_path.clone(),
+            ready_file: directory.path().join("closed-ready"),
+            output: directory.path().join("closed-observation.json"),
+        })
+        .unwrap_err();
+        assert!(
+            refused
+                .to_string()
+                .contains("authorization is invalid or closed")
+        );
+        assert!(!directory.path().join("closed-ready").exists());
+
+        crate::sqlite_cache::set_test_cache_home(Some(directory.path().join("cache")));
+        let mut reports = Vec::new();
+        for (position, engine) in [(1, ENGINE), (2, SQLITE_ENGINE)] {
+            let observation_path = directory.path().join(format!("{engine}-observation.json"));
+            holdout_observe(HoldoutObserveRequest {
+                protocol_path: protocol_path.clone(),
+                authorization_path: authorization_path.clone(),
+                input_id: "synthetic-holdout".to_owned(),
+                engine: engine.to_owned(),
+                sequence_position: position,
+                provenance_path: provenance_path.clone(),
+                ready_file: directory.path().join(format!("{engine}-ready")),
+                output: observation_path.clone(),
+            })
+            .unwrap();
+            let observation: Value =
+                serde_json::from_slice(&fs::read(&observation_path).unwrap()).unwrap();
+            let mut measurements = json!({
+                "schema_version": 1,
+                "protocol_sha256": protocol_hash,
+                "input_id": "synthetic-holdout",
+                "engine": engine,
+                "run": 1,
+                "observation_sha256": sha256::digest_hex(&fs::read(&observation_path).unwrap()),
+                "tool": tool,
+                "environment": {
+                    "os": "test-os",
+                    "architecture": "arm64",
+                    "machine": "test-machine",
+                    "cpu": "test-cpu",
+                    "logical_cpus": 1,
+                    "memory_bytes": 1,
+                    "load_average": [0.0, 0.0, 0.0],
+                    "sqlite_version": null,
+                    "sqlite_compile_options_sha256": null
+                },
+                "timing_ms": {"startup": 1.0, "end_to_end": 100.0},
+                "resources_bytes": {
+                    "peak_rss": 1,
+                    "index_logical": 0,
+                    "index_allocated": 0,
+                    "shared_model": 0
+                },
+                "started_at": "2026-01-01T00:00:00Z",
+                "finished_at": "2026-01-01T00:00:01Z"
+            });
+            if engine == SQLITE_ENGINE {
+                let index_path = PathBuf::from(observation["index_path"].as_str().unwrap());
+                let metadata = fs::metadata(index_path).unwrap();
+                measurements["environment"]["sqlite_version"] =
+                    observation["sqlite_runtime"]["version"].clone();
+                measurements["environment"]["sqlite_compile_options_sha256"] =
+                    observation["sqlite_runtime"]["compile_options_sha256"].clone();
+                measurements["resources_bytes"]["index_logical"] = json!(metadata.len());
+                measurements["resources_bytes"]["index_allocated"] = json!(metadata.blocks() * 512);
+            }
+            let measurements_path = directory.path().join(format!("{engine}-measurements.json"));
+            fs::write(
+                &measurements_path,
+                format!("{}\n", serde_json::to_string_pretty(&measurements).unwrap()),
+            )
+            .unwrap();
+            let report_path = directory.path().join(format!("{engine}-report.json"));
+            holdout_finalize(HoldoutFinalizeRequest {
+                protocol_path: protocol_path.clone(),
+                authorization_path: authorization_path.clone(),
+                observation_path,
+                measurements_path,
+                report_tag: format!("{HOLDOUT_PROTOCOL_TAG}-synthetic-holdout-{engine}"),
+                output: report_path.clone(),
+            })
+            .unwrap();
+            let report: Value = serde_json::from_slice(&fs::read(&report_path).unwrap()).unwrap();
+            assert_eq!(report["status"], "pass");
+            assert_eq!(
+                report["integrity"]["revalidated_without_rerunning_retrieval"],
+                true
+            );
+            reports.push(report_path);
+        }
+        let decision_path = directory.path().join("decision.json");
+        holdout_decide(HoldoutDecideRequest {
+            protocol_path,
+            authorization_path,
+            report_paths: reports,
+            output: decision_path.clone(),
+        })
+        .unwrap();
+        let decision: Value = serde_json::from_slice(&fs::read(decision_path).unwrap()).unwrap();
+        assert_eq!(decision["holdouts_consumed"], true);
+        assert_eq!(decision["default_engine"], ENGINE);
+        assert!(matches!(
+            decision["status"].as_str(),
+            Some("sqlite-opt-in-approved" | "lexical-retained")
+        ));
         crate::sqlite_cache::set_test_cache_home(None);
     }
 

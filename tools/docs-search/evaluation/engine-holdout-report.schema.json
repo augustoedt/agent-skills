@@ -1,0 +1,1480 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/docs-search/engine-holdout-report.schema.json",
+  "title": "docs-search one-shot finalist holdout report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "protocol_tag",
+    "protocol_sha256",
+    "report_tag",
+    "run",
+    "engine",
+    "engine_config_sha256",
+    "tool",
+    "input",
+    "environment",
+    "retrieval",
+    "quality",
+    "per_category",
+    "queries",
+    "timing_ms",
+    "indexing",
+    "resources_bytes",
+    "evidence_validation",
+    "fallback",
+    "errors",
+    "budget_checks",
+    "status",
+    "started_at",
+    "finished_at",
+    "authorization",
+    "integrity"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "protocol_tag": {
+      "const": "engine-finalists-holdout-v2"
+    },
+    "protocol_sha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "report_tag": {
+      "type": "string",
+      "pattern": "^engine-finalists-holdout-v2-[a-z0-9][a-z0-9-]*-(lexical-bm25-v1|sqlite-cache-bm25-v1)$"
+    },
+    "run": {
+      "const": 1
+    },
+    "engine": {
+      "enum": [
+        "lexical-bm25-v1",
+        "sqlite-cache-bm25-v1"
+      ]
+    },
+    "engine_config_sha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "tool": {
+      "$ref": "#/$defs/tool"
+    },
+    "input": {
+      "$ref": "#/$defs/input"
+    },
+    "environment": {
+      "$ref": "#/$defs/environment"
+    },
+    "retrieval": {
+      "$ref": "#/$defs/retrieval"
+    },
+    "quality": {
+      "$ref": "#/$defs/summary"
+    },
+    "per_category": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "exact",
+        "semantic",
+        "ambiguous",
+        "no_answer"
+      ],
+      "properties": {
+        "exact": {
+          "$ref": "#/$defs/summary"
+        },
+        "semantic": {
+          "$ref": "#/$defs/summary"
+        },
+        "ambiguous": {
+          "$ref": "#/$defs/summary"
+        },
+        "no_answer": {
+          "$ref": "#/$defs/summary"
+        }
+      }
+    },
+    "queries": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/query"
+      }
+    },
+    "timing_ms": {
+      "$ref": "#/$defs/timing"
+    },
+    "indexing": {
+      "$ref": "#/$defs/indexing"
+    },
+    "resources_bytes": {
+      "$ref": "#/$defs/resources"
+    },
+    "evidence_validation": {
+      "$ref": "#/$defs/evidenceValidation"
+    },
+    "fallback": {
+      "$ref": "#/$defs/fallback"
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/nonEmpty"
+      }
+    },
+    "budget_checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "quality",
+        "no_answer",
+        "query_execution",
+        "evidence",
+        "context",
+        "startup",
+        "query_latency",
+        "index_build",
+        "incremental_equivalence",
+        "memory",
+        "disk",
+        "rebuild",
+        "fallback",
+        "holdout_isolation",
+        "configuration_binding"
+      ],
+      "properties": {
+        "quality": {
+          "type": "boolean"
+        },
+        "no_answer": {
+          "type": "boolean"
+        },
+        "query_execution": {
+          "type": "boolean"
+        },
+        "evidence": {
+          "type": "boolean"
+        },
+        "context": {
+          "type": "boolean"
+        },
+        "startup": {
+          "type": "boolean"
+        },
+        "query_latency": {
+          "type": "boolean"
+        },
+        "index_build": {
+          "type": "boolean"
+        },
+        "incremental_equivalence": {
+          "type": "boolean"
+        },
+        "memory": {
+          "type": "boolean"
+        },
+        "disk": {
+          "type": "boolean"
+        },
+        "rebuild": {
+          "type": "boolean"
+        },
+        "fallback": {
+          "type": "boolean"
+        },
+        "holdout_isolation": {
+          "type": "boolean"
+        },
+        "configuration_binding": {
+          "type": "boolean"
+        }
+      }
+    },
+    "status": {
+      "enum": [
+        "pass",
+        "fail"
+      ]
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "finished_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "registry_tag",
+        "sha256",
+        "sequence_position"
+      ],
+      "properties": {
+        "registry_tag": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "sequence_position": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ranking_projection_sha256",
+        "evidence_projection_sha256",
+        "observation_sha256",
+        "revalidated_without_rerunning_retrieval"
+      ],
+      "properties": {
+        "ranking_projection_sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "evidence_projection_sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "observation_sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "revalidated_without_rerunning_retrieval": {
+          "const": true
+        }
+      }
+    }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "gitRevision": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{40}$"
+    },
+    "nonEmpty": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "nullableNumber": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "nullableInteger": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "nullableMetric": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 1
+    },
+    "stats": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mean",
+        "p50",
+        "p95",
+        "max",
+        "total"
+      ],
+      "properties": {
+        "mean": {
+          "$ref": "#/$defs/nullableNumber"
+        },
+        "p50": {
+          "$ref": "#/$defs/nullableNumber"
+        },
+        "p95": {
+          "$ref": "#/$defs/nullableNumber"
+        },
+        "max": {
+          "$ref": "#/$defs/nullableNumber"
+        },
+        "total": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "git_revision",
+        "binary_sha256",
+        "rust_version",
+        "cargo_lock_sha256",
+        "profile"
+      ],
+      "properties": {
+        "version": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "git_revision": {
+          "$ref": "#/$defs/gitRevision"
+        },
+        "binary_sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "rust_version": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "cargo_lock_sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "profile": {
+          "const": "release"
+        }
+      }
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "role",
+        "root",
+        "files",
+        "chunks",
+        "corpus_fingerprint",
+        "queries_schema_version",
+        "dataset_blake3",
+        "queries_sha256",
+        "query_count"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^(stable-v1|public-agent-skills|corpus-[0-9]{3,})$"
+        },
+        "role": {
+          "const": "holdout"
+        },
+        "root": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "files": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "chunks": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "corpus_fingerprint": {
+          "$ref": "#/$defs/hash"
+        },
+        "queries_schema_version": {
+          "const": 2
+        },
+        "dataset_blake3": {
+          "$ref": "#/$defs/hash"
+        },
+        "queries_sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "query_count": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "os",
+        "architecture",
+        "machine",
+        "cpu",
+        "logical_cpus",
+        "memory_bytes",
+        "load_average",
+        "sqlite_version",
+        "sqlite_compile_options_sha256"
+      ],
+      "properties": {
+        "os": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "architecture": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "machine": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "cpu": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "logical_cpus": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "memory_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "load_average": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "sqlite_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sqlite_compile_options_sha256": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/hash"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "retrieval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "limit",
+        "recall_cutoff",
+        "max_excerpt_chars",
+        "max_results_per_path",
+        "candidates_examined",
+        "engine_configuration"
+      ],
+      "properties": {
+        "limit": {
+          "const": 5
+        },
+        "recall_cutoff": {
+          "const": 5
+        },
+        "max_excerpt_chars": {
+          "const": 1200
+        },
+        "max_results_per_path": {
+          "type": "null"
+        },
+        "candidates_examined": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "engine_configuration": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/lexicalConfig"
+            },
+            {
+              "$ref": "#/$defs/sqliteConfig"
+            },
+            {
+              "$ref": "#/$defs/fts5Config"
+            },
+            {
+              "$ref": "#/$defs/embeddingConfig"
+            },
+            {
+              "$ref": "#/$defs/hybridConfig"
+            }
+          ]
+        }
+      }
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mean",
+        "p95",
+        "max",
+        "total"
+      ],
+      "properties": {
+        "mean": {
+          "$ref": "#/$defs/nullableNumber"
+        },
+        "p95": {
+          "$ref": "#/$defs/nullableInteger"
+        },
+        "max": {
+          "$ref": "#/$defs/nullableInteger"
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "queries_total",
+        "executed",
+        "skipped",
+        "failed",
+        "answerable",
+        "no_answer",
+        "hit_at_1",
+        "recall_at_5_macro",
+        "recall_at_5_micro",
+        "mrr_at_5",
+        "no_answer_false_positives",
+        "no_answer_false_positive_rate",
+        "context_chars"
+      ],
+      "properties": {
+        "queries_total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "executed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "skipped": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "answerable": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "no_answer": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "hit_at_1": {
+          "$ref": "#/$defs/nullableMetric"
+        },
+        "recall_at_5_macro": {
+          "$ref": "#/$defs/nullableMetric"
+        },
+        "recall_at_5_micro": {
+          "$ref": "#/$defs/nullableMetric"
+        },
+        "mrr_at_5": {
+          "$ref": "#/$defs/nullableMetric"
+        },
+        "no_answer_false_positives": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "no_answer_false_positive_rate": {
+          "$ref": "#/$defs/nullableMetric"
+        },
+        "context_chars": {
+          "$ref": "#/$defs/context"
+        }
+      }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rank",
+        "path",
+        "heading",
+        "line_start",
+        "line_end",
+        "score",
+        "file_hash",
+        "chunk_hash",
+        "excerpt_chars",
+        "source_ranks"
+      ],
+      "properties": {
+        "rank": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "path": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "heading": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "line_start": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "line_end": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "score": {
+          "type": "number"
+        },
+        "file_hash": {
+          "$ref": "#/$defs/hash"
+        },
+        "chunk_hash": {
+          "$ref": "#/$defs/hash"
+        },
+        "excerpt_chars": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1200
+        },
+        "source_ranks": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "fts5",
+            "embedding"
+          ],
+          "properties": {
+            "fts5": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 1,
+              "maximum": 50
+            },
+            "embedding": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 1,
+              "maximum": 50
+            }
+          }
+        }
+      }
+    },
+    "query": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "category",
+        "status",
+        "results",
+        "first_relevant_rank",
+        "first_relevant_heading_rank",
+        "relevant_paths_found",
+        "hit_at_1",
+        "recall_at_5",
+        "reciprocal_rank_at_5",
+        "no_answer_false_positive",
+        "context_chars",
+        "timing_ms",
+        "error"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "category": {
+          "enum": [
+            "exact",
+            "semantic",
+            "ambiguous",
+            "no_answer"
+          ]
+        },
+        "status": {
+          "enum": [
+            "ok",
+            "error",
+            "skipped"
+          ]
+        },
+        "results": {
+          "type": "array",
+          "maxItems": 5,
+          "items": {
+            "$ref": "#/$defs/result"
+          }
+        },
+        "first_relevant_rank": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 5
+        },
+        "first_relevant_heading_rank": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 5
+        },
+        "relevant_paths_found": {
+          "$ref": "#/$defs/nullableInteger"
+        },
+        "hit_at_1": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "recall_at_5": {
+          "$ref": "#/$defs/nullableMetric"
+        },
+        "reciprocal_rank_at_5": {
+          "$ref": "#/$defs/nullableMetric"
+        },
+        "no_answer_false_positive": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "context_chars": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "timing_ms": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "lookup",
+            "ranking",
+            "excerpt",
+            "total"
+          ],
+          "properties": {
+            "lookup": {
+              "type": "number",
+              "minimum": 0
+            },
+            "ranking": {
+              "type": "number",
+              "minimum": 0
+            },
+            "excerpt": {
+              "type": "number",
+              "minimum": 0
+            },
+            "total": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "timing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "startup",
+        "lookup",
+        "ranking",
+        "excerpt",
+        "query_total",
+        "end_to_end"
+      ],
+      "properties": {
+        "startup": {
+          "type": "number",
+          "minimum": 0
+        },
+        "lookup": {
+          "$ref": "#/$defs/stats"
+        },
+        "ranking": {
+          "$ref": "#/$defs/stats"
+        },
+        "excerpt": {
+          "$ref": "#/$defs/stats"
+        },
+        "query_total": {
+          "$ref": "#/$defs/stats"
+        },
+        "end_to_end": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "incrementalStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation",
+        "elapsed_ms",
+        "equivalent_to_full_rebuild",
+        "stale_results"
+      ],
+      "properties": {
+        "operation": {
+          "enum": [
+            "add",
+            "modify",
+            "rename",
+            "remove"
+          ]
+        },
+        "elapsed_ms": {
+          "type": "number",
+          "minimum": 0
+        },
+        "equivalent_to_full_rebuild": {
+          "type": "boolean"
+        },
+        "stale_results": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "indexing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "full_build_ms",
+        "incremental_steps",
+        "rebuild_succeeded",
+        "corruption_detected",
+        "runtime_checks"
+      ],
+      "properties": {
+        "full_build_ms": {
+          "$ref": "#/$defs/nullableNumber"
+        },
+        "incremental_steps": {
+          "type": "array",
+          "maxItems": 4,
+          "items": {
+            "$ref": "#/$defs/incrementalStep"
+          }
+        },
+        "rebuild_succeeded": {
+          "type": "boolean"
+        },
+        "corruption_detected": {
+          "type": "boolean"
+        },
+        "runtime_checks": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "peak_rss",
+        "index_logical",
+        "index_allocated",
+        "shared_model"
+      ],
+      "properties": {
+        "peak_rss": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "index_logical": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "index_allocated": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "shared_model": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "determinism": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ranking_projection_sha256",
+        "evidence_projection_sha256",
+        "matches_other_run"
+      ],
+      "properties": {
+        "ranking_projection_sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "evidence_projection_sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "matches_other_run": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "evidenceValidation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "paths",
+        "headings",
+        "lines",
+        "file_hashes",
+        "chunk_hashes",
+        "excerpts"
+      ],
+      "properties": {
+        "paths": {
+          "const": true
+        },
+        "headings": {
+          "const": true
+        },
+        "lines": {
+          "const": true
+        },
+        "file_hashes": {
+          "const": true
+        },
+        "chunk_hashes": {
+          "const": true
+        },
+        "excerpts": {
+          "const": true
+        }
+      }
+    },
+    "fallback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "used_during_normal_run",
+        "normal_run_count",
+        "fault_injection_passed",
+        "behavior"
+      ],
+      "properties": {
+        "used_during_normal_run": {
+          "const": false
+        },
+        "normal_run_count": {
+          "const": 0
+        },
+        "fault_injection_passed": {
+          "type": "boolean"
+        },
+        "behavior": {
+          "enum": [
+            "not-applicable",
+            "explicit-direct-bm25",
+            "explicit-fail-closed"
+          ]
+        }
+      }
+    },
+    "baselineComparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "report_sha256",
+        "engine",
+        "deltas",
+        "semantic_recall_at_5_macro_delta",
+        "context_total_relative_change"
+      ],
+      "properties": {
+        "report_sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "engine": {
+          "const": "lexical-bm25-v1"
+        },
+        "deltas": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "hit_at_1",
+            "recall_at_5_macro",
+            "recall_at_5_micro",
+            "mrr_at_5",
+            "no_answer_false_positives"
+          ],
+          "properties": {
+            "hit_at_1": {
+              "type": "number"
+            },
+            "recall_at_5_macro": {
+              "type": "number"
+            },
+            "recall_at_5_micro": {
+              "type": "number"
+            },
+            "mrr_at_5": {
+              "type": "number"
+            },
+            "no_answer_false_positives": {
+              "type": "number"
+            }
+          }
+        },
+        "semantic_recall_at_5_macro_delta": {
+          "type": "number"
+        },
+        "context_total_relative_change": {
+          "type": "number"
+        }
+      }
+    },
+    "bm25Core": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "k1",
+        "b",
+        "body_weight",
+        "heading_weight",
+        "path_weight",
+        "idf",
+        "minimum_should_match",
+        "phrase_boosts",
+        "score_round_decimals"
+      ],
+      "properties": {
+        "k1": {
+          "const": 1.2
+        },
+        "b": {
+          "const": 0.75
+        },
+        "body_weight": {
+          "const": 1.0
+        },
+        "heading_weight": {
+          "const": 2.0
+        },
+        "path_weight": {
+          "const": 3.0
+        },
+        "idf": {
+          "const": "ln(1+(N-df+0.5)/(df+0.5))"
+        },
+        "minimum_should_match": {
+          "const": "one-term=1;otherwise=ceil(0.6*distinct-meaningful-query-terms)"
+        },
+        "phrase_boosts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "body",
+            "heading",
+            "path"
+          ],
+          "properties": {
+            "body": {
+              "const": 2.5
+            },
+            "heading": {
+              "const": 3.0
+            },
+            "path": {
+              "const": 2.0
+            }
+          }
+        },
+        "score_round_decimals": {
+          "const": 6
+        }
+      }
+    },
+    "sqliteRuntime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rusqlite",
+        "features",
+        "expected_sqlite_version",
+        "runtime_checks"
+      ],
+      "properties": {
+        "rusqlite": {
+          "const": "=0.40.2"
+        },
+        "features": {
+          "type": "array",
+          "const": [
+            "bundled"
+          ]
+        },
+        "expected_sqlite_version": {
+          "const": "3.53.2"
+        },
+        "runtime_checks": {
+          "type": "array",
+          "const": [
+            "sqlite_version_equals_expected",
+            "compile_option_ENABLE_FTS5",
+            "fts5_create-insert-match-bm25-smoke"
+          ]
+        }
+      }
+    },
+    "lexicalConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "storage",
+        "ranking",
+        "candidate_depth",
+        "abstention"
+      ],
+      "properties": {
+        "storage": {
+          "const": "direct-markdown-scan-per-query"
+        },
+        "ranking": {
+          "$ref": "#/$defs/bm25Core"
+        },
+        "candidate_depth": {
+          "const": "all-chunks"
+        },
+        "abstention": {
+          "const": "empty-only-when-no-chunk-meets-minimum-should-match"
+        }
+      }
+    },
+    "sqliteConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "storage",
+        "sqlite",
+        "schema",
+        "invalidation",
+        "write_policy",
+        "ranking",
+        "candidate_depth",
+        "abstention"
+      ],
+      "properties": {
+        "storage": {
+          "const": "sqlite-persistent-chunk-and-token-cache"
+        },
+        "sqlite": {
+          "$ref": "#/$defs/sqliteRuntime"
+        },
+        "schema": {
+          "const": "metadata(key-text-primary-key,value-text);files(path-text-primary-key,file-hash-text,bytes-integer);chunks(chunk-hash-text-primary-key,file-hash-text,path-text,heading-text,line-start-integer,line-end-integer,text-text,tokens-json-text,normalized-text)"
+        },
+        "invalidation": {
+          "const": "rebuild-atomically-when-corpus-fingerprint-or-parser-version-or-engine-config-hash-differs"
+        },
+        "write_policy": {
+          "const": "temporary-database-fsync-then-atomic-rename;never-mutate-valid-index-in-place"
+        },
+        "ranking": {
+          "$ref": "#/$defs/bm25Core"
+        },
+        "candidate_depth": {
+          "const": "all-cached-chunks"
+        },
+        "abstention": {
+          "const": "empty-only-when-no-chunk-meets-minimum-should-match"
+        }
+      }
+    },
+    "fts5Config": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sqlite",
+        "table",
+        "tokenizer",
+        "columns",
+        "column_weights",
+        "detail",
+        "columnsize",
+        "prefix_indexes",
+        "query",
+        "candidate_depth",
+        "ranking",
+        "abstention"
+      ],
+      "properties": {
+        "sqlite": {
+          "$ref": "#/$defs/sqliteRuntime"
+        },
+        "table": {
+          "const": "chunks_fts"
+        },
+        "tokenizer": {
+          "const": "unicode61 remove_diacritics 2"
+        },
+        "columns": {
+          "type": "array",
+          "const": [
+            "body",
+            "heading",
+            "path"
+          ]
+        },
+        "column_weights": {
+          "type": "array",
+          "const": [
+            1.0,
+            2.0,
+            3.0
+          ]
+        },
+        "detail": {
+          "const": "full"
+        },
+        "columnsize": {
+          "const": 1
+        },
+        "prefix_indexes": {
+          "type": "array",
+          "maxItems": 0
+        },
+        "query": {
+          "const": "deduplicated-meaningful-terms-double-quoted-and-joined-with-OR;literal-double-quotes-escaped-by-doubling"
+        },
+        "candidate_depth": {
+          "const": 50
+        },
+        "ranking": {
+          "const": "negative-sqlite-bm25(chunks_fts,1.0,2.0,3.0)-descending-then-path-asc-line-start-asc"
+        },
+        "abstention": {
+          "const": "empty-only-when-fts5-match-has-no-row"
+        }
+      }
+    },
+    "tokenization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "add_special_tokens",
+        "truncation",
+        "max_tokens",
+        "stride",
+        "padding",
+        "query_prefix",
+        "passage_prefix"
+      ],
+      "properties": {
+        "add_special_tokens": {
+          "const": true
+        },
+        "truncation": {
+          "const": "right"
+        },
+        "max_tokens": {
+          "const": 512
+        },
+        "stride": {
+          "const": 0
+        },
+        "padding": {
+          "const": "dynamic-longest-per-batch"
+        },
+        "query_prefix": {
+          "const": "query: "
+        },
+        "passage_prefix": {
+          "const": "passage: "
+        }
+      }
+    },
+    "embeddingConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model_ref",
+        "tokenization",
+        "vector_storage",
+        "candidate_generation",
+        "candidate_depth",
+        "ranking",
+        "abstention"
+      ],
+      "properties": {
+        "model_ref": {
+          "const": "protocol.model"
+        },
+        "tokenization": {
+          "$ref": "#/$defs/tokenization"
+        },
+        "vector_storage": {
+          "const": "little-endian-f32-384-dim-l2-normalized-keyed-by-chunk-hash"
+        },
+        "candidate_generation": {
+          "const": "exact-linear-scan-of-all-chunk-vectors-no-ann"
+        },
+        "candidate_depth": {
+          "const": 50
+        },
+        "ranking": {
+          "const": "f32-dot-product-descending-then-path-asc-line-start-asc"
+        },
+        "abstention": {
+          "const": "return-empty-when-top-dot-product-is-less-than-0.80"
+        }
+      }
+    },
+    "hybridConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sources",
+        "source_candidate_depth",
+        "fusion",
+        "rrf_k",
+        "deduplication",
+        "ranking",
+        "abstention"
+      ],
+      "properties": {
+        "sources": {
+          "type": "array",
+          "const": [
+            "fts5-v1",
+            "local-embeddings-v1"
+          ]
+        },
+        "source_candidate_depth": {
+          "const": 50
+        },
+        "fusion": {
+          "const": "reciprocal-rank-fusion"
+        },
+        "rrf_k": {
+          "const": 60
+        },
+        "deduplication": {
+          "const": "chunk-hash"
+        },
+        "ranking": {
+          "const": "sum(1/(60+one-based-source-rank))-descending-then-path-asc-line-start-asc"
+        },
+        "abstention": {
+          "const": "return-empty-only-when-fts5-has-no-row-and-top-embedding-dot-product-is-less-than-0.80"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "pass"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "errors": {
+            "maxItems": 0
+          },
+          "budget_checks": {
+            "properties": {
+              "quality": {
+                "const": true
+              },
+              "no_answer": {
+                "const": true
+              },
+              "query_execution": {
+                "const": true
+              },
+              "evidence": {
+                "const": true
+              },
+              "context": {
+                "const": true
+              },
+              "startup": {
+                "const": true
+              },
+              "query_latency": {
+                "const": true
+              },
+              "index_build": {
+                "const": true
+              },
+              "incremental_equivalence": {
+                "const": true
+              },
+              "memory": {
+                "const": true
+              },
+              "disk": {
+                "const": true
+              },
+              "rebuild": {
+                "const": true
+              },
+              "fallback": {
+                "const": true
+              },
+              "holdout_isolation": {
+                "const": true
+              },
+              "configuration_binding": {
+                "const": true
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

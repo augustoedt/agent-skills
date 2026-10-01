@@ -105,6 +105,15 @@ consultas, roots e artefatos permanecem privados. O v1 foi fechado e supersedido
 implementação porque não fixava o hash da configuração externa das engines; v2 incorpora
 configuração e hash. Nenhuma finalista foi executada nesses holdouts.
 
+A Fase 5.2 também está concluída sem abrir o gate. O binário contém `holdout observe`, `holdout
+finalize` e `holdout decide`, com autorização hash-bound, sequência exata, somente as duas
+finalistas, revalidação sem segunda execução de retrieval e saída imutável. O coordenador privado
+nega paths consumidos antes de resolução, exige roots exatas, grava uma tentativa append-only antes
+do processo e bloqueia rerun inclusive após falha. Contratos públicos independentes formalizam
+autorização, observação, relatório e decisão. Testes sintéticos cobrem as duas engines, gate fechado, relatório,
+decisão, ordem, overwrite e tentativa consumida. O registry operacional continua fechado, com
+medições desabilitadas; não existem artefatos reais dos novos holdouts.
+
 ## Em andamento
 
 - manter cap 1 apenas como opção explícita, sem alterar o default;
@@ -112,15 +121,16 @@ configuração e hash. Nenhuma finalista foi executada nesses holdouts.
 - preservar a rejeição do prefixo morfológico 7/4 sem retuning de parâmetros;
 - manter `lexical-bm25-v1` e `sqlite-cache-bm25-v1` como as duas finalistas de development;
 - não usar os holdouts consumidos para seleção, tuning ou mudança de julgamentos;
-- preservar o novo protocolo de holdout fechado e seus datasets imutáveis;
-- não integrar SQLite antes de concluir o gate novo e one-shot.
+- preservar o novo protocolo de holdout fechado, o harness auditado e seus datasets imutáveis;
+- não integrar SQLite antes de concluir o gate novo e one-shot;
+- aguardar autorização explícita antes de substituir o registry fechado por outro habilitado.
 
 ## Próximo passo
 
-1. Implementar os contratos e o harness one-shot sem abrir o gate.
-2. Validar com fixture sintética, auditar hashes, ordem, recusa de rerun e isolamento.
-3. Congelar um registry com medições desabilitadas e pedir autorização explícita para abri-lo.
-4. Executar cada finalista uma única vez e registrar a decisão: SQLite opt-in ou manutenção do BM25 direto.
+1. Manter o registry da Fase 5.2 fechado e pedir autorização explícita antes de qualquer execução.
+2. Após autorização, criar e auditar um novo registry habilitado sem alterar protocolo ou harness.
+3. Executar as quatro combinações na ordem congelada, uma única tentativa por combinação.
+4. Gerar a decisão imutável: SQLite opt-in ou manutenção exclusiva do BM25 direto.
 
 O default continua `lexical-bm25-v1`. O plano faseado está no [`plano`](../plans/docs-search.md), a
 comparação foi aprovada no [`ADR 0003`](../decisions/0003-comparar-engines-antes-da-adocao.md) e a

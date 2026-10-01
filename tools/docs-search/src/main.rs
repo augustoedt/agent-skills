@@ -4,8 +4,9 @@ use std::path::PathBuf;
 use anyhow::{Context, Result, bail};
 use clap::{Parser, Subcommand};
 use docs_search::{
-    EvaluateRequest, EvaluationReport, FinalizeRequest, ObserveRequest, SearchRequest,
-    SearchResponse, evaluate, finalize, observe, search,
+    EvaluateRequest, EvaluationReport, FinalizeRequest, HoldoutDecideRequest,
+    HoldoutFinalizeRequest, HoldoutObserveRequest, ObserveRequest, SearchRequest, SearchResponse,
+    evaluate, finalize, holdout_decide, holdout_finalize, holdout_observe, observe, search,
 };
 
 #[derive(Debug, Parser)]
@@ -84,6 +85,12 @@ enum Command {
         #[command(subcommand)]
         command: BakeoffCommand,
     },
+
+    /// Closed one-shot finalist holdout harness; requires an enabled audited authorization.
+    Holdout {
+        #[command(subcommand)]
+        command: HoldoutCommand,
+    },
 }
 
 #[derive(Debug, Subcommand)]
@@ -118,6 +125,57 @@ enum BakeoffCommand {
         measurements: PathBuf,
         #[arg(long)]
         report_tag: String,
+        #[arg(long)]
+        output: PathBuf,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+enum HoldoutCommand {
+    /// Execute one authorized finalist/input pair exactly once.
+    Observe {
+        #[arg(long)]
+        protocol: PathBuf,
+        #[arg(long)]
+        authorization: PathBuf,
+        #[arg(long)]
+        input: String,
+        #[arg(long)]
+        engine: String,
+        #[arg(long)]
+        sequence_position: usize,
+        #[arg(long)]
+        provenance: PathBuf,
+        #[arg(long)]
+        ready_file: PathBuf,
+        #[arg(long)]
+        output: PathBuf,
+    },
+
+    /// Bind an immutable observation to external measurements without rerunning retrieval.
+    Finalize {
+        #[arg(long)]
+        protocol: PathBuf,
+        #[arg(long)]
+        authorization: PathBuf,
+        #[arg(long)]
+        observation: PathBuf,
+        #[arg(long)]
+        measurements: PathBuf,
+        #[arg(long)]
+        report_tag: String,
+        #[arg(long)]
+        output: PathBuf,
+    },
+
+    /// Compare all four immutable reports and write the final opt-in decision.
+    Decide {
+        #[arg(long)]
+        protocol: PathBuf,
+        #[arg(long)]
+        authorization: PathBuf,
+        #[arg(long, required = true, num_args = 1..)]
+        report: Vec<PathBuf>,
         #[arg(long)]
         output: PathBuf,
     },
@@ -212,6 +270,53 @@ fn main() -> Result<()> {
                 other_observation_path: other_observation,
                 measurements_path: measurements,
                 report_tag,
+                output,
+            })?,
+        },
+        Command::Holdout { command } => match command {
+            HoldoutCommand::Observe {
+                protocol,
+                authorization,
+                input,
+                engine,
+                sequence_position,
+                provenance,
+                ready_file,
+                output,
+            } => holdout_observe(HoldoutObserveRequest {
+                protocol_path: protocol,
+                authorization_path: authorization,
+                input_id: input,
+                engine,
+                sequence_position,
+                provenance_path: provenance,
+                ready_file,
+                output,
+            })?,
+            HoldoutCommand::Finalize {
+                protocol,
+                authorization,
+                observation,
+                measurements,
+                report_tag,
+                output,
+            } => holdout_finalize(HoldoutFinalizeRequest {
+                protocol_path: protocol,
+                authorization_path: authorization,
+                observation_path: observation,
+                measurements_path: measurements,
+                report_tag,
+                output,
+            })?,
+            HoldoutCommand::Decide {
+                protocol,
+                authorization,
+                report,
+                output,
+            } => holdout_decide(HoldoutDecideRequest {
+                protocol_path: protocol,
+                authorization_path: authorization,
+                report_paths: report,
                 output,
             })?,
         },

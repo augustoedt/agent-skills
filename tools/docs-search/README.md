@@ -97,7 +97,11 @@ cargo test
 Os subcomandos experimentais `bakeoff observe` e `bakeoff finalize` implementam o harness comum da
 Fase 4.1. Eles são exclusivos do runner privado: exigem protocolo congelado, provenance do binário,
 host, ambiente e isolamento de holdout, usam somente inputs `development`, revalidam corpus,
-dataset, baseline e evidências, recusam overwrite e escrevem artefatos `0600`. Os cinco adapters
+dataset, baseline e evidências, recusam overwrite e escrevem artefatos `0600`. Os subcomandos
+`holdout observe`, `holdout finalize` e `holdout decide` implementam o contrato one-shot da Fase 5.2:
+exigem autorização habilitada e hash-bound, restringem a duas finalistas e à ordem congelada,
+finalizam sem uma segunda execução de retrieval e mantêm BM25 direto como default. O coordenador
+privado continua sendo a única entrada operacional autorizada e seu registry permanece fechado. Os cinco adapters
 estão implementados: `lexical-bm25-v1`, `sqlite-cache-bm25-v1`, `fts5-v1`,
 `local-embeddings-v1` e `hybrid-rrf-v1`. O braço SQLite preserva o ranking BM25 e usa cache privado
 reconstruível. O braço FTS5 usa o tokenizer e os pesos congelados, 50 candidatos e query literal
@@ -125,6 +129,8 @@ runtime, pooling, normalização, threshold, rebuild, atualização incremental,
 fallback/falha fechada cobertos por testes. A Fase 4.6 concluiu duas rodadas sobre os cinco inputs de
 development. BM25 direto e cache SQLite/BM25 foram as únicas engines aprovadas em todas as guardas e
 formam a fronteira de Pareto; FTS5, E5 e RRF foram eliminados sem retuning. Os detalhes permanecem
-nos relatórios privados. A Fase 5.1 já reservou e congelou holdouts novos sem executar rankings; o
-contrato público ativo está em `evaluation/engine-holdout-protocol-v2.schema.json`. O gate continua fechado
-enquanto o harness one-shot é implementado e auditado.
+nos relatórios privados. A Fase 5.1 reservou e congelou holdouts novos sem executar rankings; o
+contrato público ativo está em `evaluation/engine-holdout-protocol-v2.schema.json`. A Fase 5.2
+implementou o harness, contratos de autorização/relatório/decisão, tentativa consumida antes do
+processo, recusa de rerun e fluxo sintético. O gate real continua fechado e nenhuma finalista foi
+executada nos novos holdouts.

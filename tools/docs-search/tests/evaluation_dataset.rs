@@ -336,6 +336,93 @@ fn published_bakeoff_protocol_schema_freezes_engine_configuration() {
 }
 
 #[test]
+fn published_holdout_schemas_bind_authorization_reports_and_decision() {
+    let protocol: Value = serde_json::from_str(include_str!(
+        "../evaluation/engine-holdout-protocol-v2.schema.json"
+    ))
+    .expect("published holdout protocol schema should be valid JSON");
+    assert_eq!(protocol["properties"]["schema_version"]["const"], 2);
+    assert_eq!(
+        protocol["properties"]["protocol_tag"]["const"],
+        "engine-finalists-holdout-v2"
+    );
+    assert_eq!(protocol["properties"]["engines"]["minItems"], 2);
+    assert!(
+        protocol["$defs"]["engine"]["required"]
+            .as_array()
+            .unwrap()
+            .contains(&Value::from("configuration_sha256"))
+    );
+
+    let authorization: Value = serde_json::from_str(include_str!(
+        "../evaluation/engine-holdout-authorization.schema.json"
+    ))
+    .expect("published holdout authorization schema should be valid JSON");
+    assert_eq!(authorization["properties"]["gate_enabled"]["const"], true);
+    assert_eq!(
+        authorization["properties"]["measurements_enabled"]["const"],
+        true
+    );
+    assert!(
+        authorization["required"]
+            .as_array()
+            .unwrap()
+            .contains(&Value::from("sequence_sha256"))
+    );
+
+    let observation: Value = serde_json::from_str(include_str!(
+        "../evaluation/engine-holdout-observation.schema.json"
+    ))
+    .expect("published holdout observation schema should be valid JSON");
+    assert_eq!(
+        observation["properties"]["baseline_comparison"]["type"],
+        "null"
+    );
+    assert_eq!(
+        observation["properties"]["auxiliary_index_path"]["type"],
+        "null"
+    );
+    assert!(
+        observation["required"]
+            .as_array()
+            .unwrap()
+            .contains(&Value::from("authorization_sha256"))
+    );
+
+    let report: Value = serde_json::from_str(include_str!(
+        "../evaluation/engine-holdout-report.schema.json"
+    ))
+    .expect("published holdout report schema should be valid JSON");
+    assert_eq!(
+        report["$defs"]["input"]["properties"]["role"]["const"],
+        "holdout"
+    );
+    assert_eq!(
+        report["properties"]["integrity"]["properties"]["revalidated_without_rerunning_retrieval"]
+            ["const"],
+        true
+    );
+    assert_eq!(
+        report["properties"]["engine"]["enum"],
+        json!(["lexical-bm25-v1", "sqlite-cache-bm25-v1"])
+    );
+
+    let decision: Value = serde_json::from_str(include_str!(
+        "../evaluation/engine-holdout-decision.schema.json"
+    ))
+    .expect("published holdout decision schema should be valid JSON");
+    assert_eq!(
+        decision["properties"]["default_engine"]["const"],
+        "lexical-bm25-v1"
+    );
+    assert_eq!(
+        decision["properties"]["global_install_changed"]["const"],
+        false
+    );
+    assert_eq!(decision["properties"]["holdouts_consumed"]["const"], true);
+}
+
+#[test]
 fn published_bakeoff_report_schema_covers_operational_results() {
     let schema: Value = serde_json::from_str(include_str!(
         "../evaluation/engine-bakeoff-report.schema.json"

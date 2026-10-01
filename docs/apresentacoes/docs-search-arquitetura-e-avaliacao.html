@@ -709,7 +709,7 @@
       <div class="next-card future">
         <p class="kicker">Parte 3 · gate fechado</p>
         <h3>Validar as finalistas</h3>
-        <p>Os holdouts novos e os critérios one-shot já estão congelados. O harness será implementado e auditado antes de qualquer execução.</p>
+        <p>Holdouts, critérios e harness one-shot estão congelados e auditados. Só falta autorização explícita para as quatro tentativas.</p>
       </div>
     </div>
     <div class="stepper-wrap">
@@ -721,7 +721,8 @@
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">4.4</span>Embeddings</div></div>
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">4.5</span>RRF</div></div>
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">4.6</span>Development</div></div>
-        <div class="step wip"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">5</span>Gate one-shot</div></div>
+        <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">5.2</span>Harness fechado</div></div>
+        <div class="step wip"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">5.3</span>Gate one-shot</div></div>
         <div class="step"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">6</span>Vencedora</div></div>
       </div>
     </div>
@@ -770,10 +771,10 @@
   <section class="block" id="status">
     <div class="block-head">
       <h2>Onde o sistema se encontra agora</h2>
-      <span class="status wip">Fase 5.1 congelada · gate fechado</span>
+      <span class="status wip">Fase 5.2 concluída · gate fechado</span>
     </div>
     <div class="prose">
-      <p>O produto funcional está no código-fonte v0.6.0-alpha.6. O motor padrão continua lexical. A comparação em development terminou e os novos holdouts foram reservados, revisados na fonte e congelados sem ranking. O gate segue desabilitado enquanto seu harness one-shot é construído.</p>
+      <p>O produto funcional está no código-fonte v0.6.0-alpha.6. O motor padrão continua lexical. A comparação em development terminou; os novos holdouts e o harness one-shot estão congelados sem ranking real. O registry segue desabilitado até autorização explícita.</p>
     </div>
     <div class="data-table-wrap">
       <table class="data-table">
@@ -782,11 +783,11 @@
           <tr><td>Código-fonte</td><td><code>docs-search 0.6.0-alpha.6</code></td><td>Implementação atual e testada no checkout.</td></tr>
           <tr><td>Binário global</td><td><code>docs-search 0.1.0</code></td><td class="old">Ainda desatualizado; nenhuma instalação automática foi feita.</td></tr>
           <tr><td>Motor default</td><td><code>lexical-bm25-v1</code></td><td>Ranking exato e ilimitado por padrão.</td></tr>
-          <tr><td>Contratos</td><td>busca/queries/avaliação v2 · bake-off/holdout v1</td><td>Development e gate final possuem pré-inscrições independentes.</td></tr>
+          <tr><td>Contratos</td><td>protocolo holdout v2 · autorização/observação/relatório/decisão v1</td><td>Gate e outputs possuem schemas independentes e hash-bound.</td></tr>
           <tr><td>Diversidade</td><td><code>--max-results-per-path 1</code></td><td>Disponível apenas quando solicitada explicitamente.</td></tr>
-          <tr><td>Freeze experimental</td><td><code>engine-finalists-holdout-v2</code></td><td>Novos snapshots, julgamentos, budgets e ordem fixados; execução desabilitada.</td></tr>
+          <tr><td>Freeze experimental</td><td><code>engine-finalists-holdout-v2</code></td><td>Snapshots, julgamentos, budgets, ordem e harness fixados; execução desabilitada.</td></tr>
           <tr><td>Resultado development</td><td>BM25 direto + SQLite/BM25</td><td>Fronteira de Pareto; nenhuma promoção automática.</td></tr>
-          <tr><td>Próximo marco</td><td>Fase 5.2</td><td>Implementar e auditar o harness one-shot sem abrir o gate.</td></tr>
+          <tr><td>Próximo marco</td><td>Fase 5.3</td><td>Solicitar autorização e, só então, consumir as quatro tentativas.</td></tr>
         </tbody>
       </table>
     </div>
@@ -806,10 +807,11 @@
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">12</span>Embeddings E5</div></div>
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">13</span>Híbrido RRF</div></div>
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">14</span>Comparação dev</div></div>
-        <div class="step wip"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">15</span>Gate v2</div></div>
+        <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">15</span>Harness one-shot</div></div>
+        <div class="step wip"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">16</span>Gate autorizado</div></div>
       </div>
     </div>
-    <div class="callout"><strong>Leitura correta do estado:</strong> os holdouts novos já foram congelados, mas ainda não foram executados. SQLite continua somente finalista; o próximo trabalho é construir o harness fechado, não medir nem mudar o default.</div>
+    <div class="callout"><strong>Leitura correta do estado:</strong> os holdouts e o harness já foram congelados, mas nenhuma finalista foi executada neles. SQLite continua somente finalista; o próximo ato exige autorização para abrir um novo registry — não medir, retunar nem mudar o default agora.</div>
   </section>
 </main>
 

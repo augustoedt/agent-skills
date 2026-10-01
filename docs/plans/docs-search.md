@@ -11,11 +11,14 @@
 - gate de holdout: concluído uma única vez e fechado; holdouts consumidos não orientam retuning;
 - prefixo morfológico limitado 7/4: testado duas vezes em development e rejeitado sem ajustes;
 - bake-off de engines: aprovado; Fase 4.0 congelada e harness comum da Fase 4.1 implementado;
-- adapters disponíveis no bake-off: `lexical-bm25-v1`, `sqlite-cache-bm25-v1`, `fts5-v1` e `local-embeddings-v1`; apenas RRF ainda é recusado;
-- protocolo e relatório operacional: contratos públicos v1 formalizados, com instância, snapshots,
+- adapters disponíveis no bake-off: `lexical-bm25-v1`, `sqlite-cache-bm25-v1`, `fts5-v1`,
+  `local-embeddings-v1` e `hybrid-rrf-v1`;
+- protocolo e relatório operacional: contratos públicos formalizados, com instância, snapshots,
   checksums e verificador mantidos no ambiente privado;
 - variantes congeladas: BM25 direto, cache SQLite com BM25, FTS5, embeddings locais e híbrido por RRF;
-- adoção: proibida antes da comparação em development e de um novo gate com holdouts frescos.
+- harness one-shot de finalistas: implementado e validado somente com fixture sintética; registry
+  real fechado e medições desabilitadas;
+- adoção: proibida antes da execução única do gate novo com autorização explícita.
 
 ## Objetivo
 
@@ -679,15 +682,23 @@ foi supersedido ainda fechado, antes de implementação ou ranking, porque apont
 configurações das engines sem fixar o conteúdo e o hash; v2 incorpora os objetos completos e seus
 SHA-256.
 
-### Fase 5.2 — implementar e auditar o harness one-shot
+### Fase 5.2 — implementar e auditar o harness one-shot — concluída
 
-Sem abrir o gate:
+Sem abrir o gate, foram concluídos:
 
-- adicionar contratos de observação, relatório e decisão one-shot;
-- reutilizar a instrumentação congelada de processo, RSS, disco, incremental e fault injection;
-- negar holdouts consumidos antes de resolver paths e aceitar apenas os snapshots fixados;
-- recusar overwrite, rerun e execução fora da ordem congelada;
-- validar o fluxo somente com fixture sintética e manter o registry com medições desabilitadas.
+- contratos públicos independentes para autorização, observação, relatório e decisão one-shot;
+- comandos `holdout observe`, `holdout finalize` e `holdout decide`, limitados às duas finalistas e
+  vinculados ao protocolo, configuração, autorização, revisão e sequência;
+- finalização por evidência e métricas observadas, sem executar retrieval uma segunda vez;
+- instrumentação congelada de processo, RSS, disco, incremental e fault injection;
+- negação dos holdouts consumidos antes da resolução de paths e allowlist das roots exatas;
+- marcador append-only de tentativa antes do processo: uma falha também consome a única tentativa;
+- recusa de overwrite, rerun, lacunas e execução fora da ordem congelada;
+- fluxo sintético cobrindo gate fechado/aberto, as duas engines, relatório, decisão e estado one-shot;
+- registry privado imutável com gate e medições desabilitados.
+
+Nenhuma finalista foi executada em `corpus-008` ou `corpus-009`; a Fase 5.3 depende de autorização
+explícita e de um novo registry habilitado.
 
 ### Fase 5.3 — executar e decidir
 

@@ -148,13 +148,30 @@ consumed holdout was accessed.
 
 `engine-holdout-protocol-v2.schema.json` is the active contract for the finalist gate. It fixes
 fresh neutral holdout aliases, one run per finalist/input, complete engine configurations and their
-hashes, exact snapshot and dataset provenance,
-counterbalanced order, absolute quality and safety floors, evidence/metric/context equivalence,
-resource limits, the minimum SQLite latency gain, immutable output, no-rerun policy, and consumed
-holdout denial. Its private instance remains disabled while a dedicated one-shot harness is built
-and audited; creating the protocol does not execute or consume a holdout. The v1 schema remains for
-history: its closed protocol was superseded before implementation because an external engine
-configuration source was not hash-bound.
+hashes, exact snapshot and dataset provenance, counterbalanced order, absolute quality and safety
+floors, evidence/metric/context equivalence, resource limits, the minimum SQLite latency gain,
+immutable output, no-rerun policy, and consumed-holdout denial.
+
+Phase 5.2 adds four independent contracts:
+
+- `engine-holdout-authorization.schema.json`: an explicitly enabled registry authorization bound to
+  the protocol hash, reviewed public revision, and frozen sequence;
+- `engine-holdout-observation.schema.json`: the raw one-shot evidence, internal timings, engine
+  configuration, provenance, index state, and deterministic projections produced by retrieval;
+- `engine-holdout-report.schema.json`: one immutable finalist/input report, including authorization,
+  provenance, evidence projections, absolute guards, process measurements, and confirmation that
+  finalization did not rerun retrieval;
+- `engine-holdout-decision.schema.json`: the closed comparison of all reports, exact
+  evidence/metric/context equivalence, per-input p95 checks, mean SQLite gain, and opt-in-only result.
+
+The public binary exposes `holdout observe`, `holdout finalize`, and `holdout decide`, but
+`observe` fails before corpus path resolution unless an enabled authorization matches the exact
+protocol. The private coordinator additionally writes a consumed attempt marker before process
+launch, enforces the counterbalanced order, refuses overwrite and rerun, and combines observation,
+measurement, and finalization in one operation. Its immutable registry remains closed with
+measurements disabled after synthetic tests; creating these contracts does not execute or consume a
+real holdout. The v1 schema remains for history: its closed protocol was superseded before
+implementation because an external engine configuration source was not hash-bound.
 
 Only the schemas are public. Protocol instances, snapshot manifests, private datasets, baseline
 reports, model paths, and checksum registries stay in machine-local encrypted storage. Frozen

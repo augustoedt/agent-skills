@@ -1,3 +1,5 @@
+#[cfg(test)]
+use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::env;
 use std::fs::{self, OpenOptions};
@@ -5,8 +7,6 @@ use std::io::Write;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
-#[cfg(test)]
-use std::sync::OnceLock;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use anyhow::{Context, Result, anyhow, bail};
@@ -31,7 +31,9 @@ const PARSER_VERSION: &str = "markdown-heading-fence-aware-v1";
 const INDEX_FILE: &str = "index.sqlite3";
 
 #[cfg(test)]
-static TEST_CACHE_HOME: OnceLock<Mutex<Option<PathBuf>>> = OnceLock::new();
+thread_local! {
+    static TEST_CACHE_HOME: RefCell<Option<PathBuf>> = const { RefCell::new(None) };
+}
 
 const CREATE_SCHEMA: &str = "
 CREATE TABLE metadata(key TEXT PRIMARY KEY, value TEXT);
@@ -309,12 +311,7 @@ pub(crate) fn cache_path(root: &Path) -> Result<PathBuf> {
         .with_context(|| format!("failed to resolve cache root {}", root.display()))?;
     let key = sha256::digest_hex(canonical.to_string_lossy().as_bytes());
     #[cfg(test)]
-    if let Some(base) = TEST_CACHE_HOME
-        .get_or_init(|| Mutex::new(None))
-        .lock()
-        .map_err(|_| anyhow!("test cache mutex is poisoned"))?
-        .clone()
-    {
+    if let Some(base) = TEST_CACHE_HOME.with(|value| value.borrow().clone()) {
         return Ok(base.join("docs-search").join(key).join(INDEX_FILE));
     }
     let base = if let Some(value) = env::var_os("XDG_CACHE_HOME") {
@@ -329,10 +326,7 @@ pub(crate) fn cache_path(root: &Path) -> Result<PathBuf> {
 
 #[cfg(test)]
 pub(crate) fn set_test_cache_home(path: Option<PathBuf>) {
-    *TEST_CACHE_HOME
-        .get_or_init(|| Mutex::new(None))
-        .lock()
-        .expect("test cache mutex") = path;
+    TEST_CACHE_HOME.with(|value| *value.borrow_mut() = path);
 }
 
 pub(crate) fn rebuild_at(

@@ -343,7 +343,7 @@
   <p class="eyebrow">agent-skills · recuperação documental</p>
   <h1>docs-search: escopo, arquitetura e estado atual</h1>
   <p class="lede">O que o sistema faz hoje, o que ficou deliberadamente fora, como sua qualidade é medida e por que o motor lexical permanece como default estável.</p>
-  <p class="meta">Atualizado em 30 de setembro de 2026 · apresentação técnica</p>
+  <p class="meta">Atualizado em 1º de outubro de 2026 · apresentação técnica</p>
 </div>
 
 <nav class="toc" aria-label="Sumário">
@@ -707,9 +707,9 @@
         <p>Os cinco braços completaram duas rodadas determinísticas em development; os 50 relatórios foram validados.</p>
       </div>
       <div class="next-card future">
-        <p class="kicker">Parte 3 · próxima</p>
+        <p class="kicker">Parte 3 · gate fechado</p>
         <h3>Validar as finalistas</h3>
-        <p>BM25 direto e SQLite/BM25 avançam para holdouts inteiramente novos; somente uma vencedora poderá ser integrada.</p>
+        <p>Os holdouts novos e os critérios one-shot já estão congelados. O harness será implementado e auditado antes de qualquer execução.</p>
       </div>
     </div>
     <div class="stepper-wrap">
@@ -721,7 +721,7 @@
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">4.4</span>Embeddings</div></div>
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">4.5</span>RRF</div></div>
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">4.6</span>Development</div></div>
-        <div class="step"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">5</span>Holdout novo</div></div>
+        <div class="step wip"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">5</span>Gate one-shot</div></div>
         <div class="step"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">6</span>Vencedora</div></div>
       </div>
     </div>
@@ -770,10 +770,10 @@
   <section class="block" id="status">
     <div class="block-head">
       <h2>Onde o sistema se encontra agora</h2>
-      <span class="status wip">estável · Fases 4.0–4.6 concluídas</span>
+      <span class="status wip">Fase 5.1 congelada · gate fechado</span>
     </div>
     <div class="prose">
-      <p>O produto funcional está no código-fonte v0.6.0-alpha.6. O motor padrão continua lexical e os contratos de busca e avaliação são v2. A comparação congelada em development terminou: BM25 direto e cache SQLite/BM25 passaram todas as guardas e são as duas finalistas; FTS5, E5 e RRF não avançam.</p>
+      <p>O produto funcional está no código-fonte v0.6.0-alpha.6. O motor padrão continua lexical. A comparação em development terminou e os novos holdouts foram reservados, revisados na fonte e congelados sem ranking. O gate segue desabilitado enquanto seu harness one-shot é construído.</p>
     </div>
     <div class="data-table-wrap">
       <table class="data-table">
@@ -782,11 +782,11 @@
           <tr><td>Código-fonte</td><td><code>docs-search 0.6.0-alpha.6</code></td><td>Implementação atual e testada no checkout.</td></tr>
           <tr><td>Binário global</td><td><code>docs-search 0.1.0</code></td><td class="old">Ainda desatualizado; nenhuma instalação automática foi feita.</td></tr>
           <tr><td>Motor default</td><td><code>lexical-bm25-v1</code></td><td>Ranking exato e ilimitado por padrão.</td></tr>
-          <tr><td>Contratos</td><td>busca/queries/avaliação v2 · bake-off v1</td><td>Pré-inscrição e resultados operacionais são contratos separados.</td></tr>
+          <tr><td>Contratos</td><td>busca/queries/avaliação v2 · bake-off/holdout v1</td><td>Development e gate final possuem pré-inscrições independentes.</td></tr>
           <tr><td>Diversidade</td><td><code>--max-results-per-path 1</code></td><td>Disponível apenas quando solicitada explicitamente.</td></tr>
-          <tr><td>Freeze experimental</td><td><code>engine-bakeoff-v1</code></td><td>Configurações, inputs, modelo, budgets e denylist verificados.</td></tr>
+          <tr><td>Freeze experimental</td><td><code>engine-finalists-holdout-v1</code></td><td>Novos snapshots, julgamentos, budgets e ordem fixados; execução desabilitada.</td></tr>
           <tr><td>Resultado development</td><td>BM25 direto + SQLite/BM25</td><td>Fronteira de Pareto; nenhuma promoção automática.</td></tr>
-          <tr><td>Próximo marco</td><td>Fase 5.1</td><td>Reservar e revisar holdouts inteiramente novos para o gate one-shot.</td></tr>
+          <tr><td>Próximo marco</td><td>Fase 5.2</td><td>Implementar e auditar o harness one-shot sem abrir o gate.</td></tr>
         </tbody>
       </table>
     </div>
@@ -806,10 +806,10 @@
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">12</span>Embeddings E5</div></div>
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">13</span>Híbrido RRF</div></div>
         <div class="step done"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">14</span>Comparação dev</div></div>
-        <div class="step"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">15</span>Holdout novo</div></div>
+        <div class="step wip"><div class="track"><div class="dot"></div><div class="line"></div></div><div class="step-label"><span class="step-num">15</span>Gate v1</div></div>
       </div>
     </div>
-    <div class="callout"><strong>Leitura correta do estado:</strong> a matriz congelada de development terminou e preservou o default lexical. SQLite é somente finalista; holdouts novos, decisão de produto e mudança de default ainda não começaram.</div>
+    <div class="callout"><strong>Leitura correta do estado:</strong> os holdouts novos já foram congelados, mas ainda não foram executados. SQLite continua somente finalista; o próximo trabalho é construir o harness fechado, não medir nem mudar o default.</div>
   </section>
 </main>
 

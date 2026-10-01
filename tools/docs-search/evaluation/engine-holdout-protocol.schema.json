@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/augustoedt/agent-skills/tools/docs-search/evaluation/engine-holdout-protocol.schema.json",
+  "title": "docs-search finalist holdout protocol v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "protocol_tag", "status", "frozen_at", "scope", "purpose",
+    "development_basis", "toolchain", "contracts", "policy", "common_retrieval",
+    "engines", "inputs", "measurement", "budgets", "decision_rule", "isolation"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "protocol_tag": {"const": "engine-finalists-holdout-v1"},
+    "status": {"const": "frozen-gate-closed"},
+    "frozen_at": {"type": "string", "format": "date-time"},
+    "scope": {"const": "one-shot-holdout"},
+    "purpose": {"$ref": "#/$defs/nonEmpty"},
+    "development_basis": {"$ref": "#/$defs/developmentBasis"},
+    "toolchain": {"$ref": "#/$defs/toolchain"},
+    "contracts": {"$ref": "#/$defs/contracts"},
+    "policy": {"$ref": "#/$defs/policy"},
+    "common_retrieval": {"$ref": "#/$defs/commonRetrieval"},
+    "engines": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/engine"},
+      "allOf": [
+        {"contains": {"type": "object", "required": ["id"], "properties": {"id": {"const": "lexical-bm25-v1"}}}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "required": ["id"], "properties": {"id": {"const": "sqlite-cache-bm25-v1"}}}, "minContains": 1, "maxContains": 1}
+      ]
+    },
+    "inputs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/input"}
+    },
+    "measurement": {"$ref": "#/$defs/measurement"},
+    "budgets": {"$ref": "#/$defs/budgets"},
+    "decision_rule": {"$ref": "#/$defs/decisionRule"},
+    "isolation": {"$ref": "#/$defs/isolation"}
+  },
+  "$defs": {
+    "nonEmpty": {"type": "string", "minLength": 1, "pattern": "\\S"},
+    "hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "gitRevision": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+    "path": {"type": "string", "minLength": 1, "pattern": "^/"},
+    "developmentBasis": {
+      "type": "object", "additionalProperties": false,
+      "required": ["comparison_report", "comparison_report_sha256", "closed_harness_registry", "closed_harness_registry_sha256", "finalists"],
+      "properties": {
+        "comparison_report": {"$ref": "#/$defs/path"},
+        "comparison_report_sha256": {"$ref": "#/$defs/hash"},
+        "closed_harness_registry": {"$ref": "#/$defs/path"},
+        "closed_harness_registry_sha256": {"$ref": "#/$defs/hash"},
+        "finalists": {"const": ["lexical-bm25-v1", "sqlite-cache-bm25-v1"]}
+      }
+    },
+    "toolchain": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_root", "source_revision", "tool_version", "cargo_lock_sha256", "rust_version", "cargo_version", "build_profile", "locked", "implementation_policy"],
+      "properties": {
+        "source_root": {"$ref": "#/$defs/path"},
+        "source_revision": {"$ref": "#/$defs/gitRevision"},
+        "tool_version": {"const": "0.6.0-alpha.6"},
+        "cargo_lock_sha256": {"$ref": "#/$defs/hash"},
+        "rust_version": {"$ref": "#/$defs/nonEmpty"},
+        "cargo_version": {"$ref": "#/$defs/nonEmpty"},
+        "build_profile": {"const": "release"},
+        "locked": {"const": true},
+        "implementation_policy": {"$ref": "#/$defs/nonEmpty"}
+      }
+    },
+    "contracts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["search_response", "query_dataset", "evaluation_report", "holdout_protocol", "holdout_observation", "holdout_report", "holdout_decision"],
+      "properties": {
+        "search_response": {"const": 2}, "query_dataset": {"const": 2}, "evaluation_report": {"const": 2},
+        "holdout_protocol": {"const": 1}, "holdout_observation": {"const": 1},
+        "holdout_report": {"const": 1}, "holdout_decision": {"const": 1}
+      }
+    },
+    "policy": {
+      "type": "object", "additionalProperties": false,
+      "required": ["runs_per_engine_input", "immutable_artifacts", "retuning_after_freeze", "judgment_changes_after_freeze", "reruns_after_first_attempt", "default_engine_before_decision", "default_may_change_in_this_gate", "global_install_may_change_in_this_gate", "promotion_scope_if_passed", "report_write_policy", "holdout_access_policy"],
+      "properties": {
+        "runs_per_engine_input": {"const": 1}, "immutable_artifacts": {"const": true},
+        "retuning_after_freeze": {"const": false}, "judgment_changes_after_freeze": {"const": false},
+        "reruns_after_first_attempt": {"const": false}, "default_engine_before_decision": {"const": "lexical-bm25-v1"},
+        "default_may_change_in_this_gate": {"const": false}, "global_install_may_change_in_this_gate": {"const": false},
+        "promotion_scope_if_passed": {"const": "explicit-opt-in-only"},
+        "report_write_policy": {"const": "create-new-0600-refuse-if-path-exists"},
+        "holdout_access_policy": {"$ref": "#/$defs/nonEmpty"}
+      }
+    },
+    "commonRetrieval": {
+      "type": "object", "additionalProperties": false,
+      "required": ["corpus_selection", "chunking", "normalization", "query_tokens", "limit", "recall_cutoff", "max_excerpt_chars", "max_results_per_path", "evidence_fields", "tie_break"],
+      "properties": {
+        "corpus_selection": {"$ref": "#/$defs/nonEmpty"}, "chunking": {"$ref": "#/$defs/nonEmpty"},
+        "normalization": {"$ref": "#/$defs/nonEmpty"}, "query_tokens": {"$ref": "#/$defs/nonEmpty"},
+        "limit": {"const": 5}, "recall_cutoff": {"const": 5}, "max_excerpt_chars": {"const": 1200},
+        "max_results_per_path": {"type": "null"},
+        "evidence_fields": {"const": ["path", "heading", "line_start", "line_end", "file_hash", "chunk_hash", "excerpt"]},
+        "tie_break": {"const": "score-desc-path-asc-line-start-asc"}
+      }
+    },
+    "engine": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "configuration", "configuration_source", "expected_storage"],
+      "properties": {
+        "id": {"enum": ["lexical-bm25-v1", "sqlite-cache-bm25-v1"]},
+        "configuration": {"$ref": "#/$defs/nonEmpty"}, "configuration_source": {"$ref": "#/$defs/path"},
+        "expected_storage": {"enum": ["direct-markdown-scan-per-query", "sqlite-persistent-chunk-and-token-cache"]}
+      }
+    },
+    "categoryCounts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["exact", "semantic", "ambiguous", "no_answer"],
+      "properties": {"exact": {"type": "integer", "minimum": 1}, "semantic": {"type": "integer", "minimum": 1}, "ambiguous": {"type": "integer", "minimum": 1}, "no_answer": {"type": "integer", "minimum": 1}}
+    },
+    "input": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "visibility", "role", "root", "source_revision", "snapshot_manifest", "snapshot_manifest_sha256", "queries", "queries_sha256", "dataset_blake3", "source_review", "source_review_sha256", "queries_schema_version", "query_count", "category_counts", "files", "chunks", "corpus_fingerprint", "selected_markdown_dirty_at_snapshot", "engines_executed_before_freeze"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^corpus-[0-9]{3,}$"}, "visibility": {"const": "private"}, "role": {"const": "holdout"},
+        "root": {"$ref": "#/$defs/path"}, "source_revision": {"$ref": "#/$defs/gitRevision"},
+        "snapshot_manifest": {"$ref": "#/$defs/path"}, "snapshot_manifest_sha256": {"$ref": "#/$defs/hash"},
+        "queries": {"$ref": "#/$defs/path"}, "queries_sha256": {"$ref": "#/$defs/hash"}, "dataset_blake3": {"$ref": "#/$defs/hash"},
+        "source_review": {"$ref": "#/$defs/path"}, "source_review_sha256": {"$ref": "#/$defs/hash"},
+        "queries_schema_version": {"const": 2}, "query_count": {"type": "integer", "minimum": 1}, "category_counts": {"$ref": "#/$defs/categoryCounts"},
+        "files": {"type": "integer", "minimum": 1}, "chunks": {"type": "integer", "minimum": 1}, "corpus_fingerprint": {"$ref": "#/$defs/hash"},
+        "selected_markdown_dirty_at_snapshot": {"const": false}, "engines_executed_before_freeze": {"const": false}
+      }
+    },
+    "host": {
+      "type": "object", "additionalProperties": false,
+      "required": ["machine", "cpu", "memory_bytes", "logical_cpus", "os", "os_build", "architecture"],
+      "properties": {
+        "machine": {"$ref": "#/$defs/nonEmpty"}, "cpu": {"$ref": "#/$defs/nonEmpty"},
+        "memory_bytes": {"type": "integer", "minimum": 1}, "logical_cpus": {"type": "integer", "minimum": 1},
+        "os": {"$ref": "#/$defs/nonEmpty"}, "os_build": {"$ref": "#/$defs/nonEmpty"}, "architecture": {"$ref": "#/$defs/nonEmpty"}
+      }
+    },
+    "runOrderItem": {
+      "type": "object", "additionalProperties": false, "required": ["input", "engines"],
+      "properties": {"input": {"type": "string", "pattern": "^corpus-[0-9]{3,}$"}, "engines": {"type": "array", "minItems": 2, "maxItems": 2, "uniqueItems": true, "items": {"enum": ["lexical-bm25-v1", "sqlite-cache-bm25-v1"]}}}
+    },
+    "measurement": {
+      "type": "object", "additionalProperties": false,
+      "required": ["host", "run_order", "fresh_process_per_engine_input", "warmup_queries", "query_policy", "prepare_policy", "incremental_workload", "fault_injection", "process_environment", "latency_clock", "percentile_method", "rss_collector", "disk_collector", "os_cache_policy"],
+      "properties": {
+        "host": {"$ref": "#/$defs/host"}, "run_order": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/runOrderItem"}},
+        "fresh_process_per_engine_input": {"const": true}, "warmup_queries": {"const": 0},
+        "query_policy": {"$ref": "#/$defs/nonEmpty"}, "prepare_policy": {"$ref": "#/$defs/nonEmpty"}, "incremental_workload": {"$ref": "#/$defs/nonEmpty"},
+        "fault_injection": {"type": "object", "additionalProperties": false, "required": ["lexical-bm25-v1", "sqlite-cache-bm25-v1"], "properties": {"lexical-bm25-v1": {"$ref": "#/$defs/nonEmpty"}, "sqlite-cache-bm25-v1": {"$ref": "#/$defs/nonEmpty"}}},
+        "process_environment": {"type": "object", "additionalProperties": false, "required": ["RAYON_NUM_THREADS", "TOKENIZERS_PARALLELISM", "OMP_NUM_THREADS", "VECLIB_MAXIMUM_THREADS"], "properties": {"RAYON_NUM_THREADS": {"const": "1"}, "TOKENIZERS_PARALLELISM": {"const": "false"}, "OMP_NUM_THREADS": {"const": "1"}, "VECLIB_MAXIMUM_THREADS": {"const": "1"}}},
+        "latency_clock": {"const": "monotonic"}, "percentile_method": {"$ref": "#/$defs/nonEmpty"},
+        "rss_collector": {"$ref": "#/$defs/nonEmpty"}, "disk_collector": {"$ref": "#/$defs/nonEmpty"}, "os_cache_policy": {"$ref": "#/$defs/nonEmpty"}
+      }
+    },
+    "qualityBudget": {
+      "type": "object", "additionalProperties": false,
+      "required": ["hit_at_1_min", "recall_at_5_macro_min", "mrr_at_5_min", "exact_hit_at_1_min", "exact_recall_at_5_macro_min", "semantic_hit_at_1_min", "semantic_recall_at_5_macro_min", "ambiguous_hit_at_1_min", "ambiguous_recall_at_5_macro_min"],
+      "properties": {
+        "hit_at_1_min": {"const": 0.75}, "recall_at_5_macro_min": {"const": 0.8}, "mrr_at_5_min": {"const": 0.8},
+        "exact_hit_at_1_min": {"const": 1.0}, "exact_recall_at_5_macro_min": {"const": 1.0},
+        "semantic_hit_at_1_min": {"const": 0.8}, "semantic_recall_at_5_macro_min": {"const": 0.8},
+        "ambiguous_hit_at_1_min": {"const": 1.0}, "ambiguous_recall_at_5_macro_min": {"const": 0.6}
+      }
+    },
+    "budgets": {
+      "type": "object", "additionalProperties": false,
+      "required": ["quality_absolute_each_input", "equivalence", "safety_each_input_engine", "context", "latency_ms_each_input_engine", "sqlite_indexing_ms", "resources_bytes_each_input_engine", "meaningful_sqlite_gain"],
+      "properties": {
+        "quality_absolute_each_input": {"$ref": "#/$defs/qualityBudget"},
+        "equivalence": {"type": "object", "additionalProperties": false, "required": ["ordered_evidence_projection_identical_between_finalists", "metrics_identical_between_finalists", "context_characters_identical_between_finalists"], "properties": {"ordered_evidence_projection_identical_between_finalists": {"const": true}, "metrics_identical_between_finalists": {"const": true}, "context_characters_identical_between_finalists": {"const": true}}},
+        "safety_each_input_engine": {"type": "object", "additionalProperties": false, "required": ["no_answer_false_positives", "query_errors", "skipped_queries", "invalid_evidence", "fallbacks_in_normal_run", "incremental_stale_results", "consumed_holdout_accesses", "fault_injection_passed"], "properties": {"no_answer_false_positives": {"const": 0}, "query_errors": {"const": 0}, "skipped_queries": {"const": 0}, "invalid_evidence": {"const": 0}, "fallbacks_in_normal_run": {"const": 0}, "incremental_stale_results": {"const": 0}, "consumed_holdout_accesses": {"const": 0}, "fault_injection_passed": {"const": true}}},
+        "context": {"type": "object", "additionalProperties": false, "required": ["max_excerpt_chars", "max_results"], "properties": {"max_excerpt_chars": {"const": 1200}, "max_results": {"const": 5}}},
+        "latency_ms_each_input_engine": {"type": "object", "additionalProperties": false, "required": ["startup_max", "query_p95_max"], "properties": {"startup_max": {"const": 500}, "query_p95_max": {"const": 500}}},
+        "sqlite_indexing_ms": {"type": "object", "additionalProperties": false, "required": ["full_build_max", "incremental_step_max_relative_to_full_build", "incremental_equivalence_required"], "properties": {"full_build_max": {"const": 60000}, "incremental_step_max_relative_to_full_build": {"const": 1.0}, "incremental_equivalence_required": {"const": true}}},
+        "resources_bytes_each_input_engine": {"type": "object", "additionalProperties": false, "required": ["peak_rss_max", "sqlite_index_storage_max", "lexical_index_storage_exact"], "properties": {"peak_rss_max": {"const": 536870912}, "sqlite_index_storage_max": {"const": 268435456}, "lexical_index_storage_exact": {"const": 0}}},
+        "meaningful_sqlite_gain": {"type": "object", "additionalProperties": false, "required": ["mean_query_p95_relative_reduction_across_both_inputs_min", "query_p95_regressions_allowed"], "properties": {"mean_query_p95_relative_reduction_across_both_inputs_min": {"const": 0.2}, "query_p95_regressions_allowed": {"const": 0}}}
+      }
+    },
+    "decisionRule": {
+      "type": "object", "additionalProperties": false,
+      "required": ["sqlite_advances_if", "if_sqlite_advances", "otherwise", "no_aggregate_opaque_score"],
+      "properties": {"sqlite_advances_if": {"$ref": "#/$defs/nonEmpty"}, "if_sqlite_advances": {"$ref": "#/$defs/nonEmpty"}, "otherwise": {"$ref": "#/$defs/nonEmpty"}, "no_aggregate_opaque_score": {"const": true}}
+    },
+    "isolation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["consumed_holdout_denylist", "consumed_holdout_denylist_sha256", "deny_before_path_resolution", "allowed_roots_are_exact_protocol_values", "holdouts_consumed", "gate_enabled"],
+      "properties": {"consumed_holdout_denylist": {"$ref": "#/$defs/path"}, "consumed_holdout_denylist_sha256": {"$ref": "#/$defs/hash"}, "deny_before_path_resolution": {"const": true}, "allowed_roots_are_exact_protocol_values": {"const": true}, "holdouts_consumed": {"const": false}, "gate_enabled": {"const": false}}
+    }
+  }
+}

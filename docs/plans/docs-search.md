@@ -660,28 +660,42 @@ conforme o braço, sem retuning. Os resultados detalhados e seus hashes permanec
 
 ## Etapa 5 — holdout novo e decisão
 
-### Fase 5.1 — reservar o gate
+### Fase 5.1 — reservar e congelar o gate — concluída
 
-Somente após escolher finalistas em development:
+Após escolher as finalistas em development, foram concluídos:
 
-- reservar holdouts inteiramente novos;
-- revisar julgamentos diretamente contra as fontes sem executar rankings;
-- congelar datasets, revisões, fingerprints, engines, parâmetros e critérios;
-- registrar aprovação explícita e execução única no gate local.
+- reserva de holdouts inteiramente novos, reproduzíveis e extraídos de objetos Git;
+- revisão dos julgamentos diretamente contra as fontes, sem executar rankings;
+- freeze de datasets, revisões, manifests, fingerprints, finalistas, ordem e critérios absolutos;
+- contrato público `evaluation/engine-holdout-protocol.schema.json` e protocolo privado com gate
+  fechado;
+- isolamento dos holdouts consumidos e permissão somente para as roots exatas do novo protocolo.
 
-Os holdouts anteriores permanecem consumidos e proibidos. Cada finalista executará uma única vez;
-o gate fecha automaticamente e seus resultados não poderão orientar retuning.
+O gate exige uma única execução de cada finalista por input, equivalência integral de evidência,
+métricas e contexto, zero falsos positivos `no_answer`, limites absolutos de qualidade e operação e
+ganho médio mínimo de 20% no p95 de consulta para SQLite, sem regressão de p95 em nenhum input.
+Mudar consulta, julgamento, engine, parâmetro, orçamento ou input exige outra tag.
 
-### Fase 5.2 — decisão
+### Fase 5.2 — implementar e auditar o harness one-shot
 
-Registrar um ADR com uma destas saídas:
+Sem abrir o gate:
 
-- promover uma engine vencedora;
-- manter `lexical-bm25-v1` e preservar todas as alternativas apenas como experimento;
-- rejeitar todas as variantes e encerrar o ciclo.
+- adicionar contratos de observação, relatório e decisão one-shot;
+- reutilizar a instrumentação congelada de processo, RSS, disco, incremental e fault injection;
+- negar holdouts consumidos antes de resolver paths e aceitar apenas os snapshots fixados;
+- recusar overwrite, rerun e execução fora da ordem congelada;
+- validar o fluxo somente com fixture sintética e manter o registry com medições desabilitadas.
 
-Passar em development não garante promoção. Qualquer falha em holdout resulta em no-go para aquela
-configuração, sem ajuste posterior de parâmetros.
+### Fase 5.3 — executar e decidir
+
+Depois de auditoria e nova autorização explícita, executar a ordem congelada uma única vez e
+registrar uma destas saídas:
+
+- permitir SQLite/BM25 apenas como opt-in, mantendo `lexical-bm25-v1` como default;
+- manter somente `lexical-bm25-v1` se qualquer guarda falhar.
+
+Passar em development não garante promoção. Qualquer falha fecha o protocolo sem rerun, retuning,
+troca de holdout ou mudança de julgamentos.
 
 ---
 

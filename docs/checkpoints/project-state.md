@@ -97,6 +97,12 @@ de latência de consulta, em troca de startup, memória e disco maiores; por iss
 fronteira de Pareto. FTS5, E5 e RRF foram eliminados pelas guardas congeladas, sem retuning. Nenhum
 holdout foi usado.
 
+A Fase 5.1 está concluída e o novo gate continua fechado. Novos corpora reproduzíveis foram extraídos
+de objetos Git, os julgamentos foram revisados diretamente contra os Markdown sem ranking e o
+protocolo one-shot congelou hashes, fingerprints, ordem, finalistas, limites absolutos e decisão. O
+contrato público é `evaluation/engine-holdout-protocol.schema.json`; identidades, consultas, roots e
+artefatos permanecem privados. Nenhuma finalista foi executada nesses holdouts.
+
 ## Em andamento
 
 - manter cap 1 apenas como opção explícita, sem alterar o default;
@@ -104,13 +110,14 @@ holdout foi usado.
 - preservar a rejeição do prefixo morfológico 7/4 sem retuning de parâmetros;
 - manter `lexical-bm25-v1` e `sqlite-cache-bm25-v1` como as duas finalistas de development;
 - não usar os holdouts consumidos para seleção, tuning ou mudança de julgamentos;
-- não integrar SQLite antes de um gate novo e one-shot.
+- preservar o novo protocolo de holdout fechado e seus datasets imutáveis;
+- não integrar SQLite antes de concluir o gate novo e one-shot.
 
 ## Próximo passo
 
-1. Reservar holdouts inteiramente novos e reproduzíveis.
-2. Revisar os novos julgamentos diretamente contra as fontes, sem executar rankings.
-3. Congelar datasets, revisões, fingerprints, finalistas e critérios em um novo gate explícito.
+1. Implementar os contratos e o harness one-shot sem abrir o gate.
+2. Validar com fixture sintética, auditar hashes, ordem, recusa de rerun e isolamento.
+3. Congelar um registry com medições desabilitadas e pedir autorização explícita para abri-lo.
 4. Executar cada finalista uma única vez e registrar a decisão: SQLite opt-in ou manutenção do BM25 direto.
 
 O default continua `lexical-bm25-v1`. O plano faseado está no [`plano`](../plans/docs-search.md), a
@@ -123,6 +130,8 @@ decisão anterior sobre cap 1 permanece no [`ADR 0002`](../decisions/0002-manter
 - Os índices SQLite/BM25, FTS5, E5 e a composição RRF existem somente no bake-off; a busca padrão ainda não possui índice persistente nem embeddings.
 - Não alterar tokenizer, threshold 0,80, profundidade 50, RRF `k = 60`, modelo, inputs ou budgets
   dentro de `engine-bakeoff-v1`; qualquer mudança exige protocolo e tag novos.
+- Não abrir, executar ou editar os novos holdouts durante a implementação do harness one-shot;
+  qualquer mudança de julgamentos, parâmetros, ordem ou budgets invalida `engine-finalists-holdout-v1`.
 - O corpus padrão exclui `skills/**`; por isso avaliações devem apontar para documentação em
   `README.md` ou `docs/`, não apenas para conteúdo de `SKILL.md`.
 - Resultado lexical vazio não prova ausência da informação.

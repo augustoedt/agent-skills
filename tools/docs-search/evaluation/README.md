@@ -146,6 +146,13 @@ Direct BM25 and SQLite-cached BM25 passed every eliminatory budget and form the 
 FTS5, E5, and RRF were eliminated without retuning. Detailed reports remain private, and no
 consumed holdout was accessed.
 
+`engine-holdout-protocol.schema.json` is a separate v1 contract for the finalist gate. It fixes
+fresh neutral holdout aliases, one run per finalist/input, exact snapshot and dataset provenance,
+counterbalanced order, absolute quality and safety floors, evidence/metric/context equivalence,
+resource limits, the minimum SQLite latency gain, immutable output, no-rerun policy, and consumed
+holdout denial. Its private instance remains disabled while a dedicated one-shot harness is built
+and audited; creating the protocol does not execute or consume a holdout.
+
 Only the schemas are public. Protocol instances, snapshot manifests, private datasets, baseline
 reports, model paths, and checksum registries stay in machine-local encrypted storage. Frozen
 Markdown comes from Git objects rather than live working trees. A local verifier must pass before

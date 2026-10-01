@@ -117,7 +117,7 @@ resposta, com headings esperados, notas e tags diagnósticas. A fixture estável
 fixture estão analisadas em [`evaluation/reports/`](evaluation/reports/README.md). O primeiro gate
 de holdout rejeitou a promoção do cap 1 a default. A hipótese seguinte, equivalência por prefixo
 morfológico limitado 7/4, foi testada duas vezes em development e rejeitada pelas guardas
-pré-registradas; seu código não entrou em `main`. O próximo ciclo é um bake-off faseado entre o
+pré-registradas; seu código não entrou em `main`. O ciclo seguinte comparou de forma faseada o
 BM25 direto, cache SQLite com BM25 preservado, FTS5, embeddings locais e híbrido por RRF. A Fase 4.0
 já congelou protocolo, configurações, inputs, modelo, budgets e contratos públicos de protocolo e
 relatório operacional v1. As Fases 4.1–4.5 implementaram o harness e todos os adapters, com
@@ -125,5 +125,6 @@ runtime, pooling, normalização, threshold, rebuild, atualização incremental,
 fallback/falha fechada cobertos por testes. A Fase 4.6 concluiu duas rodadas sobre os cinco inputs de
 development. BM25 direto e cache SQLite/BM25 foram as únicas engines aprovadas em todas as guardas e
 formam a fronteira de Pareto; FTS5, E5 e RRF foram eliminados sem retuning. Os detalhes permanecem
-nos relatórios privados. Somente as duas finalistas podem chegar a um gate novo com holdouts ainda
-não consumidos.
+nos relatórios privados. A Fase 5.1 já reservou e congelou holdouts novos sem executar rankings; o
+contrato público está em `evaluation/engine-holdout-protocol.schema.json`. O gate continua fechado
+enquanto o harness one-shot é implementado e auditado.

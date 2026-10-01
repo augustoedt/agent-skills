@@ -65,6 +65,14 @@ de consulta, mas adicionou custo de startup, memória e disco. Os dois são não
 como finalistas. FTS5, embeddings e RRF falharam guardas eliminatórias e foram descartados sem
 retuning. Nenhum holdout foi acessado; a decisão de produto continua condicionada a holdouts novos.
 
+A Fase 5.1 reservou e congelou um conjunto inteiramente novo antes de qualquer ranking. Snapshots
+vieram de objetos Git; julgamentos foram revisados contra a fonte; revisões, manifests, hashes,
+fingerprints, ordem contrabalanceada, limites absolutos e a regra de decisão ficaram fixos no
+protocolo `engine-finalists-holdout-v1`. O gate permanece desabilitado enquanto o harness one-shot é
+implementado e auditado. SQLite só poderá avançar como opt-in se preservar evidência, métricas e
+contexto exatamente, passar todas as guardas e repetir o ganho operacional congelado; o default não
+muda neste gate.
+
 ## Consequências
 
 - (+) armazenamento, ranking lexical, semântica e fusão serão avaliados separadamente;

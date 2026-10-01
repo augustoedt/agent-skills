@@ -539,8 +539,7 @@ Entregue nesta fase:
 
 ### Fase 4.2 — cache SQLite com BM25 preservado
 
-**Status:** concluída em código e testes; medições congeladas continuam fechadas até os cinco
-adapters existirem na mesma revisão limpa.
+**Status:** concluída em código, testes e nas duas rodadas congeladas da Fase 4.6.
 
 O braço `sqlite-cache-bm25-v1` foi implementado sem mudar tokenização, frequências, IDF, fórmula,
 pesos, desempate ou seleção. O objetivo permanece isolar o efeito de persistência.
@@ -565,8 +564,7 @@ Markdown selecionados; cada passo é comparado com um rebuild limpo e exige zero
 
 ### Fase 4.3 — recuperação FTS5
 
-**Status:** concluída em código e testes; medições congeladas continuam fechadas até os cinco
-adapters existirem na mesma revisão limpa.
+**Status:** concluída em código, testes e nas duas rodadas congeladas da Fase 4.6.
 
 `fts5-v1` foi implementado sobre os mesmos chunks e metadados, com tabela `chunks_fts`, tokenizer
 `unicode61 remove_diacritics 2`, pesos body/heading/path 1/2/3 e profundidade 50. Termos
@@ -584,8 +582,7 @@ da latência.
 
 ### Fase 4.4 — embeddings locais
 
-**Status:** concluída em código e testes; medições congeladas continuam fechadas até os cinco
-adapters existirem na mesma revisão limpa.
+**Status:** concluída em código, testes e nas duas rodadas congeladas da Fase 4.6.
 
 `local-embeddings-v1` usa somente o modelo e os artefatos congelados na Fase 4.0. O runtime local é
 Candle CPU 0.9.1 com Tokenizers 0.21.1, `BertModel`, prefixos E5, truncamento à direita em 512 tokens,
@@ -604,7 +601,8 @@ disco, indexação e candidatos examinados.
 Um fluxo sintético pareado com os artefatos reais do modelo validou determinismo, schema,
 evidência, quatro updates com zero resultado stale, corrupção/rebuild e falha fechada. O status foi
 `fail` pelas guardas de `no_answer` e contexto da fixture, portanto esse smoke confirma o harness,
-não autoriza tuning nem adoção. Nenhuma medição congelada de development foi aberta.
+não autoriza tuning nem adoção. As medições congeladas reais foram abertas somente depois, na Fase
+4.6, com todos os adapters na mesma revisão limpa.
 
 Não haverá seleção de modelo ou ajuste de threshold depois de observar os resultados congelados.
 Uma nova configuração exigirá outro protocolo e outra tag.
@@ -620,12 +618,11 @@ passa quando ambas as fontes passam. Testes sintéticos cobrem contribuição, d
 canônica, ordenação, abstention, propagação de erro e união das métricas incrementais. Um smoke
 pareado com o modelo real validou schema, determinismo, ranks das duas fontes, quatro updates sem
 stale e fault injection; seu `fail` sintético por `no_answer` e contexto não autoriza tuning. O
-default permanece lexical e as medições congeladas continuam fechadas até a revisão pública limpa
-ser fixada no registry seguinte.
+default permaneceu lexical durante toda a matriz congelada da Fase 4.6.
 
-### Fase 4.6 — comparação em development
+### Fase 4.6 — comparação em development — concluída
 
-Comparar as variantes em pares que preservem interpretação:
+As variantes foram comparadas em pares que preservam interpretação:
 
 1. SQLite + BM25 versus leitura direta: efeito de persistência;
 2. FTS5 versus SQLite + BM25: efeito do motor lexical;
@@ -642,17 +639,22 @@ A seleção será por fronteira de Pareto, sem score composto opaco. São guarda
 - índice stale apresentado como fonte atual;
 - falha de rebuild ou fallback.
 
-Resultados negativos também serão preservados. Uma variante só vira finalista se entregar ganho
-relevante de recuperação ou custo que não seja dominado por uma opção mais simples.
+Os 50 relatórios foram concluídos e validados: cinco inputs, cinco engines e dois runs. Apenas
+`lexical-bm25-v1` e `sqlite-cache-bm25-v1` passaram todas as guardas em todas as combinações. O cache
+SQLite manteve equivalência exata de qualidade e contexto e atingiu o ganho significativo congelado
+de latência de consulta; o baseline preservou vantagens de startup, RAM e ausência de índice. Como
+nenhum domina o outro, ambos compõem a fronteira de Pareto e avançam como as duas finalistas. FTS5,
+E5 e RRF foram eliminados por guardas de qualidade, `no_answer`, contexto ou custo operacional,
+conforme o braço, sem retuning. Os resultados detalhados e seus hashes permanecem privados.
 
-### Gate da Etapa 4
+### Gate da Etapa 4 — concluído
 
 - protocolo, inputs e parâmetros congelados antes do código experimental;
-- cinco variantes executadas duas vezes em todo o conjunto de development;
-- nenhuma consulta ou relatório de holdout consumido acessado;
-- relatórios imutáveis e comparação reproduzível;
-- default e instalação global inalterados;
-- no máximo duas variantes escolhidas como finalistas, ou nenhuma se todas falharem.
+- [x] cinco variantes executadas duas vezes em todo o conjunto de development;
+- [x] nenhuma consulta ou relatório de holdout consumido acessado;
+- [x] relatórios imutáveis e comparação reproduzível;
+- [x] default e instalação global inalterados;
+- [x] duas finalistas escolhidas: BM25 direto e cache SQLite/BM25.
 
 ---
 
@@ -726,9 +728,8 @@ Etapa 4.0: protocolo e inputs congelados ✓
     ↓
 Etapas 4.1–4.5: harness + quatro engines experimentais ✓
     ↓
-Etapa 4.6: comparação em development
-    ├── nenhuma finalista → manter BM25 direto
-    └── até duas finalistas
+Etapa 4.6: comparação em development ✓
+    └── finalistas: BM25 direto + cache SQLite/BM25
               ↓
 Etapa 5: holdouts novos, gate one-shot e ADR
     ├── no-go → manter BM25 direto

@@ -56,8 +56,14 @@ verificados, Candle CPU, pooling/normalização congelados, scan exato, threshol
 e falha fechada sem rede ou fallback lexical. A Fase 4.5 compôs FTS5 e E5 por RRF `k = 60`,
 com deduplicação por `chunk_hash`, ranks das duas fontes, contabilidade conjunta dos índices e falha
 fechada sem resultado FTS5 parcial quando E5 falha. Os cinco adapters estão implementados, mas isso
-não altera o default nem implica adoção; a comparação congelada em development continua sendo o
-próximo gate.
+não altera o default nem implica adoção.
+
+A Fase 4.6 executou a matriz congelada completa em development: cinco inputs, cinco engines e dois
+runs, com 50 relatórios privados validados. BM25 direto e cache SQLite/BM25 passaram todas as
+guardas; SQLite preservou exatamente qualidade e contexto e obteve ganho significativo de latência
+de consulta, mas adicionou custo de startup, memória e disco. Os dois são não dominados e avançam
+como finalistas. FTS5, embeddings e RRF falharam guardas eliminatórias e foram descartados sem
+retuning. Nenhum holdout foi acessado; a decisão de produto continua condicionada a holdouts novos.
 
 ## Consequências
 

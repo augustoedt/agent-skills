@@ -86,24 +86,32 @@ determinística e `source_ranks` das duas fontes. O harness soma candidatos, tim
 cobrem fusão, ranks, duplicatas, ordenação, abstention, propagação de erro e métricas incrementais.
 Um smoke pareado com o modelo real confirmou schema, determinismo, `source_ranks` duplos, quatro
 updates sem stale e fault injection; o status `fail` por `no_answer` e contexto valida as guardas e
-não autoriza tuning. O gate privado de medições permanece fechado até a revisão limpa da Fase 4.5
-ser fixada em novo registry.
+não autoriza tuning.
+
+A Fase 4.6 também está concluída. As cinco engines foram executadas duas vezes sobre os cinco inputs
+de development, produzindo 50 observações, 50 medições e 50 relatórios privados imutáveis. Todos os
+pares foram determinísticos, sem erros de consulta e com isolamento de holdout válido. Apenas
+`lexical-bm25-v1` e `sqlite-cache-bm25-v1` passaram todas as guardas em todos os inputs e runs. O
+cache SQLite preservou exatamente qualidade e contexto do baseline e entregou ganho significativo
+de latência de consulta, em troca de startup, memória e disco maiores; por isso os dois formam a
+fronteira de Pareto. FTS5, E5 e RRF foram eliminados pelas guardas congeladas, sem retuning. Nenhum
+holdout foi usado.
 
 ## Em andamento
 
 - manter cap 1 apenas como opção explícita, sem alterar o default;
-- preservar o freeze, o gate fechado e os relatórios privados imutáveis;
+- preservar o freeze e os 50 relatórios privados imutáveis da Fase 4.6;
 - preservar a rejeição do prefixo morfológico 7/4 sem retuning de parâmetros;
-- preservar o freeze concluído da Fase 4.0 sem reinterpretar parâmetros ou budgets;
-- preservar o harness da Fase 4.1 e os adapters SQLite/FTS5/E5/RRF das Fases 4.2–4.5 sem alterar o default;
-- não usar os holdouts consumidos para seleção, tuning ou mudança de julgamentos.
+- manter `lexical-bm25-v1` e `sqlite-cache-bm25-v1` como as duas finalistas de development;
+- não usar os holdouts consumidos para seleção, tuning ou mudança de julgamentos;
+- não integrar SQLite antes de um gate novo e one-shot.
 
 ## Próximo passo
 
-1. Fechar a revisão pública limpa da Fase 4.5 e fixar o harness registry seguinte, ainda com medições fechadas.
-2. Executar duas rodadas imutáveis sobre todo o conjunto congelado de development, na ordem registrada.
-3. Selecionar no máximo duas finalistas em development e só então reservar holdouts novos.
-4. Integrar somente uma vencedora que passe no gate; manter BM25 direto se nenhuma passar.
+1. Reservar holdouts inteiramente novos e reproduzíveis.
+2. Revisar os novos julgamentos diretamente contra as fontes, sem executar rankings.
+3. Congelar datasets, revisões, fingerprints, finalistas e critérios em um novo gate explícito.
+4. Executar cada finalista uma única vez e registrar a decisão: SQLite opt-in ou manutenção do BM25 direto.
 
 O default continua `lexical-bm25-v1`. O plano faseado está no [`plano`](../plans/docs-search.md), a
 comparação foi aprovada no [`ADR 0003`](../decisions/0003-comparar-engines-antes-da-adocao.md) e a

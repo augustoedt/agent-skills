@@ -141,8 +141,10 @@ truncation, dynamic batch padding, attention-mask mean pooling, L2 normalization
 deduplicates by chunk hash, records both source ranks, accounts for both indexes, and returns no
 partial FTS5 response when E5 fails. Indexed adapters execute four-operation incremental
 verification and corruption recovery; missing E5 artifacts fail closed without network or lexical
-fallback. Frozen measurements stay closed until the five adapters are committed at one clean,
-registry-pinned revision.
+fallback. The frozen development matrix is complete: five inputs, five engines, and two runs.
+Direct BM25 and SQLite-cached BM25 passed every eliminatory budget and form the Pareto frontier;
+FTS5, E5, and RRF were eliminated without retuning. Detailed reports remain private, and no
+consumed holdout was accessed.
 
 Only the schemas are public. Protocol instances, snapshot manifests, private datasets, baseline
 reports, model paths, and checksum registries stay in machine-local encrypted storage. Frozen

@@ -97,8 +97,8 @@ cargo test
 Os subcomandos experimentais `bakeoff observe` e `bakeoff finalize` implementam o harness comum da
 Fase 4.1. Eles são exclusivos do runner privado: exigem protocolo congelado, provenance do binário,
 host, ambiente e isolamento de holdout, usam somente inputs `development`, revalidam corpus,
-dataset, baseline e evidências, recusam overwrite e escrevem artefatos `0600`. Apenas
-os cinco adapters estão implementados: `lexical-bm25-v1`, `sqlite-cache-bm25-v1`, `fts5-v1`,
+dataset, baseline e evidências, recusam overwrite e escrevem artefatos `0600`. Os cinco adapters
+estão implementados: `lexical-bm25-v1`, `sqlite-cache-bm25-v1`, `fts5-v1`,
 `local-embeddings-v1` e `hybrid-rrf-v1`. O braço SQLite preserva o ranking BM25 e usa cache privado
 reconstruível. O braço FTS5 usa o tokenizer e os pesos congelados, 50 candidatos e query literal
 segura. O braço vetorial usa o modelo E5 local congelado, Candle CPU, mean pooling pela attention
@@ -120,9 +120,10 @@ morfológico limitado 7/4, foi testada duas vezes em development e rejeitada pel
 pré-registradas; seu código não entrou em `main`. O próximo ciclo é um bake-off faseado entre o
 BM25 direto, cache SQLite com BM25 preservado, FTS5, embeddings locais e híbrido por RRF. A Fase 4.0
 já congelou protocolo, configurações, inputs, modelo, budgets e contratos públicos de protocolo e
-relatório operacional v1. As Fases 4.1–4.4 implementaram o harness, o adapter direto, o cache
-SQLite/BM25, FTS5 e embeddings E5 locais, com runtime, pooling, normalização, threshold, rebuild,
-atualização incremental, corrupção, evidência e fallback/falha fechada cobertos por testes.
-Medições congeladas continuam bloqueadas até
-todos os adapters existirem na mesma revisão. Somente finalistas de development poderão chegar a um
-novo gate com holdouts ainda não consumidos.
+relatório operacional v1. As Fases 4.1–4.5 implementaram o harness e todos os adapters, com
+runtime, pooling, normalização, threshold, rebuild, atualização incremental, corrupção, evidência e
+fallback/falha fechada cobertos por testes. A Fase 4.6 concluiu duas rodadas sobre os cinco inputs de
+development. BM25 direto e cache SQLite/BM25 foram as únicas engines aprovadas em todas as guardas e
+formam a fronteira de Pareto; FTS5, E5 e RRF foram eliminados sem retuning. Os detalhes permanecem
+nos relatórios privados. Somente as duas finalistas podem chegar a um gate novo com holdouts ainda
+não consumidos.

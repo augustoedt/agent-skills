@@ -4142,7 +4142,7 @@ mod tests {
         fs::write(&snapshot_manifest, "{}\n").unwrap();
         fs::write(&source_review, "# Reviewed\n").unwrap();
         let run_order = json!([{
-            "input": "synthetic-holdout",
+            "input": "corpus-999",
             "engines": [ENGINE, SQLITE_ENGINE]
         }]);
         let protocol = json!({
@@ -4179,7 +4179,7 @@ mod tests {
                 }
             ],
             "inputs": [{
-                "id": "synthetic-holdout",
+                "id": "corpus-999",
                 "role": "holdout",
                 "root": root,
                 "queries": queries,
@@ -4253,7 +4253,7 @@ mod tests {
             "schema_version": 1,
             "protocol_tag": HOLDOUT_PROTOCOL_TAG,
             "protocol_sha256": protocol_hash,
-            "registry_tag": "synthetic-holdout-enabled-v1",
+            "registry_tag": "synthetic-corpus-999-enabled-v1",
             "public_revision": "0".repeat(40),
             "sequence_sha256": canonical_json_sha256(&run_order).unwrap(),
             "gate_enabled": true,
@@ -4310,7 +4310,7 @@ mod tests {
         let refused = holdout_observe(HoldoutObserveRequest {
             protocol_path: protocol_path.clone(),
             authorization_path: closed_path,
-            input_id: "synthetic-holdout".to_owned(),
+            input_id: "corpus-999".to_owned(),
             engine: ENGINE.to_owned(),
             sequence_position: 1,
             provenance_path: provenance_path.clone(),
@@ -4326,13 +4326,14 @@ mod tests {
         assert!(!directory.path().join("closed-ready").exists());
 
         crate::sqlite_cache::set_test_cache_home(Some(directory.path().join("cache")));
+        let mut observations = Vec::new();
         let mut reports = Vec::new();
         for (position, engine) in [(1, ENGINE), (2, SQLITE_ENGINE)] {
             let observation_path = directory.path().join(format!("{engine}-observation.json"));
             holdout_observe(HoldoutObserveRequest {
                 protocol_path: protocol_path.clone(),
                 authorization_path: authorization_path.clone(),
-                input_id: "synthetic-holdout".to_owned(),
+                input_id: "corpus-999".to_owned(),
                 engine: engine.to_owned(),
                 sequence_position: position,
                 provenance_path: provenance_path.clone(),
@@ -4342,10 +4343,11 @@ mod tests {
             .unwrap();
             let observation: Value =
                 serde_json::from_slice(&fs::read(&observation_path).unwrap()).unwrap();
+            observations.push(observation_path.clone());
             let mut measurements = json!({
                 "schema_version": 1,
                 "protocol_sha256": protocol_hash,
-                "input_id": "synthetic-holdout",
+                "input_id": "corpus-999",
                 "engine": engine,
                 "run": 1,
                 "observation_sha256": sha256::digest_hex(&fs::read(&observation_path).unwrap()),
@@ -4393,7 +4395,7 @@ mod tests {
                 authorization_path: authorization_path.clone(),
                 observation_path,
                 measurements_path,
-                report_tag: format!("{HOLDOUT_PROTOCOL_TAG}-synthetic-holdout-{engine}"),
+                report_tag: format!("{HOLDOUT_PROTOCOL_TAG}-corpus-999-{engine}"),
                 output: report_path.clone(),
             })
             .unwrap();
@@ -4409,17 +4411,25 @@ mod tests {
         holdout_decide(HoldoutDecideRequest {
             protocol_path,
             authorization_path,
-            report_paths: reports,
+            report_paths: reports.clone(),
             output: decision_path.clone(),
         })
         .unwrap();
-        let decision: Value = serde_json::from_slice(&fs::read(decision_path).unwrap()).unwrap();
+        let decision: Value = serde_json::from_slice(&fs::read(&decision_path).unwrap()).unwrap();
         assert_eq!(decision["holdouts_consumed"], true);
         assert_eq!(decision["default_engine"], ENGINE);
         assert!(matches!(
             decision["status"].as_str(),
             Some("sqlite-opt-in-approved" | "lexical-retained")
         ));
+        if let Some(destination) = std::env::var_os("DOCS_SEARCH_SYNTHETIC_HOLDOUT_OUTPUT") {
+            let destination = PathBuf::from(destination);
+            fs::create_dir(&destination).unwrap();
+            for path in observations.iter().chain(&reports) {
+                fs::copy(path, destination.join(path.file_name().unwrap())).unwrap();
+            }
+            fs::copy(&decision_path, destination.join("decision.json")).unwrap();
+        }
         crate::sqlite_cache::set_test_cache_home(None);
     }
 

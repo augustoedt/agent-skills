@@ -117,11 +117,11 @@
       "type": "array",
       "minItems": 1,
       "items": {
-        "$ref": "#/$defs/query"
+        "$ref": "#/$defs/observedQuery"
       }
     },
     "timing_ms": {
-      "$ref": "#/$defs/timing"
+      "$ref": "#/$defs/observationTiming"
     },
     "indexing": {
       "$ref": "#/$defs/indexing"
@@ -129,7 +129,7 @@
     "sqlite_runtime": {
       "anyOf": [
         {
-          "$ref": "#/$defs/sqliteRuntime"
+          "$ref": "#/$defs/observedSqliteRuntime"
         },
         {
           "type": "null"
@@ -1410,6 +1410,244 @@
           "minimum": 0
         }
       }
+    },
+    "observedResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rank",
+        "path",
+        "heading",
+        "line_start",
+        "line_end",
+        "score",
+        "file_hash",
+        "chunk_hash",
+        "excerpt",
+        "source_ranks"
+      ],
+      "properties": {
+        "rank": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "path": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "heading": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/nonEmpty"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "line_start": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "line_end": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "score": {
+          "type": "number"
+        },
+        "file_hash": {
+          "$ref": "#/$defs/hash"
+        },
+        "chunk_hash": {
+          "$ref": "#/$defs/hash"
+        },
+        "excerpt": {
+          "type": "string"
+        },
+        "source_ranks": {
+          "$ref": "#/$defs/sourceRanks"
+        }
+      }
+    },
+    "observedQuery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "category",
+        "status",
+        "results",
+        "first_relevant_rank",
+        "first_relevant_heading_rank",
+        "relevant_paths_found",
+        "hit_at_1",
+        "recall_at_5",
+        "reciprocal_rank_at_5",
+        "no_answer_false_positive",
+        "context_chars",
+        "timing_ms",
+        "error"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmpty"
+        },
+        "category": {
+          "enum": [
+            "exact",
+            "semantic",
+            "ambiguous",
+            "no_answer"
+          ]
+        },
+        "status": {
+          "enum": [
+            "ok",
+            "error",
+            "skipped"
+          ]
+        },
+        "results": {
+          "type": "array",
+          "maxItems": 5,
+          "items": {
+            "$ref": "#/$defs/observedResult"
+          }
+        },
+        "first_relevant_rank": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 5
+        },
+        "first_relevant_heading_rank": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 5
+        },
+        "relevant_paths_found": {
+          "$ref": "#/$defs/nullableInteger"
+        },
+        "hit_at_1": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "recall_at_5": {
+          "$ref": "#/$defs/nullableMetric"
+        },
+        "reciprocal_rank_at_5": {
+          "$ref": "#/$defs/nullableMetric"
+        },
+        "no_answer_false_positive": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "context_chars": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "timing_ms": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "lookup",
+            "ranking",
+            "excerpt",
+            "total"
+          ],
+          "properties": {
+            "lookup": {
+              "type": "number",
+              "minimum": 0
+            },
+            "ranking": {
+              "type": "number",
+              "minimum": 0
+            },
+            "excerpt": {
+              "type": "number",
+              "minimum": 0
+            },
+            "total": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "sourceRanks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fts5",
+        "embedding"
+      ],
+      "properties": {
+        "fts5": {
+          "type": "null"
+        },
+        "embedding": {
+          "type": "null"
+        }
+      }
+    },
+    "observationTiming": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "lookup",
+        "ranking",
+        "excerpt",
+        "query_total"
+      ],
+      "properties": {
+        "lookup": {
+          "$ref": "#/$defs/stats"
+        },
+        "ranking": {
+          "$ref": "#/$defs/stats"
+        },
+        "excerpt": {
+          "$ref": "#/$defs/stats"
+        },
+        "query_total": {
+          "$ref": "#/$defs/stats"
+        }
+      }
+    },
+    "observedSqliteRuntime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "compile_options_sha256"
+      ],
+      "properties": {
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "compile_options_sha256": {
+          "$ref": "#/$defs/hash"
+        }
+      }
     }
   },
   "allOf": [
@@ -1458,7 +1696,7 @@
             "$ref": "#/$defs/sqliteConfig"
           },
           "sqlite_runtime": {
-            "$ref": "#/$defs/sqliteRuntime"
+            "$ref": "#/$defs/observedSqliteRuntime"
           },
           "index_path": {
             "type": "string",

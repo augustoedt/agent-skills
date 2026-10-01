@@ -6,7 +6,7 @@ confira a fonte original antes de alterar código.
 
 ## Estado atual
 
-A versão de código-fonte 0.6.0-alpha.7 mantém o baseline lexical padrão sem banco e sem embeddings.
+A versão estável 0.6.0 mantém o baseline lexical padrão sem banco e sem embeddings.
 A build normal possui features vazias por default: adapters rejeitados, suas dependências e os comandos
 privados de experimento só existem com `--features experimental-adapters`. O produto usa somente os
 contratos atuais: resposta de busca v2, dataset de consultas v2 e relatório v2:

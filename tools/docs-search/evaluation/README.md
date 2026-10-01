@@ -180,7 +180,7 @@ result is `lexical-retained`: SQLite/BM25 is not promoted even as opt-in, the di
 remains the only product engine, and the holdouts cannot be rerun or used for retuning. Detailed
 queries, metrics, reports, and identities remain private.
 
-After that no-go, version 0.6.0-alpha.7 moved the four rejected adapters, their optional heavy
+After that no-go, version 0.6.0 moved the four rejected adapters, their optional heavy
 dependencies, and the `bakeoff`/`holdout` commands behind the non-default
 `experimental-adapters` feature. A normal build or `cargo install --locked --no-default-features --path
 tools/docs-search` excludes them. `--all-features` is retained only to compile and test the

@@ -6,7 +6,7 @@ O repositório é a fonte oficial das skills próprias e agora também abriga
 `tools/docs-search`, um binário Rust para recuperação documental independente de modelo.
 
 O motor lexical preserva o ranking BM25 original como default, com chunking por headings,
-normalização Unicode e hashes BLAKE3. O código-fonte `docs-search` v0.6.0-alpha.7 aceita somente os
+normalização Unicode e hashes BLAKE3. O código-fonte `docs-search` v0.6.0 aceita somente os
 contratos atuais: resposta de busca v2, dataset de consultas v2 e relatório v2. A resposta registra
 `selection.max_results_per_path`, rank final e rank BM25 bruto; versões de schema diferentes são
 rejeitadas em vez de manter compatibilidade legada.
@@ -45,14 +45,13 @@ A apresentação editorial `docs/apresentacoes/docs-search-arquitetura-e-avaliac
 escopo, fluxo de busca, contrato de evidência, avaliação, privacidade, decisões de no-go, plano do
 bake-off e estado operacional atual sem expor nomes ou paths privados.
 
-O binário instalado via Rust 1.98.1 gerenciado por `asdf` continua na versão 0.1.0; ele não foi
-atualizado automaticamente. O v0.6.0-alpha.7 pode ser executado no checkout com `cargo run --
-evaluate` até uma instalação ser solicitada. A instalação temporária foi validada, mas o binário
-global não mudou.
+O binário global gerenciado por `asdf` está na versão estável 0.6.0. A atualização foi explicitamente
+autorizada e usa a build de produto com `--no-default-features`; `bakeoff`, `holdout` e as
+dependências dos adapters rejeitados não fazem parte da instalação.
 
 A skill `search-project-docs` também está sincronizada em `~/.agents/skills/` e ligada aos agentes
-locais detectados. O plano detalhado em `docs/plans/docs-search.md` divide o próximo ciclo em um
-bake-off de cinco braços: BM25 direto, cache SQLite com BM25 preservado, FTS5, embeddings locais e
+locais detectados. O plano concluído em `docs/plans/docs-search.md` documenta o bake-off de cinco
+braços: BM25 direto, cache SQLite com BM25 preservado, FTS5, embeddings locais e
 híbrido por RRF. A decisão está no ADR 0003; o harness e os adapters `lexical-bm25-v1`,
 `sqlite-cache-bm25-v1`, `fts5-v1`, `local-embeddings-v1` e `hybrid-rrf-v1` estão implementados. A
 implementação dos adapters está completa; nenhum deles foi promovido ao produto. Os quatro
@@ -126,13 +125,16 @@ gate é eliminatório, a decisão final é `lexical-retained`: SQLite não avan�
 `lexical-bm25-v1` permanece sozinho e os holdouts estão consumidos sem possibilidade de rerun ou
 retuning.
 
-A Etapa 6.1 isolou o arquivo experimental sem apagar seu histórico. A build default usa features
-vazias e não compila nem expõe SQLite/BM25, FTS5, E5, RRF, Candle, Tokenizers, SQLite bundled,
-`bakeoff` ou `holdout`. A build explícita com `--all-features` preserva os 104 testes históricos.
-Uma medição release local reduziu o binário de aproximadamente 10,96 MB para 3,09 MB. Busca,
-schemas e instalação global permaneceram inalterados.
+A Etapa 6 foi concluída. A build default usa features vazias e não compila nem expõe SQLite/BM25,
+FTS5, E5, RRF, Candle, Tokenizers, SQLite bundled, `bakeoff` ou `holdout`. A build explícita com
+`--all-features` preserva os 104 testes históricos; o produto default passa 47 testes. Uma medição
+release local reduziu o binário de aproximadamente 10,96 MB para 3,09 MB. Instalação limpa,
+atualização 0.1.0 → 0.6.0, rollback para 0.1.0 e nova atualização para 0.6.0 passaram em roots
+isoladas antes da atualização global.
 
 ## Em andamento
+
+Não há implementação aberta. Permanecem somente invariantes de manutenção:
 
 - manter cap 1 apenas como opção explícita, sem alterar o default;
 - preservar o freeze e os 50 relatórios privados imutáveis da Fase 4.6;
@@ -145,10 +147,11 @@ schemas e instalação global permaneceram inalterados.
 
 ## Próximo passo
 
-1. Preparar a versão estável do produto lexical e definir seu número final.
-2. Testar atualização e rollback do instalador sem habilitar `experimental-adapters`.
-3. Atualizar o binário global somente mediante autorização explícita.
-4. Só formular outra hipótese com justificativa independente em development e novos holdouts.
+O projeto está concluído na versão 0.6.0. Trabalho futuro é opcional:
+
+1. Monitorar o uso real do baseline lexical e regressões da fixture pública.
+2. Só formular outra hipótese com justificativa independente em development e novos holdouts.
+3. Considerar binários pré-compilados apenas se a instalação por Cargo se tornar uma barreira medida.
 
 O default continua `lexical-bm25-v1`. O plano faseado está no [`plano`](../plans/docs-search.md), a
 comparação foi aprovada no [`ADR 0003`](../decisions/0003-comparar-engines-antes-da-adocao.md) e a

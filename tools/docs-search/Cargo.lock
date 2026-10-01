@@ -439,7 +439,7 @@ dependencies = [
 
 [[package]]
 name = "docs-search"
-version = "0.6.0-alpha.7"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "blake3",

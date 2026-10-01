@@ -32,6 +32,9 @@ A validação terá duas trilhas:
 A segunda trilha não autoriza rerun de holdouts, retuning, distribuição nem nova adoção. Os
 artefatos consumidos e suas revisões permanecem imutáveis.
 
+A decisão foi estabilizada em `docs-search 0.6.0`. Antes da atualização global, passaram instalação
+limpa, atualização desde 0.1.0, rollback para 0.1.0 e nova atualização para 0.6.0 em roots isoladas.
+
 ## Consequências
 
 - (+) a instalação normal não compila nem distribui Candle, Tokenizers ou SQLite bundled;

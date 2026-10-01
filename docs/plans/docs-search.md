@@ -713,7 +713,7 @@ julgamentos ou holdouts substitutos para esta decisão.
 
 ---
 
-## Etapa 6 — consolidar somente o vencedor — em andamento
+## Etapa 6 — consolidar somente o vencedor — concluída
 
 O vencedor foi o baseline já integrado. Não existe nova engine para promover: a etapa consolida a
 fronteira entre produto e arquivo experimental sem apagar o histórico auditável.
@@ -729,23 +729,25 @@ fronteira entre produto e arquivo experimental sem apagar o histórico auditáve
   testada exclusivamente para preservar o histórico;
 - documentos continuam autoritativos e nenhum contrato público de busca ou avaliação foi alterado.
 
-### 6.2 CI e distribuição — pendente
+### 6.2 Validação e distribuição — concluída
 
-- manter checks separados para produto e arquivo experimental: Clippy e testes default, depois
-  Clippy e testes com `--all-features`;
-- avaliar a fixture estável e o conjunto público permitido;
-- testar atualização e rollback antes da versão estável;
-- manter `cargo install --locked` enquanto for suficiente;
-- publicar binários somente se a instalação por Cargo se tornar barreira medida;
-- publicar checksums e testar arquiteturas suportadas quando houver artefatos.
+- Clippy e testes passaram separadamente para produto default e arquivo `--all-features`, usando
+  diretórios de artefatos distintos;
+- a matriz executou 47 testes de produto e 104 testes com os adapters históricos;
+- o grafo default foi verificado sem Candle, Tokenizers, `rusqlite` ou SQLite bundled;
+- busca real sobre a fixture estável preservou schema v2, `lexical-bm25-v1` e evidência;
+- instalação limpa, atualização de 0.1.0 para 0.6.0, rollback para 0.1.0 e nova atualização para
+  0.6.0 passaram em roots isoladas;
+- o instalador mantém `cargo install --locked --no-default-features` e o binário global foi
+  atualizado somente após autorização explícita.
 
-Uma instalação temporária da build padrão foi validada sem modificar o binário global. A promoção
-de versão e o update global continuam fora desta etapa sem autorização específica.
+A instalação por Cargo continua suficiente; não há barreira medida que justifique binários
+pré-compilados, checksums de artefatos publicados ou outra infraestrutura de distribuição.
 
-### 6.3 Documentação operacional — concluída para o isolamento
+### 6.3 Documentação operacional — concluída
 
-O isolamento foi registrado no README do binário, runbook, skill, checkpoint, ADR e apresentação.
-Mudanças futuras de fluxo ou contrato devem manter esses documentos sincronizados.
+README do binário, avaliação, runbook, skill, checkpoint, ADR, plano e apresentação refletem a
+versão estável e a fronteira entre produto e histórico experimental.
 
 ---
 
@@ -766,7 +768,7 @@ Etapa 5: holdouts novos, gate one-shot e ADR ✓
               ↓
 Etapa 6.1: isolar adapters rejeitados da build de produto ✓
               ↓
-Etapa 6.2: preparar versão estável, atualização e rollback
+Etapa 6.2: versão 0.6.0, instalação, atualização e rollback ✓
 ```
 
 O bake-off compara todas as alternativas planejadas sem confundir armazenamento, ranking lexical,
@@ -798,3 +800,6 @@ O `docs-search` só pode ser considerado estável quando:
 - qualquer cache pode ser apagado e reconstruído;
 - instalação, atualização e fallback são testados;
 - complexidade adotada possui ganho mensurável registrado.
+
+Todos os critérios foram satisfeitos na versão 0.6.0. Evoluções futuras começam como nova hipótese,
+sem reabrir os protocolos ou holdouts consumidos.

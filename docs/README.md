@@ -22,7 +22,7 @@ Decisões arquiteturais permanentes e suas consequências.
 
 Planos vivos de trabalho ainda não concluído.
 
-- `docs-search.md` — plano detalhado, métricas, gates e fases do bake-off de engines até a integração de um vencedor.
+- `docs-search.md` — plano concluído, com métricas, gates, no-go dos adapters e consolidação da versão estável lexical.
 
 ## runbooks/
 

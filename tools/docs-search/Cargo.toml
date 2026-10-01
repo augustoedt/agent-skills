@@ -1,6 +1,6 @@
 [package]
 name = "docs-search"
-version = "0.6.0-alpha.7"
+version = "0.6.0"
 edition = "2024"
 rust-version = "1.85"
 description = "Local, model-independent retrieval for project documentation"

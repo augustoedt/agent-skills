@@ -28,11 +28,21 @@ sem `realpath`) para funcionarem igual no macOS (BSD) e no Linux (GNU).
 
 ## Passos
 
-1. Sincronizar as skills do repo:
+1. Atualizar o repo e sincronizar as skills em um passo:
 
    ```bash
-   cd ~/Projects/agent-skills && git pull
-   ./scripts/install.sh
+   cd "${AGENT_SKILLS_REPO:-$HOME/Projects/agent-skills}"
+   ./scripts/install.sh --pull
+   ```
+
+   Para uma skill apenas, acrescentar seu nome. `--pull` usa
+   `git pull --ff-only` e recusa o update quando o checkout tem alterações
+   locais; nesse caso, revisar, commitar ou guardar o trabalho antes de tentar
+   novamente. Sem `--pull`, o script sincroniza o checkout atual sem acessar a
+   rede.
+
+   ```bash
+   ./scripts/install.sh --pull docs-organization
    ```
 
 2. Listar skills que ainda são diretório real (não symlink) em
@@ -81,6 +91,8 @@ sem `realpath`) para funcionarem igual no macOS (BSD) e no Linux (GNU).
   cópia de `~/.pi/agent/skills/`, substituída por symlink.
 - Não remover sem `diff -rq` antes: se as duas cópias diferirem, resolver a
   diferença manualmente — não sobrescrever uma pela outra.
+- Não usar `--pull` para contornar um checkout sujo: ele falha de propósito
+  para não misturar trabalho local com atualização remota.
 - Não versionar skills de terceiros neste repo: `scripts/install.sh` só
   sincroniza `skills/`; terceiros continuam via `npx skills` (ver README).
 - Não rodar o loop de conversão de fora de `~/.pi/agent/skills/` sem ajustar

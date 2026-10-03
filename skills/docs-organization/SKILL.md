@@ -1,6 +1,6 @@
 ---
 name: docs-organization
-description: Organiza a pasta docs/ no padrão documental do ecossistema. Use ao organizar documentação, criar docs/, definir função das pastas, atualizar project-state.md, registrar ADR, criar ou atualizar docs/runbooks/ (rotinas padrão de debug/ops), ou quando pedirem apresentação HTML em docs/apresentacoes/ (infra, API, módulos, fluxo) sob demanda.
+description: Organiza e compacta docs/ como um grafo enxuto de Markdown no padrão documental do ecossistema. Use ao organizar documentação, reduzir docs sem perder decisões, criar docs/, definir relações entre documentos, atualizar project-state.md, registrar ADR, criar ou atualizar docs/runbooks/ (rotinas padrão de debug/ops), ou quando pedirem apresentação HTML em docs/apresentacoes/ (infra, API, módulos, fluxo) sob demanda.
 ---
 
 # Organização de documentação — padrão do ecossistema
@@ -30,6 +30,71 @@ Pastas de domínio são bem-vindas quando o projeto precisa — precedentes:
 (infra/rotas), `architecture/` (diagramas/explicação), `legacy/` (dumps de
 sistema legado). A regra: **toda pasta tem sua função explicada no
 `docs/README.md`**.
+
+## Grafo de Markdown
+
+Trate `docs/` como um grafo portátil: cada `.md` é um nó, cada link Markdown
+relativo é uma aresta e as pastas classificam os nós. Não adotar banco de
+grafo, frontmatter complexo nem `[[wikilinks]]` como requisito — os links devem
+continuar navegáveis no GitHub e em qualquer editor.
+
+Caminho principal de retomada:
+
+```text
+docs/README.md → checkpoints/project-state.md → plano ativo
+                                      ├→ decisões/contratos
+                                      ├→ runbooks
+                                      └→ reviews/benchmarks
+```
+
+Regras do grafo:
+
+- todo documento operacional deve ser alcançável a partir de `docs/README.md`;
+- cada fato tem um nó canônico; outros documentos resumem em uma frase e
+  apontam para ele, sem copiar blocos;
+- relações importantes usam rótulos claros: **Depende de**, **Implementa**,
+  **Decidido por**, **Verificado em**, **Substitui**;
+- links de volta só existem quando ajudam a navegação; não criar ciclos por
+  simetria automática;
+- documento concluído sai do caminho principal: o resultado vai para
+  `reviews/` e o material histórico para `archive/`;
+- detectar links quebrados e nós órfãos antes de encerrar a reorganização.
+
+Bloco opcional e curto para documentos com relações não óbvias:
+
+```md
+## Relações
+
+- **Depende de:** [Contrato X](../contracts/x.md)
+- **Decidido por:** [ADR Y](../decisions/y.md)
+- **Verificado em:** [Review Z](../reviews/z.md)
+- **Substitui:** [Plano anterior](../archive/plano-anterior.md)
+```
+
+Não repetir relações que já estejam evidentes no primeiro parágrafo ou no
+índice.
+
+## Compactação sem perda de essência
+
+Compactar é reescrever o conjunto, não apagar contexto às cegas. Preservar:
+decisões e seus motivos, contrato vigente, estado atual, evidência final,
+limitações, armadilhas ainda válidas e próximo passo. Tentativas intermediárias,
+logs extensos, proibições temporárias e narrativas de sessão saem do checkpoint;
+se ainda tiverem valor histórico, condensar em `reviews/` ou mover para
+`archive/` com `git mv`.
+
+Orçamentos indicativos, não limites mecânicos:
+
+- `docs/README.md`: função da pasta + uma linha por documento;
+- `checkpoints/project-state.md`: preferir 150–250 linhas; exceder só quando a
+  retomada realmente exigir;
+- bloco `Relações`: 3–6 arestas úteis;
+- plano concluído: objetivo, resultado, decisões, evidência e limites; o diário
+  de execução não permanece no caminho ativo.
+
+A pergunta de corte é: **“isso muda uma decisão, o estado, o próximo passo ou
+uma armadilha?”** Se não, referenciar uma evidência ou remover a duplicação.
+O Git preserva versões anteriores; não usar o checkpoint como histórico de Git.
 
 ## Regras invioláveis
 
@@ -74,7 +139,31 @@ sistema legado). A regra: **toda pasta tem sua função explicada no
    [templates/adr.md](templates/adr.md).
 8. **Apontar nos arquivos de agentes**: `CLAUDE.md`/`AGENTS.md` devem mandar
    ler `docs/README.md` e o `project-state.md` antes de retomar trabalho.
-9. **Commit separado** só com a reorganização (não misturar com features).
+9. **Validar o grafo**: conferir links relativos, listar `.md` não alcançáveis
+   pelo índice e revisar ciclos/duplicações nos hubs. Arquivos deliberadamente
+   privados ou templates podem ser exceções documentadas.
+10. **Compactar ao fechar**: trocar narrativa de execução por resultado,
+    decisão, evidência e limites; mover histórico útil com `git mv`.
+11. **Commit separado** só com a reorganização (não misturar com features).
+
+### Modo compactação
+
+Quando o pedido for “enxugar”, “reduzir” ou “organizar sem perder a essência”:
+
+1. congelar um inventário de nós, links, tamanho e status (ativo, concluído,
+   superado, evidência ou histórico);
+2. escolher o nó canônico de cada assunto e mapear duplicações antes de editar;
+3. compactar primeiro `project-state.md`, mantendo somente o snapshot atual;
+4. retirar planos concluídos de `plans/`, criando ou atualizando uma review de
+   fechamento e arquivando apenas o histórico que ainda tem valor;
+5. transformar cópias de contexto em resumo de uma frase + link rotulado;
+6. provar preservação com uma tabela temporária “fato essencial → nó final”;
+7. validar links, alcançabilidade desde o índice e `git diff --check`;
+8. reler o caminho principal como alguém retomando o projeto sem o chat.
+
+Não compactar ADRs apagando decisões: manter o arquivo e registrar o desfecho
+ou a decisão sucessora. Não esconder WIP, bloqueadores ou riscos atuais em
+`archive/`.
 
 ## Apresentação HTML (sob demanda)
 
@@ -111,10 +200,12 @@ Nomes canônicos: `docs/apresentacoes/fluxo-do-sistema.html` e
 
 ## Checkpoint autoritativo — como escrever
 
-Conteúdo denso, seções fixas: **Onde estamos** (fases/commits com hash),
-**Em andamento** (WIP, inclusive não commitado, com arquivos e motivo),
-**Próximo passo** (lista ordenada), **Armadilhas conhecidas**,
-**Referências**. Regra de ouro: responder "se eu sumir amanhã, o que quem me
+É um **snapshot**, não diário. Conteúdo denso, seções fixas: **Onde estamos**
+(fases/commits ainda relevantes), **Em andamento** (WIP, inclusive não
+commitado, com arquivos e motivo), **Próximo passo** (lista ordenada),
+**Armadilhas conhecidas**, **Referências**. Resumir fatos encerrados em uma
+linha com link para review/ADR/archive; remover instruções temporárias já
+superadas. Regra de ouro: responder "se eu sumir amanhã, o que quem me
 substituir precisa saber nos primeiros 30 minutos?".
 
 ## Runbooks — rotinas de debug/ops

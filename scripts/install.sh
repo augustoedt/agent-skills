@@ -20,6 +20,8 @@
 # Usage:
 #   scripts/install.sh                          # sync every skill under skills/
 #   scripts/install.sh phoenix-ash-admin-ui     # sync just one skill
+#   scripts/install.sh --pull                   # git pull --ff-only, then sync all
+#   scripts/install.sh --pull docs-organization # pull, then sync one skill
 #
 # Env overrides:
 #   AGENT_SKILLS_DEST=/some/dir   # use this dir as the canonical copy instead
@@ -33,6 +35,37 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SOURCE_DIR="$REPO_DIR/skills"
 
 CANONICAL_DIR="${AGENT_SKILLS_DEST:-$HOME/.agents/skills}"
+
+pull_first=false
+skill_args=()
+for arg in "$@"; do
+  case "$arg" in
+    --pull) pull_first=true ;;
+    --help|-h)
+      echo "usage: scripts/install.sh [--pull] [skill ...]"
+      exit 0
+      ;;
+    --*)
+      echo "error: unknown option: $arg" >&2
+      exit 2
+      ;;
+    *) skill_args+=("$arg") ;;
+  esac
+done
+
+if [ "$pull_first" = true ]; then
+  if ! command -v git >/dev/null 2>&1; then
+    echo "error: git not found; --pull cannot update the repo" >&2
+    exit 1
+  fi
+  if [ -n "$(git -C "$REPO_DIR" status --porcelain)" ]; then
+    echo "error: repo has local changes; refusing --pull to avoid overwriting work" >&2
+    echo "       commit, stash, or run without --pull to sync the current checkout" >&2
+    exit 1
+  fi
+  echo "update:    git -C $REPO_DIR pull --ff-only"
+  git -C "$REPO_DIR" pull --ff-only
+fi
 
 # Agent targets: "<base-dir-in-HOME>:<skills-subdir>[:copy]" (bash 3.2-safe:
 # plain array of pairs, no associative arrays). "symlink" is the default mode.
@@ -99,7 +132,7 @@ echo "canonical: $CANONICAL_DIR"
 echo
 
 # skill selection: all of skills/ unless names given on the command line
-targets=("$@")
+targets=("${skill_args[@]}")
 if [ "${#targets[@]}" -eq 0 ]; then
   for skill_path in "$SOURCE_DIR"/*/; do
     targets+=("$(basename "$skill_path")")

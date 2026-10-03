@@ -1,12 +1,13 @@
 # Checkpoint — estado do projeto <nome-do-projeto>
 
-> **Atualizado em YYYY-MM-DD.** Este é o checkpoint autoritativo: ao
-> retomar o trabalho (compactação de chat, troca de modelo), comece por
-> aqui.
+> **Atualizado em YYYY-MM-DD.** Este é o checkpoint autoritativo e um
+> snapshot, não um diário: ao retomar o trabalho (compactação de chat, troca
+> de modelo), comece por aqui. Histórico concluído fica em reviews/archive.
 
 ## Onde estamos
 
-<!-- Fases/entregas concluídas com hashes de commit e datas -->
+<!-- Estado atual e somente entregas concluídas que condicionam o próximo
+passo. Uma linha + link por evidência; não reproduzir planos/reviews. -->
 
 ## Em andamento ⚠️
 
@@ -19,8 +20,15 @@ motivo. Se não há nada, escrever "Nada em andamento." -->
 
 ## Armadilhas conhecidas
 
-<!-- O que já mordeu alguém e pode morder de novo -->
+<!-- Somente riscos ainda válidos. Remover proibições temporárias superadas. -->
 
 ## Referências
 
-<!-- Links relativos pros docs relevantes -->
+<!-- 3–8 links relativos rotulados para os nós canônicos, por exemplo:
+- **Plano ativo:** [...](../plans/...)
+- **Decidido por:** [...](../decisions/...)
+- **Verificado em:** [...](../reviews/...)
+- **Runbook:** [...](../runbooks/...)
+-->
+
+<!-- Alvo indicativo: 150–250 linhas. Exceder só quando a retomada exigir. -->

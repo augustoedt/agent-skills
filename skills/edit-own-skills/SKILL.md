@@ -39,6 +39,9 @@ usar outro caminho).
 1. Editar em `$REPO/skills/<nome>/SKILL.md` (ou criar a pasta).
 2. `cd "$REPO"` + `git add` + `git commit` + `git push origin main`.
 3. Sincronizar: `"$REPO/scripts/install.sh" <nome>` — ou sem argumento, para todas.
+   Em outra máquina, `"$REPO/scripts/install.sh" --pull <nome>` atualiza com
+   `git pull --ff-only` antes de sincronizar e recusa checkout com mudanças
+   locais.
 
 ## Nunca
 

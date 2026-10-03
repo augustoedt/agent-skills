@@ -50,8 +50,11 @@ cd "$AGENT_SKILLS_REPO"
 A **fonte da verdade** é `skills/` deste repo — **nunca** edite
 `~/.agents/skills/` direto (o `install.sh` sobrescreve via `rsync --delete`).
 Fluxo: editar em `skills/<nome>/`, commitar, pushar e rodar
-`./scripts/install.sh <nome>`. A skill `edit-own-skills` (neste repo) documenta
-esse fluxo e é carregada automaticamente pelo pi ao pedir pra mexer em skill.
+`./scripts/install.sh <nome>`. Em outra máquina, `./scripts/install.sh --pull
+<nome>` faz `git pull --ff-only` antes da sincronização e recusa o pull se o
+checkout tiver alterações locais. A skill `edit-own-skills` (neste repo)
+documenta esse fluxo e é carregada automaticamente pelo pi ao pedir pra mexer
+em skill.
 
 ## Compatibilidade (macOS + Linux)
 

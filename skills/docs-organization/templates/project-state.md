@@ -7,7 +7,10 @@
 ## Onde estamos
 
 <!-- Estado atual e somente entregas concluídas que condicionam o próximo
-passo. Uma linha + link por evidência; não reproduzir planos/reviews. -->
+passo. Uma linha + link por evidência; não reproduzir planos/reviews.
+Ao atualizar, REESCREVER esta seção — não acrescentar um item por commit.
+Números voláteis (testes, versões) só com data e só se condicionam o
+próximo passo; nunca duas versões do mesmo número. -->
 
 ## Em andamento ⚠️
 
@@ -31,4 +34,7 @@ motivo. Se não há nada, escrever "Nada em andamento." -->
 - **Runbook:** [...](../runbooks/...)
 -->
 
-<!-- Alvo indicativo: 150–250 linhas. Exceder só quando a retomada exigir. -->
+<!-- Alvo indicativo: 150–250 linhas. Exceder só quando a retomada exigir.
+Teste de retomada: com este arquivo e o docs/README.md deve dar para responder
+como rodar localmente, onde está produção e como fazer deploy, o que está pela
+metade, o próximo passo e o que não pode ser feito. -->

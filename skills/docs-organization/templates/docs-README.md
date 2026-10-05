@@ -1,8 +1,8 @@
 # Documentação do projeto
 
-Estrutura da documentação do `<nome-do-projeto>`. Modelo do ecossistema
-(origem: `campanha_intel_back/docs`). Pastas de domínio adicionais são
-bem-vindas — toda pasta tem sua função explicada aqui.
+Estrutura da documentação do `<nome-do-projeto>`, no padrão da skill
+`docs-organization`. Pastas de domínio adicionais são bem-vindas — toda pasta
+tem sua função explicada aqui.
 
 ## Como navegar
 
@@ -10,6 +10,16 @@ Caminho principal: [`checkpoints/project-state.md`](checkpoints/project-state.md
 → plano ativo → decisões/contratos → evidências. Cada item abaixo ocupa uma
 linha e aponta para o nó canônico; conteúdo concluído sai do caminho principal
 para `reviews/` ou `archive/`.
+
+## Antes de… → leia
+
+<!-- Uma linha por tarefa recorrente; apontar para o nó canônico. -->
+
+| Antes de… | Leia |
+|---|---|
+| rodar ou testar localmente | [`runbooks/<...>.md`](runbooks/) |
+| release ou deploy | [`runbooks/<...>.md`](runbooks/) |
+| mexer em <área sensível> | [`decisions/<...>.md`](decisions/) |
 
 ## decisions/
 
@@ -20,7 +30,8 @@ revertida = arquivo atualizado com o desfecho, nunca apagado.
 ## plans/
 
 Planos de trabalho ainda não concluídos (documentos vivos). Listar uma linha
-por plano com status; planos encerrados não permanecem aqui.
+por plano com status; planos encerrados não permanecem aqui. Cada plano
+começa com um bloco Resumo (template `plan.md`).
 
 ## checkpoints/
 

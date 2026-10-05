@@ -132,6 +132,13 @@ release local reduziu o binário de aproximadamente 10,96 MB para 3,09 MB. Insta
 atualização 0.1.0 → 0.6.0, rollback para 0.1.0 e nova atualização para 0.6.0 passaram em roots
 isoladas antes da atualização global.
 
+A skill `docs-organization` incorporou em 2026-10-05 lições de uso real em dois projetos:
+tabela "Antes de… → leia" no índice, runbooks com premissas/verificação/"Verificado em",
+estado fora do Git documentado no mesmo passo, docs no mesmo commit da mudança, resumo no
+topo dos planos, ADR com "Vigente hoje" e "Como verificar", regra para branches de
+demonstração e teste de retomada. Templates `runbook.md`, `adr.md`, `docs-README.md` e
+`project-state.md` atualizados; `plan.md` é novo.
+
 ## Em andamento
 
 Não há implementação aberta. Permanecem somente invariantes de manutenção:

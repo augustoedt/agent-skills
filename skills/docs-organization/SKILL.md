@@ -1,6 +1,6 @@
 ---
 name: docs-organization
-description: Organiza e compacta docs/ como um grafo enxuto de Markdown no padrão documental do ecossistema. Use ao organizar documentação, reduzir docs sem perder decisões, criar docs/, definir relações entre documentos, atualizar project-state.md, registrar ADR, criar ou atualizar docs/runbooks/ (rotinas padrão de debug/ops), ou quando pedirem apresentação HTML em docs/apresentacoes/ (infra, API, módulos, fluxo) sob demanda.
+description: Organiza e compacta docs/ como um grafo enxuto de Markdown no padrão documental do ecossistema. Use ao organizar documentação, reduzir docs sem perder decisões, criar docs/, definir relações entre documentos, atualizar project-state.md, registrar ADR, criar ou atualizar docs/runbooks/ (rotinas padrão de debug/ops), documentar branch experimental ou de demonstração, ou quando pedirem apresentação HTML em docs/apresentacoes/ (infra, API, módulos, fluxo) sob demanda.
 ---
 
 # Organização de documentação — padrão do ecossistema
@@ -23,6 +23,7 @@ docs/
   archive/           ← documentos de etapas concluídas (histórico)
   benchmarks/        ← medições que sustentam decisões (pode ficar vazia)
   apresentacoes/     ← HTML editorial pra não-técnicos (só sob demanda)
+  branches/          ← só dentro de branch experimental/demo (ver seção própria)
 ```
 
 Pastas de domínio são bem-vindas quando o projeto precisa — precedentes:
@@ -47,6 +48,16 @@ docs/README.md → checkpoints/project-state.md → plano ativo
                                       └→ reviews/benchmarks
 ```
 
+### Roteamento por tarefa
+
+Documento que ninguém sabe *quando* ler não é lido: o índice dizer o que cada
+arquivo **é** não basta. O `docs/README.md` tem, logo após "Como navegar", a
+tabela **Antes de… → leia**, uma linha por tarefa recorrente (rodar/testar,
+release/deploy, demo, migração de dados, mexer em autorização, operação de
+produção…) apontando para o runbook, ADR ou documento de arquitetura que deve
+ser lido antes. `AGENTS.md`/`CLAUDE.md` apontam para essa tabela em vez de
+repetir a lista.
+
 Regras do grafo:
 
 - todo documento operacional deve ser alcançável a partir de `docs/README.md`;
@@ -58,7 +69,9 @@ Regras do grafo:
   simetria automática;
 - documento concluído sai do caminho principal: o resultado vai para
   `reviews/` e o material histórico para `archive/`;
-- detectar links quebrados e nós órfãos antes de encerrar a reorganização.
+- detectar links quebrados e nós órfãos antes de encerrar a reorganização;
+- documento não copia o que o código já diz (moduledoc, `--help`, saída de
+  task, schema): aponta para o comando ou arquivo que é a fonte.
 
 Bloco opcional e curto para documentos com relações não óbvias:
 
@@ -109,14 +122,25 @@ O Git preserva versões anteriores; não usar o checkpoint como histórico de Gi
    revertida = mesmo arquivo atualizado com o desfecho.
 5. **issues/ é só o que está aberto**: auditoria concluída → `reviews/`;
    etapa concluída → `archive/`; problema que virou trabalho → `plans/`.
-6. **runbooks/ são vivos**: um arquivo por operação de debug/ops. Não
-   arquivar quando a rotina muda — **editar o mesmo arquivo**. Novo tipo
-   de acesso (SSH, sqlite, ZIP, backfill, …) = arquivo novo + linha no
-   `docs/README.md`. Template: [templates/runbook.md](templates/runbook.md).
+6. **runbooks/ são vivos e verificáveis**: um arquivo por operação de
+   debug/ops. Não arquivar quando a rotina muda — **editar o mesmo arquivo**.
+   Novo tipo de acesso (SSH, sqlite, ZIP, backfill, …) = arquivo novo + linha
+   no `docs/README.md`. Todo runbook declara premissas, um passo de
+   verificação e quando foi executado de verdade pela última vez; runbook
+   nunca executado é marcado **não verificado**. Template:
+   [templates/runbook.md](templates/runbook.md).
 7. Mover com `git mv` (preserva histórico) e **atualizar todas as
    referências cruzadas** (código, testes, outros docs). Proteger WIP não
    commitado: nunca commitar arquivos de trabalho alheio junto com a
    reorganização.
+8. **Estado fora do Git também é documentado**: mudança feita em painel ou
+   CLI de plataforma (domínio, variável, serviço, credencial, DNS, cron,
+   webhook, permissão de integração) atualiza o runbook correspondente **no
+   mesmo passo**. Registrar a fonte da verdade e como consultá-la, não o valor
+   volátil: "domínio: `<comando ou tela>`" em vez do domínio literal.
+9. **Docs andam com a mudança**: atualização incremental de checkpoint,
+   runbook ou ADR causada por uma mudança vai **no mesmo commit** dela.
+   Commit só de docs é para reorganização/compactação ou registro sem código.
 
 ## Procedimento (aplicar o padrão num projeto)
 
@@ -130,7 +154,8 @@ O Git preserva versões anteriores; não usar o checkpoint como histórico de Gi
 4. **Atualizar referências**: grep por `docs/`, `issues/`, nomes de arquivo
    em `.md`, `.ts` e README; ajustar pros paths novos.
 5. **Criar/atualizar `docs/README.md`** a partir de
-   [templates/docs-README.md](templates/docs-README.md).
+   [templates/docs-README.md](templates/docs-README.md), incluindo a tabela
+   **Antes de… → leia** (ver Roteamento por tarefa).
 6. **Criar/atualizar `docs/checkpoints/project-state.md`** a partir de
    [templates/project-state.md](templates/project-state.md) — conteúdo real:
    estado, em andamento, próximo passo, armadilhas.
@@ -138,13 +163,23 @@ O Git preserva versões anteriores; não usar o checkpoint como histórico de Gi
    escritas viram arquivos em `decisions/` — template em
    [templates/adr.md](templates/adr.md).
 8. **Apontar nos arquivos de agentes**: `CLAUDE.md`/`AGENTS.md` devem mandar
-   ler `docs/README.md` e o `project-state.md` antes de retomar trabalho.
+   ler `docs/README.md` e o `project-state.md` antes de retomar trabalho, e
+   consultar a tabela **Antes de… → leia** antes de cada tarefa.
 9. **Validar o grafo**: conferir links relativos, listar `.md` não alcançáveis
-   pelo índice e revisar ciclos/duplicações nos hubs. Arquivos deliberadamente
+   pelo índice e revisar ciclos/duplicações nos hubs. Também: pastas presentes
+   no índice mas inexistentes (ou o inverso), lacunas na numeração de ADRs sem
+   explicação e números contraditórios no checkpoint. Arquivos deliberadamente
    privados ou templates podem ser exceções documentadas.
 10. **Compactar ao fechar**: trocar narrativa de execução por resultado,
     decisão, evidência e limites; mover histórico útil com `git mv`.
-11. **Commit separado** só com a reorganização (não misturar com features).
+11. **Commits**: reorganização/compactação em commit próprio, sem features;
+    atualizações incrementais seguem a regra inviolável 9. Se push dispara deploy ou CI,
+    configurar o filtro de caminho para ignorar `docs/**` (watch paths,
+    `paths-ignore`, ignored build step…) e registrar isso no runbook de deploy.
+12. **Teste de retomada**: lendo só `docs/README.md` e o checkpoint, responder:
+    (1) como rodo localmente? (2) onde está produção e como faço deploy?
+    (3) o que está pela metade? (4) qual o próximo passo? (5) o que não posso
+    fazer? Resposta que exige ler código ou o chat = corrigir o doc agora.
 
 ### Modo compactação
 
@@ -205,7 +240,12 @@ Nomes canônicos: `docs/apresentacoes/fluxo-do-sistema.html` e
 commitado, com arquivos e motivo), **Próximo passo** (lista ordenada),
 **Armadilhas conhecidas**, **Referências**. Resumir fatos encerrados em uma
 linha com link para review/ADR/archive; remover instruções temporárias já
-superadas. Regra de ouro: responder "se eu sumir amanhã, o que quem me
+superadas.
+
+Ao atualizar, **reescrever a seção afetada**; nunca só acrescentar um item por
+commit — isso transforma o snapshot em diário. Números que envelhecem rápido
+(contagem de testes, versões, métricas) só entram se condicionam o próximo
+passo, com data, e nunca em duas versões no mesmo arquivo. Regra de ouro: responder "se eu sumir amanhã, o que quem me
 substituir precisa saber nos primeiros 30 minutos?".
 
 ## Runbooks — rotinas de debug/ops
@@ -215,9 +255,55 @@ SSH a uma VM, sqlite local, baixar objecto privado, inspeccionar um
 ficheiro, backfill — **não deixar só no chat**. Criar ou actualizar
 `docs/runbooks/<kebab-da-operacao>.md`.
 
-Conteúdo: Quando / Passos (comandos reais, paths reais) / Não fazer.
-Sem secrets. IP/hostname no checkpoint, o runbook aponta para lá.
+Conteúdo: Quando / Premissas / Passos (comandos reais, paths reais) /
+Verificação / Não fazer, com a linha **Verificado em** no topo. Sem secrets.
 Rotina mudou → editar o mesmo arquivo, não criar `…-v2.md`.
+
+- **Premissas** explicitam do que a rotina depende e que pode ser diferente
+  em outro ambiente: fuso horário do servidor, domínios/hosts, credenciais
+  externas obrigatórias ou opcionais, provedores (email, SMS, pagamento),
+  permissões de integração (ex.: plataforma sem acesso à organização Git).
+  Escrever a premissa força a pergunta "e se não for assim?" antes do deploy.
+- **Verificação** é um comando ou passo que prova que a rotina funcionou; no
+  runbook de deploy, um teste por fluxo crítico (checklist pós-deploy).
+- **Verificado em** registra data e contexto da última execução real. Runbook
+  que descreve algo nunca executado (ex.: release que nunca subiu) fica
+  marcado **não verificado** — não descrever como pronto o que nunca rodou.
+- Valores voláteis (IP, hostname, domínio, IDs) ficam no checkpoint ou são
+  consultados na fonte; o runbook diz como obtê-los.
+
+## Planos — resumo no topo
+
+Todo plano em `plans/` começa com um bloco **Resumo** de até ~15 linhas:
+status, fase atual, pendências/gates, próximo passo e o que é proibido sem
+aprovação, seguido de "detalhes abaixo só para quem vai executar o plano".
+Quem precisa apenas do estado para no resumo. Template:
+[templates/plan.md](templates/plan.md).
+
+## ADRs — substituição parcial e verificação
+
+- Decisão parcialmente substituída: o ADR antigo ganha no topo um bloco
+  **Vigente hoje** (o que ainda vale, em poucas linhas) e cada trecho que
+  deixou de valer é marcado no próprio texto apontando para o sucessor. O
+  leitor não deve precisar filtrar mentalmente regra vigente de regra morta.
+- Todo ADR tem **Como verificar**: teste, comando ou inspeção que prova que a
+  decisão continua valendo no código.
+- Lacuna de numeração (ADR nunca criado ou número pulado) é explicada no
+  índice; ADR não é apagado (regra inviolável 4).
+
+## Branches experimentais ou de demonstração
+
+Branch descartável (MVP para mostrar, spike, experimento) não altera o grafo
+da linha principal: checkpoint, ADRs, runbooks e índice da `main` continuam
+descrevendo o produto real.
+
+- Registrar tudo num único `docs/branches/<nome-da-branch>.md`, ligado ao
+  `docs/README.md` **dentro da própria branch**, começando por: "Branch
+  descartável — não aplicável à `main`".
+- Listar ali as exceções a ADRs/armadilhas vigentes (qual regra é violada e
+  por quê), como rodar/publicar a demo e as premissas do ambiente dela.
+- Se a branch virar produto, as exceções viram ADRs novos e o documento sai
+  para `archive/` no merge.
 
 ## Sinais de que este skill se aplica
 
@@ -226,4 +312,5 @@ Rotina mudou → editar o mesmo arquivo, não criar `…-v2.md`.
 - "registra essa decisão", "cria um ADR"
 - "runbook", "passo a passo", "como acesso a VM", "como baixo o ZIP", debug/ops
 - "apresentação HTML", "explica o sistema", "página em apresentacoes/"
+- "branch de demo", "MVP descartável", "spike", experimento fora da `main`
 - Projeto novo sem `docs/` estruturada

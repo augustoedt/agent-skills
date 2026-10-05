@@ -46,3 +46,11 @@ limpa, atualização desde 0.1.0, rollback para 0.1.0 e nova atualização para 
 - (−) o arquivo experimental ainda exige manutenção mínima enquanto permanecer na árvore;
 - ⚠️ `experimental-adapters` nunca deve ser habilitada pelo instalador ou pela distribuição normal;
 - ⚠️ compilar o histórico não reabre protocolos, registries ou holdouts consumidos.
+
+## Como verificar
+
+- `tools/docs-search/Cargo.toml` tem `default = []` em `[features]`.
+- `docs-search --help` lista apenas `search` e `evaluate`, sem `bakeoff` nem `holdout`.
+- As duas trilhas de testes do runbook
+  [`buscar-documentacao-de-projetos.md`](../runbooks/buscar-documentacao-de-projetos.md) passam:
+  default e `--all-features`, rodadas em sequência.

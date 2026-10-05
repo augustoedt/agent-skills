@@ -39,3 +39,8 @@ observar rankings.
   ajuste;
 - ⚠️ SQLite/FTS5, embeddings, RRF ou outro aumento de complexidade continuam exigindo evidência
   independente nos corpora de desenvolvimento e um novo gate.
+
+## Como verificar
+
+`docs-search search --help` mostra `--max-results-per-path` como opcional, sem valor padrão, e uma
+busca `--json` sem a flag retorna `selection.max_results_per_path` nulo.

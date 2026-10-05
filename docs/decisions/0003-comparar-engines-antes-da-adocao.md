@@ -110,3 +110,9 @@ com `--all-features` serve para preservação histórica, não para reabrir o ex
 - ⚠️ nenhuma variante pode ser promovida usando os holdouts consumidos;
 - ⚠️ SQLite/BM25 está rejeitado para este ciclo, apesar do ganho operacional;
 - ⚠️ implementar um protótipo não implica adoção nem manutenção futura.
+
+## Como verificar
+
+Decisão executada e encerrada com `lexical-retained`. Para confirmar que o resultado continua
+aplicado: a busca `--json` retorna `engine` `lexical-bm25-v1`, e a build de produto não contém os
+outros braços (ver verificação do [ADR 0004](0004-isolar-adapters-rejeitados-da-build-de-produto.md)).

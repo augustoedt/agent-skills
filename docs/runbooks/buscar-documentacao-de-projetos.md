@@ -1,5 +1,10 @@
 # Runbook — Buscar documentação de projetos
 
+> **Verificado em:** 2026-10-05 — `docs-search --version` retornou `0.6.0` e uma busca `--json` no
+> próprio repo retornou `schema_version = 2` e `engine = lexical-bm25-v1`. A trilha de
+> desenvolvimento (`cargo test`, matrizes de features) e o verificador do freeze não foram
+> reexecutados nessa data.
+
 Documento vivo. Atualizar junto com `skills/search-project-docs/SKILL.md` sempre que o fluxo ou o
 contrato do binário mudar.
 
@@ -8,6 +13,13 @@ contrato do binário mudar.
 - Antes de carregar vários documentos de um projeto no contexto de um agente.
 - Ao retomar trabalho e localizar checkpoint, ADR, plano, regra ou runbook relevante.
 - Ao responder perguntas cuja fonte deve ser citada com path e linhas.
+
+## Premissas
+
+- Instalação compila com Cargo: exige toolchain Rust; o binário global é gerenciado por `asdf`.
+- O corpus padrão é Markdown em `docs/**` e arquivos de raiz; `skills/**` e código ficam fora.
+- A trilha de avaliação do bake-off depende de `DOCS_SEARCH_PRIVATE_EVAL_ROOT`, um diretório
+  privado local que não existe fora da máquina do autor.
 
 ## Instalar ou atualizar o binário
 
@@ -61,6 +73,16 @@ docs-search --version
    relevante.
 7. Se necessário, reformular a consulta uma vez; só então ampliar a leitura.
 8. Conferir código e configuração atuais antes de editar.
+
+## Verificação
+
+```bash
+docs-search --version   # versão estável atual: 0.6.0
+docs-search search --root . --query "sincronizar skills" --limit 1 --json
+```
+
+A busca deve retornar `schema_version` 2, `engine` `lexical-bm25-v1` e
+`selection.max_results_per_path` nulo (cap desligado por padrão).
 
 ## Corpus
 

@@ -1,5 +1,10 @@
 # Plano — docs-search
 
+> **Arquivado em 2026-10-05.** Plano concluído com o `docs-search` 0.6.0. Preservado sem reescrita
+> como histórico. Resultado e métricas resumidos em
+> [`../reviews/2026-10-05-fechamento-docs-search.md`](../reviews/2026-10-05-fechamento-docs-search.md);
+> estado atual em [`../checkpoints/project-state.md`](../checkpoints/project-state.md).
+
 ## Estado do plano
 
 - baseline lexical: implementado e preservado sem tuning;

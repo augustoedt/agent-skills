@@ -1,6 +1,10 @@
 # Runbook — Sincronizar skills e eliminar conflitos de nome
 
-Documento vivo. Actualizar quando a rotina mudar (paths, credenciais, API).
+> **Verificado em:** 2026-10-05 — `./scripts/install.sh docs-organization` seguido de
+> `diff -rq skills/docs-organization ~/.agents/skills/docs-organization` sem diferenças. Os passos
+> 2–4 (conversão de cópias reais em symlink) não foram reexecutados nessa data.
+
+Documento vivo. Atualizar quando a rotina mudar (paths, comandos, agentes).
 Não é ADR nem plano.
 
 ## Quando
@@ -25,6 +29,13 @@ que encontrar.
 
 Os comandos abaixo são POSIX/bash puro (sem `find -printf`, sem `sed -i`,
 sem `realpath`) para funcionarem igual no macOS (BSD) e no Linux (GNU).
+
+## Premissas
+
+- O repo está em `$AGENT_SKILLS_REPO` ou em `~/Projects/agent-skills`; o caminho muda por máquina.
+- `--pull` exige acesso ao remoto GitHub e checkout limpo.
+- Só os agentes cuja pasta existe na máquina recebem symlinks; agentes ausentes são pulados.
+- Comandos POSIX/bash, válidos em macOS (BSD) e Linux (GNU).
 
 ## Passos
 
@@ -84,6 +95,16 @@ sem `realpath`) para funcionarem igual no macOS (BSD) e no Linux (GNU).
    for d in */; do d="${d%/}"; [ -L "$d" ] || echo "REAL DIR: $d"; done  # vazio
    find . -maxdepth 1 -type l ! -exec test -e {} \; -print                 # vazio
    ```
+
+## Verificação
+
+- A cópia instalada é idêntica ao repo (sem saída = ok):
+
+  ```bash
+  diff -rq "skills/<nome>" "$HOME/.agents/skills/<nome>"
+  ```
+
+- O passo 4 não lista diretório real nem symlink quebrado.
 
 ## Não fazer
 

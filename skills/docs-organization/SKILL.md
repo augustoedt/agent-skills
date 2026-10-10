@@ -18,7 +18,7 @@ docs/
   plans/             ← planos de trabalho ainda não concluídos (documentos vivos)
   checkpoints/       ← project-state.md — arquivo ÚNICO e autoritativo
   runbooks/          ← passo a passo vivo de debug/ops (um arquivo por operação)
-  reviews/           ← revisões de código e auditorias
+  reviews/           ← artefatos de revisões/auditorias explicitamente solicitadas
   issues/            ← problemas conhecidos EM ABERTO (virou plano → sai daqui)
   archive/           ← documentos de etapas concluídas (histórico)
   benchmarks/        ← medições que sustentam decisões (pode ficar vazia)
@@ -45,7 +45,7 @@ Caminho principal de retomada:
 docs/README.md → checkpoints/project-state.md → plano ativo
                                       ├→ decisões/contratos
                                       ├→ runbooks
-                                      └→ reviews/benchmarks
+                                      └→ reviews solicitadas/benchmarks
 ```
 
 ### Roteamento por tarefa
@@ -67,8 +67,9 @@ Regras do grafo:
   **Decidido por**, **Verificado em**, **Substitui**;
 - links de volta só existem quando ajudam a navegação; não criar ciclos por
   simetria automática;
-- documento concluído sai do caminho principal: o resultado vai para
-  `reviews/` e o material histórico para `archive/`;
+- documento concluído sai do caminho principal: material histórico vai para
+  `archive/`; quando o próprio trabalho já for uma revisão ou auditoria
+  explicitamente solicitada, seu artefato permanece em `reviews/`;
 - detectar links quebrados e nós órfãos antes de encerrar a reorganização;
 - documento não copia o que o código já diz (moduledoc, `--help`, saída de
   task, schema): aponta para o comando ou arquivo que é a fonte.
@@ -80,7 +81,7 @@ Bloco opcional e curto para documentos com relações não óbvias:
 
 - **Depende de:** [Contrato X](../contracts/x.md)
 - **Decidido por:** [ADR Y](../decisions/y.md)
-- **Verificado em:** [Review Z](../reviews/z.md)
+- **Verificado em:** [Review Z já solicitada](../reviews/z.md)
 - **Substitui:** [Plano anterior](../archive/plano-anterior.md)
 ```
 
@@ -93,8 +94,9 @@ Compactar é reescrever o conjunto, não apagar contexto às cegas. Preservar:
 decisões e seus motivos, contrato vigente, estado atual, evidência final,
 limitações, armadilhas ainda válidas e próximo passo. Tentativas intermediárias,
 logs extensos, proibições temporárias e narrativas de sessão saem do checkpoint;
-se ainda tiverem valor histórico, condensar em `reviews/` ou mover para
-`archive/` com `git mv`.
+se ainda tiverem valor histórico, condensar no documento canônico da mesma
+natureza ou mover para `archive/` com `git mv`; não transformar esse material
+em review sem solicitação explícita.
 
 Orçamentos indicativos, não limites mecânicos:
 
@@ -120,8 +122,9 @@ O Git preserva versões anteriores; não usar o checkpoint como histórico de Gi
    etapa. Serve pra retomada após compactação de chat ou troca de modelo.
 4. **ADRs nunca são apagados**: decisão nova = arquivo novo; decisão
    revertida = mesmo arquivo atualizado com o desfecho.
-5. **issues/ é só o que está aberto**: auditoria concluída → `reviews/`;
-   etapa concluída → `archive/`; problema que virou trabalho → `plans/`.
+5. **issues/ é só o que está aberto**: artefato de auditoria explicitamente
+   solicitada e concluída → `reviews/`; etapa concluída → `archive/`; problema
+   que virou trabalho → `plans/`.
 6. **runbooks/ são vivos e verificáveis**: um arquivo por operação de
    debug/ops. Não arquivar quando a rotina muda — **editar o mesmo arquivo**.
    Novo tipo de acesso (SSH, sqlite, ZIP, backfill, …) = arquivo novo + linha
@@ -141,6 +144,11 @@ O Git preserva versões anteriores; não usar o checkpoint como histórico de Gi
 9. **Docs andam com a mudança**: atualização incremental de checkpoint,
    runbook ou ADR causada por uma mudança vai **no mesmo commit** dela.
    Commit só de docs é para reorganização/compactação ou registro sem código.
+10. **Reviews exigem solicitação explícita**: mencionar `reviews/`, concluir
+    tarefa/plano, compactar ou reorganizar documentação nunca autoriza executar
+    code review, invocar agente revisor, nem criar, editar, mover ou atualizar
+    arquivo em `docs/reviews/`. Isso só pode ocorrer quando o usuário pedir
+    explicitamente a revisão/auditoria ou a alteração daquele artefato.
 
 ## Procedimento (aplicar o padrão num projeto)
 
@@ -171,7 +179,8 @@ O Git preserva versões anteriores; não usar o checkpoint como histórico de Gi
    explicação e números contraditórios no checkpoint. Arquivos deliberadamente
    privados ou templates podem ser exceções documentadas.
 10. **Compactar ao fechar**: trocar narrativa de execução por resultado,
-    decisão, evidência e limites; mover histórico útil com `git mv`.
+    decisão, evidência e limites; mover histórico útil com `git mv`, sem criar
+    ou alterar reviews salvo por solicitação explícita.
 11. **Commits**: reorganização/compactação em commit próprio, sem features;
     atualizações incrementais seguem a regra inviolável 9. Se push dispara deploy ou CI,
     configurar o filtro de caminho para ignorar `docs/**` (watch paths,
@@ -189,8 +198,9 @@ Quando o pedido for “enxugar”, “reduzir” ou “organizar sem perder a es
    superado, evidência ou histórico);
 2. escolher o nó canônico de cada assunto e mapear duplicações antes de editar;
 3. compactar primeiro `project-state.md`, mantendo somente o snapshot atual;
-4. retirar planos concluídos de `plans/`, criando ou atualizando uma review de
-   fechamento e arquivando apenas o histórico que ainda tem valor;
+4. retirar planos concluídos de `plans/` e arquivar apenas o histórico que
+   ainda tem valor; não criar nem atualizar review de fechamento sem pedido
+   explícito do usuário;
 5. transformar cópias de contexto em resumo de uma frase + link rotulado;
 6. provar preservação com uma tabela temporária “fato essencial → nó final”;
 7. validar links, alcançabilidade desde o índice e `git diff --check`;
@@ -239,8 +249,8 @@ Nomes canônicos: `docs/apresentacoes/fluxo-do-sistema.html` e
 (fases/commits ainda relevantes), **Em andamento** (WIP, inclusive não
 commitado, com arquivos e motivo), **Próximo passo** (lista ordenada),
 **Armadilhas conhecidas**, **Referências**. Resumir fatos encerrados em uma
-linha com link para review/ADR/archive; remover instruções temporárias já
-superadas.
+linha com link para ADR/archive ou, quando já existir por solicitação explícita,
+review; remover instruções temporárias já superadas.
 
 Ao atualizar, **reescrever a seção afetada**; nunca só acrescentar um item por
 commit — isso transforma o snapshot em diário. Números que envelhecem rápido

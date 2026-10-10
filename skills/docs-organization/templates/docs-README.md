@@ -9,7 +9,8 @@ tem sua função explicada aqui.
 Caminho principal: [`checkpoints/project-state.md`](checkpoints/project-state.md)
 → plano ativo → decisões/contratos → evidências. Cada item abaixo ocupa uma
 linha e aponta para o nó canônico; conteúdo concluído sai do caminho principal
-para `reviews/` ou `archive/`.
+para `archive/`. Artefatos de revisão ou auditoria permanecem em `reviews/`
+somente quando o usuário os tiver solicitado explicitamente.
 
 ## Antes de… → leia
 
@@ -48,7 +49,10 @@ quando a rotina mudar. Não é plano nem ADR. Pasta pode começar vazia.
 
 ## reviews/
 
-Revisões de código e auditorias (concluídas ou em curso).
+Armazenamento de revisões de código e auditorias explicitamente solicitadas
+pelo usuário. A existência desta pasta ou desta seção não autoriza executar uma
+revisão nem criar, editar, mover ou atualizar seus arquivos sem novo pedido
+explícito.
 
 ## issues/
 

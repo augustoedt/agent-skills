@@ -2,7 +2,8 @@
 
 > **Atualizado em YYYY-MM-DD.** Este é o checkpoint autoritativo e um
 > snapshot, não um diário: ao retomar o trabalho (compactação de chat, troca
-> de modelo), comece por aqui. Histórico concluído fica em reviews/archive.
+> de modelo), comece por aqui. Histórico concluído fica em `archive/`;
+> `reviews/` contém somente artefatos explicitamente solicitados pelo usuário.
 
 ## Onde estamos
 
@@ -30,7 +31,7 @@ motivo. Se não há nada, escrever "Nada em andamento." -->
 <!-- 3–8 links relativos rotulados para os nós canônicos, por exemplo:
 - **Plano ativo:** [...](../plans/...)
 - **Decidido por:** [...](../decisions/...)
-- **Verificado em:** [...](../reviews/...)
+- **Verificado em:** [...](../reviews/...) <!-- só quando essa review já existir por solicitação explícita -->
 - **Runbook:** [...](../runbooks/...)
 -->
 

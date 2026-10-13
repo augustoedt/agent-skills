@@ -1,7 +1,9 @@
 # Runbook — Buscar documentação de projetos
 
-> **Verificado em:** 2026-10-05 — `docs-search --version` retornou `0.6.0` e uma busca `--json` no
-> próprio repo retornou `schema_version = 2` e `engine = lexical-bm25-v1`. A trilha de
+> **Verificado em:** 2026-10-13 — `docs-search --version` retornou `0.6.0`; no corpus real de um
+> projeto, uma consulta longa multifacetada retornou vazio, enquanto as consultas atômicas
+> `retificar.py`, `regras retificação`, `produto replicável` e `estado atual projeto` retornaram
+> os documentos esperados com `schema_version = 2` e `engine = lexical-bm25-v1`. A trilha de
 > desenvolvimento (`cargo test`, matrizes de features) e o verificador do freeze não foram
 > reexecutados nessa data.
 
@@ -18,6 +20,8 @@ contrato do binário mudar.
 
 - Instalação compila com Cargo: exige toolchain Rust; o binário global é gerenciado por `asdf`.
 - O corpus padrão é Markdown em `docs/**` e arquivos de raiz; `skills/**` e código ficam fora.
+- O motor estável é lexical: normaliza caixa e acentos, mas não resolve sinônimos ou flexões e
+  exige que um mesmo chunk contenha a maioria dos termos significativos da consulta.
 - A trilha de avaliação do bake-off depende de `DOCS_SEARCH_PRIVATE_EVAL_ROOT`, um diretório
   privado local que não existe fora da máquina do autor.
 
@@ -43,10 +47,14 @@ docs-search --version
 
 ## Buscar
 
-1. Resolver a raiz do projeto:
+1. Resolver a raiz do projeto, com fallback explícito para projetos sem Git:
 
    ```bash
-   ROOT="$(git rev-parse --show-toplevel)"
+   if ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"; then
+     :
+   else
+     ROOT="$PWD"
+   fi
    ```
 
 2. Verifique a disponibilidade e não invoque o binário se a verificação falhar:
@@ -60,19 +68,41 @@ docs-search --version
    ```
 
 3. Se `DOCS_SEARCH_BIN` estiver vazio, use o fallback explícito da seção **Não fazer**.
-4. Fazer uma consulta focada:
+4. Decompor o pedido:
+   - um assunto vira uma consulta de 1–4 termos distintivos;
+   - um pedido multifacetado vira 2–4 consultas independentes, uma por faceta;
+   - identificadores literais, nomes de arquivo, ADRs, comandos e mensagens de erro são os melhores
+     pontos de partida;
+   - não enviar uma pergunta longa que mistura estado, comportamento, regras e próximos passos.
+5. Fazer cada consulta focada, em paralelo quando a interface permitir:
 
    ```bash
-   "$DOCS_SEARCH_BIN" search --root "$ROOT" --query "<pergunta objetiva>" --limit 5 --json
+   "$DOCS_SEARCH_BIN" search --root "$ROOT" --query "<1 a 4 termos>" --limit 5 --json
    ```
 
-5. Selecionar pelos campos `path`, `heading`, `line_start`, `line_end`, `score` e
+6. Selecionar pelos campos `path`, `heading`, `line_start`, `line_end`, `score` e
    `matched_terms`. Na resposta v2, `selection` registra o cap efetivo e `raw_rank` permite auditar
    resultados promovidos pela diversidade.
-6. Ler o trecho correspondente no arquivo original e confirmar o hash/frescor quando isso for
+7. Ler o trecho correspondente no arquivo original e confirmar o hash/frescor quando isso for
    relevante.
-7. Se necessário, reformular a consulta uma vez; só então ampliar a leitura.
-8. Conferir código e configuração atuais antes de editar.
+8. Para uma faceta vazia, seguir **Resultado vazio**. Só aumentar o limite quando já existem
+   candidatos relevantes.
+9. Conferir código e configuração atuais antes de editar.
+
+## Resultado vazio
+
+O filtro lexical exige cerca de 60% dos termos significativos no mesmo chunk. Como os documentos
+são divididos por headings, uma consulta que mistura várias respostas pode não ter candidato algum,
+mesmo quando o corpus contém todas elas em chunks diferentes.
+
+Para cada faceta vazia:
+
+1. reduzir a consulta ao identificador literal ou a 1–2 termos centrais;
+2. tentar no máximo uma segunda variante lexical, porque `gera`, `gerar` e `geração` não são
+   equivalentes e “próximos passos” não implica “Plano” ou “Pronto quando”;
+3. não repetir a frase original e não aumentar só `--limit`;
+4. persistindo vazio, usar `rg` no corpus permitido conforme **Não fazer** e marcar a evidência como
+   fallback sem ranking.
 
 ## Verificação
 
@@ -159,7 +189,8 @@ exige outra tag e outro protocolo.
 - Não acessar holdouts consumidos, contornar a denylist ou alterar parâmetros de `engine-bakeoff-v1`.
 - Não invocar `docs-search` sem antes confirmar `command -v docs-search`.
 - Não engolir indisponibilidade ou erro do binário; reportar a falha e usar `rg` explicitamente
-  apenas no corpus permitido:
+  apenas no corpus permitido. O mesmo fallback vale quando consultas atômicas e uma variante
+  lexical continuam vazias:
 
   ```bash
   paths=()
@@ -170,6 +201,6 @@ exige outra tag e outro protocolo.
   if [ "${#paths[@]}" -eq 0 ]; then
     echo "nenhum arquivo do corpus documental encontrado" >&2
   else
-    rg -n -i --glob '*.md' '<termos>' "${paths[@]}"
+    rg -n -i --glob '*.md' '<termo1|termo2|identificador>' "${paths[@]}"
   fi
   ```

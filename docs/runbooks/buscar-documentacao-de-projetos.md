@@ -1,10 +1,11 @@
 # Runbook — Buscar documentação de projetos
 
-> **Verificado em:** 2026-10-13 — `docs-search --version` retornou `0.6.0`; no corpus real de um
-> projeto, uma consulta longa multifacetada retornou vazio, enquanto as consultas atômicas
-> `retificar.py`, `regras retificação`, `produto replicável` e `estado atual projeto` retornaram
-> os documentos esperados com `schema_version = 2` e `engine = lexical-bm25-v1`. A trilha de
-> desenvolvimento (`cargo test`, matrizes de features) e o verificador do freeze não foram
+> **Verificado em:** 2026-10-15 — `docs-search 0.6.0`: no repo de skills, `sincronizar` encontrou
+> o runbook de sincronização; `sincronização` retornou outros trechos, confirmando que as formas
+> não são equivalentes. Uma consulta longa também encontrou resultados: tamanho não é causa
+> universal de falha. Numa pasta agregadora sem corpus, a resposta foi `files = 0`, `chunks = 0`
+> e `results = []`, distinguindo erro de escopo de ausência de correspondência lexical. A trilha
+> de desenvolvimento (`cargo test`, matrizes de features) e o verificador do freeze não foram
 > reexecutados nessa data.
 
 Documento vivo. Atualizar junto com `skills/search-project-docs/SKILL.md` sempre que o fluxo ou o
@@ -47,15 +48,21 @@ docs-search --version
 
 ## Buscar
 
-1. Resolver a raiz do projeto, com fallback explícito para projetos sem Git:
+1. Identificar o projeto mencionado na tarefa antes de escolher a raiz. Definir `PROJECT_DIR`
+   com seu diretório; só usar o cwd se ele for o projeto correto. Uma pasta agregadora não é a
+   raiz dos projetos que contém. Se houver ambiguidade, pedir a escolha sem varrer todos:
 
    ```bash
-   if ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"; then
+   PROJECT_DIR="${PROJECT_DIR:-$PWD}" # definir explicitamente quando o projeto não for o cwd
+   if ROOT="$(git -C "$PROJECT_DIR" rev-parse --show-toplevel 2>/dev/null)"; then
      :
    else
-     ROOT="$PWD"
+     ROOT="$PROJECT_DIR"
    fi
    ```
+
+   Conferir se a raiz Git encontrada pertence ao projeto desejado. O corpus não agrega `docs/`
+   de repositórios filhos nem qualquer pasta de notas do Obsidian.
 
 2. Verifique a disponibilidade e não invoque o binário se a verificação falhar:
 
@@ -80,14 +87,31 @@ docs-search --version
    "$DOCS_SEARCH_BIN" search --root "$ROOT" --query "<1 a 4 termos>" --limit 5 --json
    ```
 
-6. Selecionar pelos campos `path`, `heading`, `line_start`, `line_end`, `score` e
-   `matched_terms`. Na resposta v2, `selection` registra o cap efetivo e `raw_rank` permite auditar
-   resultados promovidos pela diversidade.
+6. Conferir primeiro `root`, `corpus.files` e `corpus.chunks`. Erro do comando ou JSON inválido
+   é falha de busca: reportar e usar o fallback, sem registrar como zero correspondências.
+   `files = 0` segue **Corpus vazio**; arquivos sem chunks exigem conferir se há texto pesquisável.
+   Com chunks disponíveis, selecionar pelos campos `path`, `heading`, `line_start`, `line_end`,
+   `score` e `matched_terms`. Na resposta v2, `selection` registra o cap efetivo e `raw_rank`
+   permite auditar resultados promovidos pela diversidade.
 7. Ler o trecho correspondente no arquivo original e confirmar o hash/frescor quando isso for
    relevante.
-8. Para uma faceta vazia, seguir **Resultado vazio**. Só aumentar o limite quando já existem
-   candidatos relevantes.
+8. Para uma faceta vazia ou sem resultado relevante, seguir **Resultado vazio**. Só aumentar o
+   limite quando já existem candidatos relevantes.
 9. Conferir código e configuração atuais antes de editar.
+
+## Corpus vazio
+
+`corpus.files = 0` significa **nenhum documento no corpus dessa raiz**, não uma consulta ruim.
+Não reformular os termos nesse estado:
+
+1. conferir a raiz retornada e os caminhos permitidos (`docs/` e Markdown de raiz);
+2. se a raiz estiver errada, apontar para o projeto identificado e repetir a consulta focada;
+3. se a raiz correta não tiver corpus, declarar isso. Fontes fora do corpus, como `skills/` ou
+   notas do Obsidian, podem ser lidas explicitamente quando pertinentes à tarefa; não apresentar
+   essa leitura como resultado do ranking nem ampliar o corpus silenciosamente.
+
+Com arquivos presentes, mas `corpus.chunks = 0`, conferir se há texto pesquisável antes de trocar
+palavras. Com chunks disponíveis e sem correspondência relevante, seguir a próxima seção.
 
 ## Resultado vazio
 
@@ -95,24 +119,40 @@ O filtro lexical exige cerca de 60% dos termos significativos no mesmo chunk. Co
 são divididos por headings, uma consulta que mistura várias respostas pode não ter candidato algum,
 mesmo quando o corpus contém todas elas em chunks diferentes.
 
-Para cada faceta vazia:
+Para cada faceta vazia ou sem resultado relevante, com `corpus.chunks > 0`:
 
-1. reduzir a consulta ao identificador literal ou a 1–2 termos centrais;
-2. tentar no máximo uma segunda variante lexical, porque `gera`, `gerar` e `geração` não são
-   equivalentes e “próximos passos” não implica “Plano” ou “Pronto quando”;
+1. reduzir a consulta ao identificador literal ou a 1–2 termos centrais, usando um único termo
+   distintivo quando a combinação falhar;
+2. tentar no máximo uma segunda variante lexical, preferindo palavras observadas no índice,
+   nomes de arquivos ou outros resultados. `gera`, `gerar` e `geração` não são equivalentes;
+   `sincronização` e `sincronizar` podem encontrar documentos diferentes; “próximos passos” não
+   implica “Plano” ou “Pronto quando”;
 3. não repetir a frase original e não aumentar só `--limit`;
-4. persistindo vazio, usar `rg` no corpus permitido conforme **Não fazer** e marcar a evidência como
-   fallback sem ranking.
+4. persistindo a falta de evidência relevante, usar `rg` no corpus permitido conforme **Não fazer**
+   e marcar a evidência como fallback sem ranking.
 
 ## Verificação
 
+Após confirmar `command -v docs-search`, usar uma fonte pública conhecida, independentemente
+do diretório atual:
+
 ```bash
+REPO="${AGENT_SKILLS_REPO:-$HOME/Projects/agent-skills}"
 docs-search --version   # versão estável atual: 0.6.0
-docs-search search --root . --query "sincronizar skills" --limit 1 --json
+docs-search search --root "$REPO" --query "sincronizar" --limit 5 --json
 ```
 
-A busca deve retornar `schema_version` 2, `engine` `lexical-bm25-v1` e
-`selection.max_results_per_path` nulo (cap desligado por padrão).
+Conferir `root`, `corpus.files > 0`, `corpus.chunks > 0` e um resultado no runbook
+`docs/runbooks/sincronizar-e-deduplicar-skills.md`. A resposta deve trazer `schema_version` 2,
+`engine` `lexical-bm25-v1` e `selection.max_results_per_path` nulo (cap desligado por padrão).
+
+Ao testar recuperação vazia, distinguir explicitamente:
+
+- raiz sem corpus: `files = 0`, `chunks = 0`; corrigir escopo ou declarar corpus ausente;
+- termo ausente num corpus conhecido: `files > 0`, `chunks > 0`, `results = []`; simplificar,
+  tentar uma variante e depois usar `rg`;
+- `rg` sem correspondência retorna 1; erro de leitura ou execução não deve ser chamado de
+  ausência de correspondência. A evidência recuperada por `rg` deve ser marcada como fallback.
 
 ## Corpus
 

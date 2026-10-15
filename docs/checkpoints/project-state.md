@@ -1,6 +1,6 @@
 # Estado do projeto
 
-> **Atualizado em 2026-10-05.** Checkpoint autoritativo e snapshot, não diário: ao retomar, comece
+> **Atualizado em 2026-10-15.** Checkpoint autoritativo e snapshot, não diário: ao retomar, comece
 > por aqui e pelo [`índice`](../README.md). O histórico do `docs-search` está na
 > [`review de fechamento`](../reviews/2026-10-05-fechamento-docs-search.md).
 
@@ -20,8 +20,10 @@
     ([ADR 0003](../decisions/0003-comparar-engines-antes-da-adocao.md),
     [ADR 0004](../decisions/0004-isolar-adapters-rejeitados-da-build-de-produto.md));
   - uso real tem sido raro (relato do usuário em 2026-10-05).
-- A skill `search-project-docs` é a camada de instrução sobre o binário e está sincronizada nos
-  agentes.
+- A skill `search-project-docs` é a camada de instrução sobre o binário. O fluxo distingue raiz
+  incorreta/corpus vazio de consulta sem correspondência, usa termos curtos e uma variante lexical
+  antes do fallback `rg`; ver [runbook](../runbooks/buscar-documentacao-de-projetos.md). Não altera
+  a engine nem amplia o corpus padrão.
 - A skill `docs-organization` foi revisada em 2026-10-05 com lições de uso em dois projetos
   (roteamento por tarefa, runbooks verificáveis, estado fora do Git, docs no commit da mudança,
   resumo de plano, ADR com "Vigente hoje"/"Como verificar", branches de demonstração e teste de
@@ -60,7 +62,9 @@ O `docs-search` está concluído. Trabalho futuro é opcional:
   as tentativas e a decisão one-shot, e a rejeição do prefixo morfológico 7/4 sem retuning.
 - O corpus padrão exclui `skills/**`; por isso avaliações devem apontar para documentação em
   `README.md` ou `docs/`, não apenas para conteúdo de `SKILL.md`.
-- Resultado lexical vazio não prova ausência da informação.
+- Resultado lexical vazio não prova ausência da informação. Conferir `root`, `corpus.files` e
+  `corpus.chunks` antes de reformular termos: pastas agregadoras não incluem automaticamente a
+  documentação dos projetos filhos.
 - Nunca versionar nomes, paths, queries, headings, fingerprints ou relatórios derivados de projetos
   privados; nem paths absolutos, porque a configuração muda entre computadores.
 - Runbook e `skills/search-project-docs/SKILL.md` descrevem o mesmo processo e devem mudar juntos.

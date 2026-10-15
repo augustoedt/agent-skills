@@ -16,16 +16,22 @@ resposta existe em documentos diferentes.
 
 ## Fluxo
 
-1. Determine a raiz do projeto. Use a raiz Git quando existir e o diretório atual quando o projeto
-   não estiver versionado:
+1. Determine o projeto mencionado na tarefa **antes** de escolher a raiz. Não use automaticamente
+   o cwd quando ele for uma pasta agregadora de projetos ou quando a tarefa apontar para outro
+   checkout. Defina `PROJECT_DIR` com o diretório do projeto identificado; use o cwd somente se ele
+   for o contexto correto. Se houver vários projetos possíveis, peça a escolha, sem buscar todos:
 
    ```bash
-   if ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"; then
+   PROJECT_DIR="${PROJECT_DIR:-$PWD}" # definir explicitamente quando o projeto não for o cwd
+   if ROOT="$(git -C "$PROJECT_DIR" rev-parse --show-toplevel 2>/dev/null)"; then
      :
    else
-     ROOT="$PWD"
+     ROOT="$PROJECT_DIR"
    fi
    ```
+
+   Confirme que `ROOT` pertence ao projeto desejado. A busca não agrega automaticamente `docs/`
+   de repositórios filhos nem pesquisa qualquer pasta de notas do Obsidian.
 
 2. Verifique a disponibilidade antes de qualquer invocação:
 
@@ -57,12 +63,15 @@ resposta existe em documentos diferentes.
    "$DOCS_SEARCH_BIN" search --root "$ROOT" --query "<1 a 4 termos>" --limit 5 --json
    ```
 
-5. Examine primeiro `path`, `heading`, linhas, `score` e `matched_terms`. Na resposta v2,
-   `selection` registra o cap efetivo e `raw_rank` permite auditar promoções por diversidade. Leia
-   no arquivo original somente os trechos relevantes. O excerpt é evidência de seleção, não fonte
-   autoritativa.
-6. Trate cada faceta vazia pelo procedimento **Resultado vazio** abaixo. Aumentar `--limit` não
-   recupera candidatos quando `results` está vazio.
+5. Antes de avaliar o ranking, confira `root`, `corpus.files` e `corpus.chunks` na resposta JSON.
+   Erro do comando ou JSON inválido é falha da busca, não resultado vazio: reporte e use o fallback.
+   Se `corpus.files = 0`, siga **Corpus vazio**; se há arquivos, mas `corpus.chunks = 0`, confira
+   se eles contêm texto pesquisável antes de mudar os termos. Com chunks disponíveis, examine
+   `path`, `heading`, linhas, `score` e `matched_terms`. Na resposta v2, `selection` registra o cap
+   efetivo e `raw_rank` permite auditar promoções por diversidade. Leia no arquivo original somente
+   os trechos relevantes. O excerpt é evidência de seleção, não fonte autoritativa.
+6. Trate cada faceta vazia ou sem resultado relevante pelo procedimento **Resultado vazio** abaixo.
+   Aumentar `--limit` não recupera candidatos quando `results` está vazio.
 7. Se existem resultados relevantes, mas poucos, só então reformule com vocabulário encontrado
    nos títulos/excerpts ou aumente o limite.
 8. Antes de editar, confira o código/configuração atual relacionado à documentação encontrada.
@@ -76,17 +85,30 @@ Não entram automaticamente código, `.env` ou `skills/**`. Isso não detecta se
 próprios Markdown; credenciais nunca devem ser documentadas no corpus. `docs/` e os arquivos
 originais continuam sendo a fonte da verdade; hashes e scores servem para rastreabilidade.
 
+## Corpus vazio
+
+`corpus.files = 0` significa **nenhum documento no corpus dessa raiz**, não termos ruins.
+Não tente sinônimos nem aumente `--limit` nesse caso:
+
+1. confira a raiz retornada e a existência de `docs/` e dos Markdown de raiz permitidos;
+2. se a raiz estiver errada, corrija para o projeto identificado e repita a consulta focada;
+3. se o projeto correto não tiver corpus, reporte isso. Se a fonte estiver fora dele, como em
+   `skills/` ou num vault, leia os arquivos pertinentes à tarefa explicitamente, sem atribuir essa
+   leitura ao `docs-search` nem ampliar o corpus silenciosamente.
+
 ## Resultado vazio
 
-`results: []` numa busca ampla não significa que o corpus não contém a resposta. Para cada faceta
-vazia:
+Com `corpus.chunks > 0`, `results: []` não significa que o corpus não contém a resposta. Para cada
+faceta vazia ou sem resultado relevante:
 
-1. reduza para o identificador literal ou 1–2 termos centrais;
+1. reduza para o identificador literal ou 1–2 termos centrais, preferindo um único termo distintivo
+   quando a combinação falhar;
 2. tente no máximo mais uma variante lexical, trocando flexão ou usando vocabulário visto em
-   nomes de arquivos, no índice documental ou em resultados de outra faceta;
+   nomes de arquivos, no índice documental ou em resultados de outra faceta. Exemplo:
+   `sincronização` → `sincronizar`; ambas podem retornar documentos diferentes, não equivalentes;
 3. não repita a frase longa e não aumente apenas `--limit`;
-4. se continuar vazio, use o fallback `rg` abaixo no corpus permitido e declare que a recuperação
-   veio do fallback, não do ranking.
+4. se continuar sem evidência relevante, use o fallback `rg` abaixo no corpus permitido e declare
+   que a recuperação veio do fallback, não do ranking.
 
 Exemplos de diferenças que importam para o motor lexical: `gera`, `gerar` e `geração` não são o
 mesmo termo; “próximos passos” não encontra automaticamente títulos como “Plano” ou “Pronto

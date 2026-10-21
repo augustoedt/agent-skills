@@ -143,6 +143,19 @@ Conteúdo de dashboard:
 
 Não use números fictícios como se fossem reais. Se o domínio ainda não fornecer métricas, mostre estado de configuração explícito.
 
+#### Fluxo de entrada obrigatório
+
+Toda implementação deve fechar a jornada de entrada do portal:
+
+- a página inicial `/` exibe uma ação primária clara para entrar no sistema;
+- usuário anônimo segue dessa ação para a rota real de login;
+- usuário já autenticado e autorizado é direcionado ao dashboard inicial, sem rever o login;
+- autenticação, confirmação de credencial e recuperação concluídas redirecionam ao dashboard inicial do papel, usando apenas `return_to` interno validado quando ele existir;
+- conta autenticada sem o papel do portal recebe saída explícita ou opção de logout, nunca um loop entre `/`, login e rota protegida;
+- não usar role picker, credencial embutida, rota pública de bootstrap ou dashboard fictício para completar essa jornada.
+
+O destino pós-login deve ser implementado no callback/controlador de autenticação e protegido novamente no `live_session`; esconder ou trocar o botão da home não substitui autorização.
+
 ### 5. Regras Ash
 
 Quando o projeto usa Ash:
@@ -187,8 +200,11 @@ Charts devem usar `--chart-1` a `--chart-5`, ter resumo textual e não depender 
 
 Inclua testes para:
 
+- página `/` anônima com ação primária para o login;
+- login válido redirecionando ao dashboard inicial;
+- acesso a `/` já autenticado redirecionando ao dashboard inicial;
 - usuário não autenticado;
-- usuário autenticado sem papel administrativo;
+- usuário autenticado sem papel administrativo e sem loop de redirecionamento;
 - administrador autorizado;
 - navegação ativa;
 - mobile/sidebar quando houver hook relevante;
@@ -222,6 +238,7 @@ Corrija warnings do código da aplicação. Não mascare warnings instalando dep
 ## Critérios de aceite
 
 - admin consistente em desktop e mobile;
+- `/`, login e dashboard formam uma jornada contínua, sem loop e com redirecionamento pós-login;
 - sidebar/header/conteúdo seguem o padrão desta skill;
 - tokens semânticos centralizam o tema;
 - nenhuma dependência proibida nova;
